@@ -55,7 +55,7 @@ class BottomNavBar extends StatelessWidget {
                     ? Colors.white70
                     : Colors.black54,
           ),
-          SizedBox(height: screenWidth * 0.01),
+          SizedBox(height: screenWidth * 0.02),
           Text(
             label,
             style: GoogleFonts.montserrat(
@@ -68,7 +68,7 @@ class BottomNavBar extends StatelessWidget {
                       : Colors.black,
             ),
           ),
-          SizedBox(height: screenWidth * 0.002),
+          SizedBox(height: screenWidth * 0.004),
           Container(
             width: screenWidth * 0.08,
             height: screenWidth * 0.005,

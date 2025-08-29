@@ -83,4 +83,5 @@ flutter:
     - assets/merchants/
     - assets/merchantspageimg/
     - assets/images/bookings_imgs/
+    - assets/images/goals_imgs/
     - .env 

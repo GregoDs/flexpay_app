@@ -1,4 +1,4 @@
-import 'package:flexpay/features/onboarding/splashscreen.dart';
+import 'package:flexpay/features/auth/ui/splash_screen.dart';
 import 'package:flutter/services.dart';
 // import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'exports.dart';

@@ -3,7 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 
-class MerchantsScreen extends StatelessWidget {
+class MerchantsScreen extends StatefulWidget {
+  @override
+  State<MerchantsScreen> createState() => _MerchantsScreenState();
+}
+
+class _MerchantsScreenState extends State<MerchantsScreen> {
   final List<Map<String, String>> merchants = [
     {
       "name": "Smart Devices",
@@ -61,12 +66,12 @@ class MerchantsScreen extends StatelessWidget {
       "image": "assets/merchantspageimg/Quickmart.png"
     },
   ];
+  final Set<int> favoriteIndices = {};
 
   @override
   Widget build(BuildContext context) {
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-        final Color textColor = isDarkMode ? Colors.white : const Color(0xFF1D3C4E);
-
+    final Color textColor = isDarkMode ? Colors.white : const Color(0xFF1D3C4E);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDarkMode
@@ -234,6 +239,16 @@ class MerchantsScreen extends StatelessWidget {
                         link: merchants[index]["link"]!,
                         imageUrl: merchants[index]["image"]!,
                         isDarkMode: isDarkMode,
+                        isFavorite: favoriteIndices.contains(index),
+                        onFavoriteToggle: () {
+                          setState(() {
+                            if (favoriteIndices.contains(index)) {
+                              favoriteIndices.remove(index);
+                            } else {
+                              favoriteIndices.add(index);
+                            }
+                          });
+                        },
                       );
                     },
                   ),
@@ -332,7 +347,7 @@ class _MerchantCategoryIcon extends StatelessWidget {
           label,
           style: GoogleFonts.montserrat(
             fontSize: 11.sp,
-            color: isDarkMode ? Colors.white : Colors.black,//textColor
+            color: isDarkMode ? Colors.white : Colors.black, //textColor
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -347,6 +362,7 @@ class MerchantCard extends StatelessWidget {
   final String imageUrl;
   final bool isDarkMode;
   final bool isFavorite;
+  final VoidCallback onFavoriteToggle;
   final String location;
   final String rating;
 
@@ -355,9 +371,10 @@ class MerchantCard extends StatelessWidget {
     required this.link,
     required this.imageUrl,
     required this.isDarkMode,
-    this.isFavorite = false,
-    this.location = "Kenya", // Default location
-    this.rating = "4k", // Default rating
+    required this.isFavorite,
+    required this.onFavoriteToggle,
+    this.location = "Kenya",
+    this.rating = "4k",
     Key? key,
   }) : super(key: key);
 
@@ -401,10 +418,17 @@ class MerchantCard extends StatelessWidget {
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: isFavorite ? Colors.red : Colors.grey[500],
-                size: 18.sp,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                iconSize: 18.sp,
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite
+                      ? Color(0xFFF7B53A)
+                      : Colors.grey[500], // Amber color
+                  size: 18.sp,
+                ),
+                onPressed: onFavoriteToggle,
               ),
             ),
           ),

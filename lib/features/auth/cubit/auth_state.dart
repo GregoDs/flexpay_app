@@ -26,3 +26,5 @@ final class AuthUserUpdated extends AuthState {
   AuthUserUpdated({required this.userModel});
 
 }
+
+final class AuthTokenInvalid extends AuthState{}

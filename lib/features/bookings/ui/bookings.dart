@@ -40,7 +40,7 @@ final List<Map<String, dynamic>> dummyBookings = [
     "title": "Maldives Vacation",
     "subtitle": "Done on November 22",
     "progress": 1.0,
-    "progressColor": Color(0xFFF7B53A),
+    "progressColor": Colors.amber,
     "badge": true,
     "percentage": 100,
     "status": "Completed",
@@ -240,7 +240,7 @@ class _BookingsPageState extends State<BookingsPage> {
                                     ? const Color(0xFF23262B)
                                     : const Color(0xFFF6F7F9)),
                             textColor: selectedTab == "Completed"
-                                ? Colors.white
+                                ? Colors.black
                                 : Colors.white,
                             onTap: () =>
                                 setState(() => selectedTab = "Completed"),
@@ -255,7 +255,7 @@ class _BookingsPageState extends State<BookingsPage> {
                                     ? const Color(0xFF23262B)
                                     : const Color(0xFFF6F7F9)),
                             textColor: selectedTab == "Active"
-                                ? Colors.white
+                                ? Colors.black
                                 : Colors.white,
                             onTap: () => setState(() => selectedTab = "Active"),
                           ),

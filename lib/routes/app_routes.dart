@@ -22,7 +22,7 @@ import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/auth/cubit/auth_cubit.dart';
 import 'package:flexpay/features/auth/repo/auth_repo.dart';
 import 'package:flexpay/features/auth/ui/login.dart';
-import 'package:flexpay/features/auth/ui/otpverification.dart';
+import 'package:flexpay/features/auth/ui/otp_verification.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_products_cubit.dart';
 import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
 import 'package:flexpay/features/flexchama/ui/viewchama.dart';
@@ -30,9 +30,10 @@ import 'package:flexpay/features/goals/ui/goals.dart';
 
 import 'package:flexpay/features/home/ui/homescreen.dart';
 
-import 'package:flexpay/features/onboarding/onboardingscreen.dart';
+import 'package:flexpay/features/auth/ui/onboarding_screen.dart';
 
-import 'package:flexpay/features/onboarding/splashscreen.dart';
+import 'package:flexpay/features/auth/ui/splash_screen.dart';
+import 'package:flexpay/features/navigation/navigation_wrapper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 
 // Create global Cubit instances
@@ -42,7 +43,7 @@ final authCubit = AuthCubit(AuthRepo());
 
 class AppRoutes {
   static final routes = {
-    // Routes.splash: (context) => const StartupRedirector(),
+
     Routes.splash: (context) => const SplashScreen(),
     Routes.onboarding: (context) => const OnBoardingScreen(),
     Routes.login: (context) => BlocProvider.value(
@@ -55,14 +56,16 @@ class AppRoutes {
           child: const OtpScreen(),
         ),
 
-    Routes.home: (context) => HomeScreen(
-          isDarkModeOn: Theme.of(context).brightness == Brightness.dark,
-        ),
+    // Routes.home: (context) => HomeScreen(
+    //       isDarkModeOn: Theme.of(context).brightness == Brightness.dark,
+    //     ),
+
+    Routes.home: (context) => const NavigationWrapper(initialIndex: 0),
 
     Routes.goals: (context) => GoalsPage(),
 
     Routes.viewChamas:
-        (context) => // Example: In your main.dart or wherever you navigate to ViewChamas
+        (context) => 
             BlocProvider(
               create: (context) => ChamaProductsCubit(ChamaRepo(ApiService())),
               child: ViewChamas(),

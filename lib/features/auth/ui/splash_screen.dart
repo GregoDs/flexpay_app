@@ -1,7 +1,8 @@
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/auth/ui/login.dart';
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
-import 'package:flexpay/features/onboarding/onboardingscreen.dart';
+import 'package:flexpay/features/auth/ui/onboarding_screen.dart';
+import 'package:flexpay/utils/services/service_repo.dart';
 import 'package:flutter/services.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -16,66 +17,46 @@ class _SplashScreenState extends State<SplashScreen>
   late final AnimationController controller;
   late final Animation<double> animation;
 
-  bool isLoggedIn = false;
-  bool firstLaunch = true;
-
   @override
   void initState() {
     super.initState();
 
     controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4),
-    )..forward();
+      duration: const Duration(seconds: 2),
+    );
 
     animation = CurvedAnimation(
       parent: controller,
-      curve: Curves.linear,
+      curve: Curves.easeInOut,
     );
 
-    _initialize(); 
-  }
+    controller.forward();
 
-  Future<void> _initialize() async {
-    await _checkLoginStatus(); 
-    await Future.delayed(const Duration(seconds: 4));
-
-    if (!mounted) return;
-
-    
-    if (firstLaunch) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => OnBoardingScreen()),
-      );
-    } else if (isLoggedIn) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const NavigationWrapper()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => LoginScreen()),
-      );
-    }
-  }
-
-  Future<void> _checkLoginStatus() async {
-    final localStorage = await SharedPreferences.getInstance();
-    final launch = localStorage.getBool('firstLaunch');
-    final token = localStorage.getString('token');
-
-    setState(() {
-      firstLaunch = launch ?? true;
-      isLoggedIn = token != null && token.isNotEmpty;
+    // After animation, check where to go
+    Future.delayed(const Duration(seconds: 2), () async {
+      await _decideNextScreen();
     });
   }
 
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
+  Future<void> _decideNextScreen() async {
+    final service = StartupService();
+    final route = await service.decideNextRoute();
+
+    if (!mounted) return;
+
+    switch (route) {
+      case 'onboarding':
+        Navigator.pushReplacementNamed(context, Routes.onboarding);
+        break;
+      case 'login':
+        Navigator.pushReplacementNamed(context, Routes.login);
+        break;
+      case 'home':
+        Navigator.pushReplacementNamed(
+            context, Routes.home); 
+        break;
+    }
   }
 
   @override

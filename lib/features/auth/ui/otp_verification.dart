@@ -68,6 +68,21 @@ class _OtpScreenState extends State<OtpScreen> {
       backgroundColor:
           isDarkMode ? const Color(0xFF1A1A1A) : ColorName.whiteColor,
       body: SafeArea(
+        child: BlocListener<AuthCubit, AuthState>(
+          listener: (context, state) async {
+            if (state is AuthTokenInvalid) {
+              CustomSnackBar.showError(
+                context,
+                title: "Session Ended",
+                message: "Sorry, your session has ended. Please log in again.",
+              );
+              await Future.delayed(const Duration(seconds: 2));
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                Routes.login,
+                (route) => false,
+              );
+            }
+          },
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthUserUpdated) {
@@ -78,14 +93,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 });
 
                 // Navigate to the HomeScreen
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => HomeScreen(
-                      isDarkModeOn:
-                          Theme.of(context).brightness == Brightness.dark,
-                    ),
-                  ),
-                );
+               Navigator.pushReplacementNamed(context, Routes.home);
               }
             } else if (state is AuthOtpSent) {
               setState(() {
@@ -263,6 +271,7 @@ class _OtpScreenState extends State<OtpScreen> {
             );
           },
         ),
+      ),
       ),
     );
   }

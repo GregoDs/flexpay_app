@@ -65,4 +65,25 @@ class AuthRepo {
   }
 
   UserModel? get userModel => _userModel;
+
+  //Verify and Validate token
+   Future<Response> verifyToken(String token) async {
+    try {
+      final endpoint = dotenv.env["PROD_AUTH_BEARER_TOKEN_ENDPOINT"];
+      if (endpoint == null) {
+        throw Exception('PROD_AUTH_BEARER_TOKEN_ENDPOINT is not set in .enc');
+      }
+      final String url = "$endpoint/verify-token";
+
+      final response = await _apiService.get(
+        url,
+        requiresAuth: true,
+      );
+      return response;
+    } catch (e) {
+      print("Unexpected error during token verification: $e");
+      rethrow;
+    }
+  }
+
 }

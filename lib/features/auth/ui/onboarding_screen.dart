@@ -1,8 +1,9 @@
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
+import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/widgets/app_text.dart';
 import 'package:lottie/lottie.dart';
 
-import '../../exports.dart';
+import '../../../exports.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -104,16 +105,11 @@ class _OnBoardingState extends State<OnBoardingScreen> {
                             height: 57.6,
                             child: ElevatedButton(
                               onPressed: () async {
-                                SharedPreferences localStorage =
-                                    await SharedPreferences.getInstance();
-                                localStorage.setBool('firstLaunch', false);
+                                await SharedPreferencesHelper
+                                    .setFirstLaunchDone();
                                 if (context.mounted) {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const NavigationWrapper()),
-                                  );
+                                  Navigator.pushReplacementNamed(
+                                      context, Routes.login);
                                 }
                               },
                               style: ButtonStyle(

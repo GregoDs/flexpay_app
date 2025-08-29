@@ -7,14 +7,24 @@ String prettyPrintJson(dynamic jsonObj) {
   return encoder.convert(jsonObj);
 }
 
-
-
 class SharedPreferencesHelper {
   static const String _tokenKey = 'token';
   static const String _userDataKey = 'user_data';
   static const String _bookingResponseKey = 'booking_response';
   static const String _bookingReferenceKey = 'booking_reference';
   static const String _validatedAmountKey = 'validated_amount';
+
+  ///SplashScreen Navigation
+  //first Launch
+  static Future<bool> isFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isFirstLaunch') ?? true;
+  }
+
+  static Future<void> setFirstLaunchDone() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isFirstLaunch', false);
+  }
 
   // Token Handling
   static Future<void> saveToken(String token) async {
@@ -69,10 +79,8 @@ class SharedPreferencesHelper {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userDataKey);
-
   }
 
-  
 // // Save Closed Bookings
 // static Future<void> saveClosedBookings(List<Booking> bookings) async {
 //   final prefs = await SharedPreferences.getInstance();
@@ -108,7 +116,6 @@ class SharedPreferencesHelper {
 //     return [];
 //   }
 // }
-
 
   // // Booking Data Handling
   // static Future<void> saveBookingData({

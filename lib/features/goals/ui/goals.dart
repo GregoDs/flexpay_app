@@ -14,42 +14,42 @@ class GoalsPage extends StatefulWidget {
 class _GoalsPageState extends State<GoalsPage> {
   final List<Map<String, dynamic>> goals = [
     {
-      "image": "assets/merchantspageimg/Car-and-General.png",
+      "image": "assets/images/goals_imgs/rent_goals.png",
       "title": "Rent Goal",
       "subtitle": "Pay your rent on time",
       "amount": "\$500.00",
       "favorite": true,
     },
+    // {
+    //   "image": "assets/images/goals/land.png",
+    //   "title": "Land/Plot",
+    //   "subtitle": "Own your dream land",
+    //   "amount": "\$2,000.00",
+    //   "favorite": false,
+    // },
+    // {
+    //   "image": "assets/images/goals/shopping.png",
+    //   "title": "Shopping",
+    //   "subtitle": "Shop your wishlist",
+    //   "amount": "\$350.00",
+    //   "favorite": false,
+    // },
     {
-      "image": "assets/images/goals/land.png",
-      "title": "Land/Plot",
-      "subtitle": "Own your dream land",
-      "amount": "\$2,000.00",
-      "favorite": false,
-    },
-    {
-      "image": "assets/images/goals/shopping.png",
-      "title": "Shopping",
-      "subtitle": "Shop your wishlist",
-      "amount": "\$350.00",
-      "favorite": false,
-    },
-    {
-      "image": "assets/images/goals/vacation.png",
+      "image": "assets/images/goals_imgs/vacation.png",
       "title": "Vacation",
       "subtitle": "Plan your getaway",
       "amount": "\$1,200.00",
       "favorite": true,
     },
     {
-      "image": "assets/images/goals/christmas.png",
+      "image": "assets/images/goals_imgs/christmass_goals.png",
       "title": "Christmas Goal",
       "subtitle": "Festive savings",
       "amount": "\$400.00",
       "favorite": false,
     },
     {
-      "image": "assets/images/goals/school.png",
+      "image": "assets/images/goals_imgs/school_fees.png",
       "title": "School Fees",
       "subtitle": "Pay school fees easily",
       "amount": "\$800.00",
@@ -85,18 +85,15 @@ class _GoalsPageState extends State<GoalsPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.arrow_back, size: 28.sp, color: iconColor),
-                    Text(
-                      "Goals Categories ",
-                      style: GoogleFonts.montserrat(
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.w600,
-                        color: textColor,
+                    Center(
+                      child: Text(
+                        "Goals Categories ",
+                        style: GoogleFonts.montserrat(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
                       ),
-                    ),
-                    CircleAvatar(
-                      radius: 18.w,
-                      backgroundImage: AssetImage("assets/images/profile.jpg"),
                     ),
                   ],
                 ),
@@ -179,7 +176,7 @@ class _GoalsPageState extends State<GoalsPage> {
                             crossAxisCount: 2,
                             mainAxisSpacing: 18.h,
                             crossAxisSpacing: 18.w,
-                            childAspectRatio: 0.58,
+                            childAspectRatio: 0.60,
                           ),
                           itemCount: goals.length,
                           itemBuilder: (context, index) {
@@ -212,13 +209,13 @@ class _GoalsPageState extends State<GoalsPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Center(
+                                      // Use Expanded for the image to fill available space
+                                      Expanded(
                                         child: ClipRRect(
                                           borderRadius:
                                               BorderRadius.circular(16.r),
                                           child: Container(
                                             width: double.infinity,
-                                            height: 210.h,
                                             color: isDarkMode
                                                 ? Colors.grey[800]
                                                 : Colors.grey[200],
@@ -229,33 +226,7 @@ class _GoalsPageState extends State<GoalsPage> {
                                           ),
                                         ),
                                       ),
-                                      SizedBox(height: 12.h),
-                                      Text(
-                                        goal["title"],
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.w700,
-                                          color: textColor,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4.h),
-                                      Text(
-                                        goal["subtitle"],
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 12.sp,
-                                          color: subtitleColor,
-                                        ),
-                                      ),
-                                      SizedBox(height: 12.h),
-                                      Text(
-                                        goal["amount"],
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.w700,
-                                          color: textColor,
-                                        ),
-                                      ),
-                                      Spacer(),
+                                      SizedBox(height: 8.h),
                                       Align(
                                         alignment: Alignment.bottomRight,
                                         child: Container(
@@ -295,6 +266,23 @@ class _GoalsPageState extends State<GoalsPage> {
                                           ),
                                         ),
                                       ),
+                                      Text(
+                                        goal["title"],
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 15.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4.h),
+                                      Text(
+                                        goal["subtitle"],
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 12.sp,
+                                          color: subtitleColor,
+                                        ),
+                                      ),
+                                      SizedBox(height: 8.h),
                                     ],
                                   ),
                                 ),
