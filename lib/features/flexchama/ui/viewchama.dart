@@ -32,6 +32,23 @@ class _ViewChamasState extends State<ViewChamas> {
   // Tab state
   bool isYearly = true;
 
+  // Add selection state
+  int selectedChamaType = 1; // 1 = My Chama, 2 = Our Chamas
+
+  // Example data for My Chama
+  final List<Map<String, dynamic>> myChamas = [
+    {
+      "icon": Icons.group,
+      "title": "Umoja@5k",
+      "savings": "Ksh 20,000",
+    },
+    {
+      "icon": Icons.savings,
+      "title": "My Savings Squad",
+      "savings": "Ksh 12,000",
+    },
+  ];
+
   // Example data
   final List<Map<String, dynamic>> yearlyChamas = [
     {
@@ -245,21 +262,37 @@ class _ViewChamasState extends State<ViewChamas> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildBalanceCard(
-                    FontAwesomeIcons.creditCard,
-                    'My Chama',
-                    loanBalance.toString(),
-                    loanIconColor,
-                    textColor,
-                    loanBg,
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedChamaType = 1;
+                      });
+                    },
+                    child: _buildBalanceCard(
+                      FontAwesomeIcons.creditCard,
+                      'My Chama',
+                      loanBalance.toString(),
+                      loanIconColor,
+                      textColor,
+                      loanBg,
+                      isSelected: selectedChamaType == 1,
+                    ),
                   ),
-                  _buildBalanceCard(
-                    FontAwesomeIcons.handHoldingDollar,
-                    'Our Chamas',
-                    flexcoinBalance.toString(),
-                    flexcoinIconColor,
-                    textColor,
-                    flexcoinBg,
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedChamaType = 2;
+                      });
+                    },
+                    child: _buildBalanceCard(
+                      FontAwesomeIcons.handHoldingDollar,
+                      'Our Chamas',
+                      flexcoinBalance.toString(),
+                      flexcoinIconColor,
+                      textColor,
+                      flexcoinBg,
+                      isSelected: selectedChamaType == 2,
+                    ),
                   ),
                 ],
               ),
@@ -276,34 +309,35 @@ class _ViewChamasState extends State<ViewChamas> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tabs
-                    Row(
-                      children: [
-                        _ChamaTab(
-                          label: "Yearly",
-                          selected: isYearly,
-                          onTap: () {
-                            setState(() {
-                              isYearly = true;
-                            });
-                          },
-                        ),
-                        SizedBox(width: 24.w),
-                        _ChamaTab(
-                          label: "Half Yearly",
-                          selected: !isYearly,
-                          onTap: () {
-                            setState(() {
-                              isYearly = false;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10.h),
-                    // Our Chamas label
+                    // Tabs (only show for Our Chamas)
+                    if (selectedChamaType == 2)
+                      Row(
+                        children: [
+                          _ChamaTab(
+                            label: "Yearly",
+                            selected: isYearly,
+                            onTap: () {
+                              setState(() {
+                                isYearly = true;
+                              });
+                            },
+                          ),
+                          SizedBox(width: 24.w),
+                          _ChamaTab(
+                            label: "Half Yearly",
+                            selected: !isYearly,
+                            onTap: () {
+                              setState(() {
+                                isYearly = false;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    if (selectedChamaType == 2) SizedBox(height: 10.h),
+                    // Chama label
                     Text(
-                      "Our Chamas",
+                      selectedChamaType == 1 ? "My Chama" : "Our Chamas",
                       style: GoogleFonts.montserrat(
                         fontSize: 14.sp,
                         color: const Color(0xFF3399CC),
@@ -313,11 +347,17 @@ class _ViewChamasState extends State<ViewChamas> {
                     SizedBox(height: 18.h),
                     // Chama List with icons
                     ...List.generate(
-                      isYearly ? yearlyChamas.length : halfYearlyChamas.length,
+                      selectedChamaType == 1
+                          ? myChamas.length
+                          : (isYearly
+                              ? yearlyChamas.length
+                              : halfYearlyChamas.length),
                       (index) {
-                        final chama = isYearly
-                            ? yearlyChamas[index]
-                            : halfYearlyChamas[index];
+                        final chama = selectedChamaType == 1
+                            ? myChamas[index]
+                            : (isYearly
+                                ? yearlyChamas[index]
+                                : halfYearlyChamas[index]);
                         return Padding(
                           padding: EdgeInsets.only(bottom: 18.h),
                           child: _ChamaListItem(
@@ -366,7 +406,7 @@ class _ViewChamasState extends State<ViewChamas> {
               SizedBox(width: 8.w),
               Flexible(
                 child: Text(
-                  'Spread the word!\nRefer a friend and earn',
+                  'Spread the word!\nClick to refer a friend and earn',
                   style: GoogleFonts.montserrat(
                     fontWeight: FontWeight.normal,
                     fontSize: 16.sp,
@@ -566,8 +606,9 @@ class _ViewChamasState extends State<ViewChamas> {
     String amount,
     Color iconColor,
     Color textColor,
-    Color cardColor,
-  ) {
+    Color cardColor, {
+    bool isSelected = false,
+  }) {
     return Container(
       width: 160.w,
       height: 148.h,
@@ -582,6 +623,7 @@ class _ViewChamasState extends State<ViewChamas> {
             blurRadius: 8,
           ),
         ],
+        border: isSelected ? Border.all(color: Colors.amber, width: 3) : null,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

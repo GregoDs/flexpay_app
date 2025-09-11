@@ -27,4 +27,9 @@ final class AuthUserUpdated extends AuthState {
 
 }
 
+final class AuthResendOtp extends AuthState {
+  final String message;
+  AuthResendOtp({required this.message});
+}
+
 final class AuthTokenInvalid extends AuthState{}

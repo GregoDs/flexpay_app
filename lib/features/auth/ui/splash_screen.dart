@@ -2,8 +2,11 @@ import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/auth/ui/login.dart';
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
 import 'package:flexpay/features/auth/ui/onboarding_screen.dart';
+import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/service_repo.dart';
 import 'package:flutter/services.dart';
+
+import '../../../utils/services/logger.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -41,6 +44,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _decideNextScreen() async {
     final service = StartupService();
+    final user = await SharedPreferencesHelper.getUserModel();
+    AppLogger.log('[SplashScreen] Loaded user from SharedPreferences: ${user?.token}');
     final route = await service.decideNextRoute();
 
     if (!mounted) return;
@@ -53,8 +58,7 @@ class _SplashScreenState extends State<SplashScreen>
         Navigator.pushReplacementNamed(context, Routes.login);
         break;
       case 'home':
-        Navigator.pushReplacementNamed(
-            context, Routes.home); 
+        Navigator.pushReplacementNamed(context, Routes.home);
         break;
     }
   }

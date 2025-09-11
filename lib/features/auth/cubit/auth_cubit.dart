@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flexpay/features/auth/repo/auth_repo.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/error_handler.dart';
+import 'package:flexpay/utils/services/logger.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -10,41 +11,61 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit(this._authRepo) : super(AuthInitial());
 
-  Future<void> requestOtp(String phoneNumber) async {
+  /// ----------------- Request OTP -----------------
+  Future<void> requestOtp(String phoneNumber, {bool isResend = false}) async {
     emit(AuthLoading());
     try {
       final response = await _authRepo.requestOtp(phoneNumber);
 
       if (response.data['success'] == true) {
-        emit(AuthOtpSent(message: 'OTP sent successfully'));
-        emit(AuthUserUpdated(userModel: _authRepo.userModel!));
+        if (isResend) {
+          emit(AuthResendOtp(message: 'OTP resent successfully'));
+        } else {
+          emit(AuthOtpSent(message: 'OTP sent successfully'));
+        }
       } else {
         emit(AuthError(
-          errorMessage: ErrorHandler.extractErrorMessage(response.data),
-        ));
+            errorMessage: ErrorHandler.extractErrorMessage(response.data)));
       }
     } on DioException catch (e) {
+      AppLogger.apiError(
+        type: "DioException",
+        method: e.requestOptions.method,
+        uri: e.requestOptions.uri,
+        statusCode: e.response?.statusCode,
+        data: e.response?.data,
+      );
       emit(AuthError(errorMessage: ErrorHandler.handleError(e)));
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.log("❌ ERROR in requestOtp: $e");
+      AppLogger.log(stackTrace);
       emit(AuthError(errorMessage: ErrorHandler.handleGenericError(e)));
     }
   }
 
+  /// ----------------- Verify OTP -----------------
   Future<void> verifyOtp(String phoneNumber, String otp) async {
     emit(AuthLoading());
     try {
       final response = await _authRepo.verifyOtp(phoneNumber, otp);
 
-      //check if response indicates success
       if (response.data['success'] == true) {
-        //verify token
-        final token = await SharedPreferencesHelper.getToken();
-        final verifyTokenResponse = await _authRepo.verifyToken(token ?? '');
+        // Use in-memory user model directly
+        final user = _authRepo.userModel;
+        if (user == null) {
+          emit(AuthError(errorMessage: "Failed to load user data."));
+          return;
+        }
+
+        AppLogger.log("🔍 Using in-memory token = ${user.token}");
+
+        // Verify token with backend
+        
+        final verifyTokenResponse = await _authRepo.verifyToken(user.token);
 
         if (verifyTokenResponse.data['success'] == true) {
-          emit(AuthUserUpdated(userModel: _authRepo.userModel!));
+          emit(AuthUserUpdated(userModel: user));
         } else {
-          //token is invalid
           emit(AuthTokenInvalid());
         }
       } else {
@@ -53,30 +74,53 @@ class AuthCubit extends Cubit<AuthState> {
         ));
       }
     } on DioException catch (e) {
+      AppLogger.apiError(
+        type: "DioException",
+        method: e.requestOptions.method,
+        uri: e.requestOptions.uri,
+        statusCode: e.response?.statusCode,
+        data: e.response?.data,
+      );
       emit(AuthError(errorMessage: ErrorHandler.handleError(e)));
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.log("❌ ERROR in verifyOtp: $e");
+      AppLogger.log(stackTrace);
       emit(AuthError(errorMessage: ErrorHandler.handleGenericError(e)));
     }
   }
 
-  //verify Token if its not the first launch ...so directly from the shared preferences
-  Future<void> verifyTokenOnStartup(String token) async {
+  /// ----------------- Verify Token on App Startup -----------------
+  Future<void> verifyTokenOnStartup() async {
     emit(AuthLoading());
     try {
-      final token = await SharedPreferencesHelper.getToken();
-      if (token == null) {
+      // Prefer SharedPreferences for startup (in-memory may not exist yet)
+      final user = _authRepo.userModel ?? await SharedPreferencesHelper.getUserModel();
+
+      if (user == null || user.token.isEmpty) {
         emit(AuthTokenInvalid());
         return;
       }
-      final response = await _authRepo.verifyToken(token);
+
+      final response = await _authRepo.verifyToken(user.token);
 
       if (response.data['success'] == true) {
-        emit(AuthUserUpdated(userModel: _authRepo.userModel!));
+        emit(AuthUserUpdated(userModel: user));
       } else {
+        // Clear invalid token
+        await SharedPreferencesHelper.logout();
         emit(AuthTokenInvalid());
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.log("❌ ERROR in verifyTokenOnStartup: $e");
+      AppLogger.log(stackTrace);
       emit(AuthTokenInvalid());
     }
   }
+
+  /// ----------------- Logout -----------------
+  // Future<void> logout() async {
+  //   await SharedPreferencesHelper.logout();
+  //   _authRepo.userModel = null;
+  //   emit(AuthLoggedOut());
+  // }
 }

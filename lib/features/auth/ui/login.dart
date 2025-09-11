@@ -1,11 +1,12 @@
 import 'package:flexpay/features/auth/cubit/auth_cubit.dart';
 import 'package:flexpay/features/auth/cubit/auth_state.dart';
 import 'package:flexpay/gen/colors.gen.dart';
+import 'package:flexpay/routes/app_routes.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,6 +24,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+    final textTheme =
+        GoogleFonts.montserratTextTheme(Theme.of(context).textTheme);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -31,36 +34,28 @@ class _LoginScreenState extends State<LoginScreen> {
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthLoading) {
-              // Update loading state
               setState(() {
                 _isLoading = true;
               });
             } else if (state is AuthOtpSent) {
-              // Update loading state
-              setState(() {
-                _isLoading = false;
-              });
-
-              // Show success message
-              CustomSnackBar.showSuccess(
-                context,
-                title: 'Success',
-                message: state.message,
-              );
-
-              // Delay navigation until the success SnackBar is shown
-              Future.delayed(const Duration(seconds: 1), () {
-                Navigator.pushNamed(
-                    context, '/otp'); // Use the named route here
-              });
+              if (ModalRoute.of(context)?.settings.name != Routes.otp) {
+                setState(() {
+                  _isLoading = false;
+                });
+                CustomSnackBar.showSuccess(
+                  context,
+                  title: 'Success',
+                  message: state.message,
+                );
+                Future.delayed(const Duration(seconds: 1), () {
+                  Navigator.pushNamed(context, Routes.otp);
+                });
+              }
             } else if (state is AuthError && !_isSnackBarShowing) {
-              // Update loading state
               setState(() {
                 _isLoading = false;
                 _isSnackBarShowing = true;
               });
-
-              // Show error message
               CustomSnackBar.showError(
                 context,
                 title: 'Error',
@@ -88,21 +83,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: Image.asset(
-                      'assets/images/onboardingSlide1.png',                          
+                      'assets/images/onboardingSlide1.png',
                       fit: BoxFit.cover,
                     ),
                   ),
                   SizedBox(height: screenHeight * 0.05),
-                  RichText(
-                    textAlign: TextAlign.left,
-                    text: TextSpan(
-                      text: "Sign In to Flexpay ",
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: screenWidth * 0.08,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : Colors.black,
-                      ),
+                  Text(
+                    "Sign In to Flexpay",
+                    style: textTheme.headlineSmall?.copyWith(
+                      fontSize: screenWidth * 0.090,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                   SizedBox(height: screenHeight * 0.01),
@@ -110,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     "We provide top-quality services and support for your needs.",
                     style: TextStyle(
                       fontFamily: 'Montserrat',
-                      fontSize: screenWidth * 0.05,
+                      fontSize: screenWidth * 0.040,
                       color: isDarkMode ? Colors.grey[400] : Colors.grey,
                     ),
                   ),
@@ -182,12 +173,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: ColorName.primaryColor,
                         elevation: isDarkMode ? 2 : 5,
-                        padding: EdgeInsets.symmetric(
-                          vertical: screenHeight * 0.018,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(screenWidth * 0.03),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       onPressed: _isLoading
@@ -221,13 +209,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             )
                           : Text(
-                              "LOGIN",
-                              style: TextStyle(
-                                fontFamily: 'Montserrat',
-                                fontSize: screenWidth * 0.05,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              "Sign in",
+                              style: textTheme.titleMedium
+                                  ?.copyWith(color: Colors.white),
                             ),
                     ),
                   ),
@@ -237,7 +221,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: _isLoading
                           ? null
                           : () {
-                              // Handle Sign Up
+                              Navigator.pushReplacementNamed(
+                                  context, Routes.register);
                             },
                       child: Text(
                         "Don't have an account? Sign Up",

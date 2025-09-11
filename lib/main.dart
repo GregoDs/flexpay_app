@@ -7,6 +7,12 @@ void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   // FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
+  // Lock orientation to portrait only
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   await dotenv.load(fileName: ".env");
 
 //  runApp(
@@ -55,8 +61,7 @@ class MyApp extends StatelessWidget {
                 darkTheme: ThemeData(
                   brightness: Brightness.dark,
                   primaryColor: ColorName.primaryColor,
-                  scaffoldBackgroundColor:
-                      Colors.black, // <--- ensure this is black
+                  scaffoldBackgroundColor: Colors.black,
                 ),
                 themeMode: ThemeMode.system,
                 routes: AppRoutes.routes,

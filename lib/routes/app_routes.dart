@@ -23,6 +23,7 @@ import 'package:flexpay/features/auth/cubit/auth_cubit.dart';
 import 'package:flexpay/features/auth/repo/auth_repo.dart';
 import 'package:flexpay/features/auth/ui/login.dart';
 import 'package:flexpay/features/auth/ui/otp_verification.dart';
+import 'package:flexpay/features/auth/ui/register.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_products_cubit.dart';
 import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
 import 'package:flexpay/features/flexchama/ui/viewchama.dart';
@@ -46,6 +47,7 @@ class AppRoutes {
 
     Routes.splash: (context) => const SplashScreen(),
     Routes.onboarding: (context) => const OnBoardingScreen(),
+    Routes.register: (context) => const CreateAccountPage(),
     Routes.login: (context) => BlocProvider.value(
           value: authCubit,
           child: const LoginScreen(),
@@ -107,6 +109,7 @@ class AppRoutes {
 class Routes {
   static const splash = '/splash';
   static const onboarding = '/onboarding';
+  static const register = '/register';
   static const login = '/login';
   static const otp = '/otp';
   static const main = '/main';
