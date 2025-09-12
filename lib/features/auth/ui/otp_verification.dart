@@ -5,6 +5,7 @@ import 'package:flexpay/routes/app_routes.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:lottie/lottie.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,7 +25,7 @@ class _OtpScreenState extends State<OtpScreen> {
   bool _isSnackBarShowing = false;
   bool _isResendingOtp = false;
   bool _isVerifyingOtp = false;
-  int _secondsRemaining = 00;
+  int _secondsRemaining = 10;
   late Timer _timer;
 
   @override
@@ -49,7 +50,7 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   void _startTimer() {
-    _secondsRemaining = 00;
+    _secondsRemaining = 10;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_secondsRemaining > 0) {
         setState(() {
@@ -75,7 +76,7 @@ class _OtpScreenState extends State<OtpScreen> {
     if (_phoneNumber != null && !_isResendingOtp) {
       setState(() {
         _isResendingOtp = true;
-        _secondsRemaining = 00;
+        _secondsRemaining = 10;
       });
       _startTimer();
       authCubit.requestOtp(_phoneNumber!, isResend: true);
@@ -121,7 +122,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     _isResendingOtp = false;
                     _isLoading = false;
                     _otpController.clear();
-                    _secondsRemaining = 00;
+                    _secondsRemaining = 10;
                     _startTimer();
                   });
 
@@ -137,7 +138,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     _isResendingOtp = false;
                     _isLoading = false;
                     _otpController.clear();
-                    _secondsRemaining = 00;
+                    _secondsRemaining = 10;
                     _startTimer();
                   });
 
@@ -223,7 +224,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
                         // Subtitle
                         Text(
-                          "A 4 digit code has been sent to your \nmobile number ${_phoneNumber ?? "+00-0000-000-0000"}",
+                          "A 4 digit code has been sent to your \nmobile number 0${_phoneNumber ?? "+00-0000-000-0000"}",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 15,
@@ -292,15 +293,12 @@ class _OtpScreenState extends State<OtpScreen> {
                               ),
                             ),
                             child: _isLoading
-                                ? const SizedBox(
-                                    height: 14,
-                                    width: 14,
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
-                                      strokeWidth: 2,
-                                    ),
-                                  )
+                                ? Center(
+                                      child: SpinKitWave(
+                                        color: ColorName.primaryColor,
+                                        size: 28,
+                                      ),
+                                    )
                                 : const Text(
                                     "Verify OTP",
                                     style: TextStyle(

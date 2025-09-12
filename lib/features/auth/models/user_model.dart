@@ -7,16 +7,16 @@ class UserModel {
     required this.user,
   });
 
-  /// Use this when you parse the original API response:
-  /// { data: [ { token: ..., user: {...} }, { ...profile... } ], ... }
-  factory UserModel.fromApiResponse(Map<String, dynamic> apiJson) {
+  /// ✅ Parse Login Response
+  factory UserModel.fromLoginResponse(Map<String, dynamic> apiJson) {
     final dataList = apiJson['data'] as List? ?? [];
 
     final authInfo = dataList.isNotEmpty
         ? Map<String, dynamic>.from(dataList[0])
         : <String, dynamic>{};
 
-    final userInfo = (authInfo['user'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
+    final userInfo = (authInfo['user'] as Map?)?.cast<String, dynamic>() ??
+        <String, dynamic>{};
     final profileInfo = dataList.length > 1
         ? Map<String, dynamic>.from(dataList[1])
         : <String, dynamic>{};
@@ -29,21 +29,35 @@ class UserModel {
     );
   }
 
-  /// Use this when reading from SharedPreferences (already flattened { token, user })
+  /// ✅ Parse Signup Response
+  factory UserModel.fromSignupResponse(Map<String, dynamic> apiJson) {
+    final data = apiJson['data'] as Map<String, dynamic>? ?? {};
+    final userJson = (data['user'] as Map?)?.cast<String, dynamic>() ?? {};
+    final customerJson =
+        (userJson['customer'] as Map?)?.cast<String, dynamic>() ?? {};
+
+    final token = userJson['token']?.toString() ?? '';
+
+    return UserModel(
+      token: token,
+      user: User.fromJson(userJson, customerJson),
+    );
+  }
+  //for storing it into the shared preferences...shared preferences needs it in plain json so you need to unflatten the model 
+  Map<String, dynamic> toJson() => {
+        'token': token,
+        'user': user.toJson(),
+      };
+
+  /// ✅ When restoring from SharedPreferences after being flattened
   factory UserModel.fromJson(Map<String, dynamic> json) {
     final token = json['token']?.toString() ?? '';
-    final userMap = (json['user'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
-    // profileJson is not present in stored format; pass empty map
+    final userMap = (json['user'] as Map?)?.cast<String, dynamic>() ?? {};
     return UserModel(
       token: token,
       user: User.fromJson(userMap, <String, dynamic>{}),
     );
   }
-
-  Map<String, dynamic> toJson() => {
-        'token': token,
-        'user': user.toJson(),
-      };
 }
 
 class User {
@@ -78,7 +92,8 @@ class User {
     required this.username,
   });
 
-  factory User.fromJson(Map<String, dynamic> userJson, Map<String, dynamic> profileJson) {
+  factory User.fromJson(
+      Map<String, dynamic> userJson, Map<String, dynamic> profileJson) {
     int _parseInt(dynamic v) {
       if (v == null) return 0;
       if (v is int) return v;
@@ -96,15 +111,15 @@ class User {
       apiToken: userJson['api_token']?.toString(),
       idNumber: userJson['id_number']?.toString(),
       dob: userJson['dob']?.toString(),
-
-      phoneNumber: profileJson['phone_number']?.toString() ??
+      phoneNumber: profileJson['phone_number_1']?.toString() ??
+          profileJson['phone_number']?.toString() ??
           userJson['phone_number']?.toString() ??
           '',
       firstName: profileJson['first_name']?.toString() ?? '',
       lastName: profileJson['last_name']?.toString() ?? '',
       username: profileJson['username']?.toString() ??
-          userJson['username']?.toString() ??
-          '',
+          '${profileJson['first_name'] ?? ''} ${profileJson['last_name'] ?? ''}'
+              .trim(),
     );
   }
 

@@ -46,26 +46,26 @@ class AppRoutes {
   static final routes = {
 
     Routes.splash: (context) => const SplashScreen(),
+
     Routes.onboarding: (context) => const OnBoardingScreen(),
-    Routes.register: (context) => const CreateAccountPage(),
+
+    Routes.register: (context) =>  BlocProvider.value(
+          value: authCubit,
+          child: const CreateAccountPage(),
+        ),
     Routes.login: (context) => BlocProvider.value(
           value: authCubit,
           child: const LoginScreen(),
         ),
-
     Routes.otp: (context) => BlocProvider.value(
           value: authCubit,
           child: const OtpScreen(),
         ),
-
     // Routes.home: (context) => HomeScreen(
     //       isDarkModeOn: Theme.of(context).brightness == Brightness.dark,
     //     ),
-
     Routes.home: (context) => const NavigationWrapper(initialIndex: 0),
-
     Routes.goals: (context) => GoalsPage(),
-
     Routes.viewChamas:
         (context) => 
             BlocProvider(

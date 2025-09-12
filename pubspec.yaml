@@ -49,7 +49,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  mockito: ^5.4.0
+  mockito: ^5.4.4
+  build_runner: ^2.4.6
+  bloc_test: ^10.0.0
   integration_test:
     sdk: flutter
   flutter_launcher_icons: "^0.14.3"
@@ -58,7 +60,7 @@ flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/icon/flexpaylogo.png"
-  adaptive_icon_foreground: "assets/icon/flexpaylogo.png"  # Ensures better resolution for adaptive icons
+  adaptive_icon_foreground: "assets/icon/flexpaylogo.png" 
   adaptive_icon_background: "#ffffff" 
   
   flutter_lints: ^5.0.0
@@ -82,6 +84,8 @@ flutter:
     - assets/icon/logos/logo.png
     - assets/merchants/
     - assets/merchantspageimg/
+    - assets/images/auth_images/
     - assets/images/bookings_imgs/
+    - assets/images/flags/
     - assets/images/goals_imgs/
     - .env 

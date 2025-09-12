@@ -5,8 +5,10 @@ import 'package:flexpay/routes/app_routes.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:lottie/lottie.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,39 +20,48 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController phoneController = TextEditingController();
   bool _isLoading = false;
-  bool _isSnackBarShowing = false; // Flag to track if a SnackBar is showing
+  bool _isSnackBarShowing = false;
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
     final textTheme =
         GoogleFonts.montserratTextTheme(Theme.of(context).textTheme);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final fieldColor = isDarkMode ? Colors.grey[850]! : Colors.grey[200]!;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: isDarkMode ? Colors.black : Colors.white,
+        centerTitle: true,
+        title: Text(
+          "Sign In",
+          style: textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthLoading) {
-              setState(() {
-                _isLoading = true;
-              });
+              setState(() => _isLoading = true);
             } else if (state is AuthOtpSent) {
-              if (ModalRoute.of(context)?.settings.name != Routes.otp) {
-                setState(() {
-                  _isLoading = false;
-                });
-                CustomSnackBar.showSuccess(
-                  context,
-                  title: 'Success',
-                  message: state.message,
-                );
-                Future.delayed(const Duration(seconds: 1), () {
-                  Navigator.pushNamed(context, Routes.otp);
-                });
-              }
+              setState(() => _isLoading = false);
+              CustomSnackBar.showSuccess(
+                context,
+                title: 'Success',
+                message: state.message,
+              );
+              Future.delayed(const Duration(seconds: 1), () {
+                Navigator.pushNamed(context, Routes.otp);
+              });
             } else if (state is AuthError && !_isSnackBarShowing) {
               setState(() {
                 _isLoading = false;
@@ -63,178 +74,197 @@ class _LoginScreenState extends State<LoginScreen> {
                 actionLabel: 'Dismiss',
                 onAction: () {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  setState(() {
-                    _isSnackBarShowing = false;
-                  });
+                  setState(() => _isSnackBarShowing = false);
                 },
               );
             }
           },
           builder: (context, state) {
             return SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: screenWidth * 0.05,
-                vertical: screenHeight * 0.02,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: screenHeight * 0.05),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Image.asset(
-                      'assets/images/onboardingSlide1.png',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  SizedBox(height: screenHeight * 0.05),
-                  Text(
-                    "Sign In to Flexpay",
-                    style: textTheme.headlineSmall?.copyWith(
-                      fontSize: screenWidth * 0.090,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: screenHeight * 0.01),
-                  Text(
-                    "We provide top-quality services and support for your needs.",
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: screenWidth * 0.040,
-                      color: isDarkMode ? Colors.grey[400] : Colors.grey,
-                    ),
-                  ),
-                  SizedBox(height: screenHeight * 0.05),
-                  TextFormField(
-                    controller: phoneController,
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: screenWidth * 0.045,
-                      color: isDarkMode ? Colors.white : Colors.black,
-                    ),
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(
-                        Icons.phone,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey,
-                      ),
-                      labelText: "Phone Number",
-                      hintText: "Enter your phone number",
-                      labelStyle: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: screenWidth * 0.045,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(screenWidth * 0.03),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(screenWidth * 0.03),
-                        borderSide: BorderSide(
-                          color: isDarkMode
-                              ? Colors.grey[700]!
-                              : Colors.grey[300]!,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(screenWidth * 0.03),
-                        borderSide: BorderSide(
-                          color: ColorName.primaryColor,
-                        ),
-                      ),
-                      filled: isDarkMode,
-                      fillColor: isDarkMode ? Colors.grey[900] : null,
-                    ),
-                    enabled: !_isLoading,
-                  ),
-                  SizedBox(height: screenHeight * 0.004),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () {
-                              // Handle Forgot Password
-                            },
-                      child: Text(
-                        "Forgot Password?",
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: screenWidth * 0.04,
-                          color: const Color(0xFF337687),
-                        ),
+              child: Padding(
+                padding:
+                    EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 22),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      height: screenHeight * 0.32, 
+                      child: Lottie.asset(
+                        'assets/images/auth_images/Welcome.json',
+                        fit: BoxFit.contain,
                       ),
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.04),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: ColorName.primaryColor,
-                        elevation: isDarkMode ? 2 : 5,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: _isLoading
-                          ? null
-                          : () {
-                              final phoneNumber = phoneController.text.trim();
-                              if (phoneNumber.isNotEmpty) {
-                                SharedPreferences.getInstance().then((prefs) {
-                                  prefs.setString('phone_number', phoneNumber);
-                                });
+                    SizedBox(height: screenHeight * 0.026),
 
-                                context
-                                    .read<AuthCubit>()
-                                    .requestOtp(phoneNumber);
-                              } else {
-                                CustomSnackBar.showError(
-                                  context,
-                                  title: 'Error',
-                                  message: 'Please enter your phone number',
-                                );
-                              }
-                            },
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text(
-                              "Sign in",
-                              style: textTheme.titleMedium
-                                  ?.copyWith(color: Colors.white),
-                            ),
+                    // Intro text
+                    Text(
+                      "Hello There",
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.02),
-                  Center(
-                    child: TextButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () {
-                              Navigator.pushReplacementNamed(
-                                  context, Routes.register);
-                            },
+                    SizedBox(height: screenHeight * 0.008),
+                    Text(
+                      "Sign in to continue to Flexpay lipiapolepole",
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ), 
+                    SizedBox(height: screenHeight * 0.04),
+
+                    // Phone field
+                    Align(
+                      alignment: Alignment.centerLeft,
                       child: Text(
-                        "Don't have an account? Sign Up",
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: screenWidth * 0.045,
-                          color: ColorName.primaryColor,
+                        "Phone Number",
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: phoneController,
+                      enabled: !_isLoading,
+                      keyboardType: TextInputType.phone,
+                      style: GoogleFonts.montserrat(color: textColor),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: fieldColor,
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.only(left: 12, right: 8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.asset(
+                                'assets/images/flags/kenya.png', 
+                                width: 24,
+                                height: 18,
+                                fit: BoxFit.cover,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                "+254",
+                                style: GoogleFonts.montserrat(
+                                  fontWeight: FontWeight.w600,
+                                  color: textColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        prefixIconConstraints: const BoxConstraints(
+                          minWidth: 0,
+                          minHeight: 0,
+                        ),
+                        hintText: "phone number",
+                        hintStyle: GoogleFonts.montserrat(color: Colors.grey[500]),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: _isLoading ? null : () {},
+                        child: Text(
+                          "Forgot Password?",
+                          style: textTheme.bodySmall?.copyWith(
+                            color: ColorName.primaryColor,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: screenHeight * 0.04),
+
+                    // Sign in button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ColorName.primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            vertical: screenHeight * 0.018,
+                          ),
+                        ),
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                final phoneNumber = phoneController.text.trim();
+                                if (phoneNumber.isNotEmpty) {
+                                  SharedPreferences.getInstance().then((prefs) {
+                                    prefs.setString(
+                                        'phone_number', phoneNumber);
+                                  });
+                                  context
+                                      .read<AuthCubit>()
+                                      .requestOtp(phoneNumber);
+                                } else {
+                                  CustomSnackBar.showError(
+                                    context,
+                                    title: 'Error',
+                                    message: 'Please enter your phone number',
+                                  );
+                                }
+                              },
+                        child: _isLoading
+                            ? Center(
+                                      child: SpinKitWave(
+                                        color: ColorName.primaryColor,
+                                        size: 28,
+                                      ),
+                                    )
+                            : Text(
+                                "Sign In",
+                                style: textTheme.titleMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    ),
+                    SizedBox(height: screenHeight * 0.025),
+
+                    // Sign up link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Don’t have an account? ",
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: textColor,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _isLoading
+                              ? null
+                              : () => Navigator.pushReplacementNamed(
+                                  context, Routes.register),
+                          child: Text(
+                            "Register now",
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: ColorName.primaryColor,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
               ),
             );
           },

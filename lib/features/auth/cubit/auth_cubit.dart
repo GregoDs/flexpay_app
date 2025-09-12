@@ -11,6 +11,69 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit(this._authRepo) : super(AuthInitial());
 
+  /// ----------------- Register new account -----------------
+  Future<void> createAccount(
+      String email,
+      String password,
+      String confirmPassword,
+      String firstName,
+      String lastName,
+      String phoneNumber1,
+      String userType,
+      String gender,
+      String dob) async {
+    emit(AuthLoading());
+    try {
+      final response = await _authRepo.createAccount(
+          email,
+          password,
+          confirmPassword,
+          firstName,
+          lastName,
+          phoneNumber1,
+          userType,
+          gender,
+          dob);
+
+      if (response.data['success'] == true) {
+        //use in memory user model directly
+        final user = _authRepo.userModel;
+        if (user == null) {
+          emit(AuthError(errorMessage: "Failed to load user data."));
+          return;
+        }
+
+        AppLogger.log("🔍 Using in-memory token = ${user.token}");
+
+        //Verify the token with the backend and send user to appropriate screen
+        final verifyTokenResponse = await _authRepo.verifyToken(user.token);
+
+        if (verifyTokenResponse.data['success'] == true) {
+          emit(AuthUserUpdated(userModel: user));
+        } else {
+          emit(AuthTokenInvalid());
+        }
+      } else {
+        emit(AuthError(
+          errorMessage: ErrorHandler.extractErrorMessage(response.data),
+        ));
+      }
+    } on DioException catch (e) {
+      AppLogger.apiError(
+        type: "DioException",
+        method: e.requestOptions.method,
+        uri: e.requestOptions.uri,
+        statusCode: e.response?.statusCode,
+        data: e.response?.data,
+      );
+      emit(AuthError(errorMessage: ErrorHandler.handleError(e)));
+    } catch (e, stackTrace) {
+      AppLogger.log("❌ ERROR in verifyOtp: $e");
+      AppLogger.log(stackTrace);
+      emit(AuthError(errorMessage: ErrorHandler.handleGenericError(e)));
+    }
+  }
+
   /// ----------------- Request OTP -----------------
   Future<void> requestOtp(String phoneNumber, {bool isResend = false}) async {
     emit(AuthLoading());
@@ -60,7 +123,7 @@ class AuthCubit extends Cubit<AuthState> {
         AppLogger.log("🔍 Using in-memory token = ${user.token}");
 
         // Verify token with backend
-        
+
         final verifyTokenResponse = await _authRepo.verifyToken(user.token);
 
         if (verifyTokenResponse.data['success'] == true) {
@@ -94,7 +157,8 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       // Prefer SharedPreferences for startup (in-memory may not exist yet)
-      final user = _authRepo.userModel ?? await SharedPreferencesHelper.getUserModel();
+      final user =
+          _authRepo.userModel ?? await SharedPreferencesHelper.getUserModel();
 
       if (user == null || user.token.isEmpty) {
         emit(AuthTokenInvalid());

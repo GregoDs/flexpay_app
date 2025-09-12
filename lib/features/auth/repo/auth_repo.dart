@@ -61,9 +61,10 @@ class AuthRepo {
       // _userModel = UserModel.fromJson(
       //   Map<String, dynamic>.from(response.data),
       // );
-       // parse whole API response
-      _userModel = UserModel.fromApiResponse(Map<String, dynamic>.from(response.data));
-       
+      // parse whole API response from logging in
+      _userModel =
+          UserModel.fromLoginResponse(Map<String, dynamic>.from(response.data));
+
       await SharedPreferencesHelper.saveUserModel(_userModel!);
       await SharedPreferencesHelper.setFirstLaunchDone();
       AppLogger.log('[AuthRepo] Token saved: ${_userModel!.token}');
@@ -98,4 +99,49 @@ class AuthRepo {
       rethrow;
     }
   }
+  
+
+  // register new account
+  Future<Response> createAccount(
+      String email,
+      String password,
+      String confirmPassword,
+      String firstName,
+      String lastName,
+      String phoneNumber1,
+      String userType,
+      String gender,
+      String dob) async {
+    final endpoint = dotenv.env["PROD_AUTH_STAGING_REGISTER"] ??
+        (throw Exception("PROD_AUTH_STAGING_REGISTER is not set in .env"));
+
+    final response = await _apiService.post(
+      "$endpoint/register",
+      data: {
+        "email": email,
+        "password": password,
+        "confirm_password": confirmPassword,
+        "first_name": firstName,
+        "last_name": lastName,
+        "phone_number_1": phoneNumber1,
+        "user_type": userType,
+        "gender": gender,
+        "dob": dob,
+      },
+      requiresAuth: false,
+    );
+
+    if (response.data['success'] == true) {
+      //Parse the ap[i response from signing up
+      _userModel = UserModel.fromSignupResponse(
+          Map<String, dynamic>.from(response.data));
+
+      await SharedPreferencesHelper.saveUserModel(_userModel!);
+      AppLogger.log('[AuthRepo] Token saved: ${_userModel!.token}');
+    }
+    return response;
+  }
+
+
+
 }

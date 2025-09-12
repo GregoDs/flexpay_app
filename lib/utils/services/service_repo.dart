@@ -1,6 +1,7 @@
 import 'package:flexpay/features/auth/repo/auth_repo.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
+import 'package:flutter/services.dart';
 
 class StartupService {
   final AuthRepo _authRepo = AuthRepo();
@@ -44,5 +45,24 @@ class StartupService {
       print("❌ Token validation failed: $e");
       return false;
     }
+  }
+}
+
+class CapitalizeFirstLetterFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+
+    // Capitalize only the first letter, leave the rest as the user typed
+    final text = newValue.text;
+    final capitalized = text[0].toUpperCase() + text.substring(1);
+
+    return newValue.copyWith(
+      text: capitalized,
+      selection: newValue.selection, // keep cursor position
+    );
   }
 }
