@@ -1,5 +1,6 @@
 import 'package:flexpay/features/auth/cubit/auth_cubit.dart';
 import 'package:flexpay/features/auth/cubit/auth_state.dart';
+import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/gen/colors.gen.dart';
 import 'package:flexpay/routes/app_routes.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
@@ -19,6 +20,7 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
+  late final UserModel userModel;
   final TextEditingController _otpController = TextEditingController();
   String? _phoneNumber;
   bool _isLoading = false;
@@ -108,67 +110,66 @@ class _OtpScreenState extends State<OtpScreen> {
           },
           child: BlocConsumer<AuthCubit, AuthState>(
             listener: (context, state) {
-                if (state is AuthUserUpdated) {
-                  if (_isVerifyingOtp) {
+              if (state is AuthUserUpdated) {
+                // Get the userModel from the state
+                final userModel = state.userModel;
+                // Navigate to home and pass userModel as argument
+                Navigator.pushReplacementNamed(
+                  context,
+                  Routes.home,
+                  arguments: userModel,
+                );
+              } else if (state is AuthOtpSent) {
+                // First OTP only (from LoginScreen)
+                setState(() {
+                  _isResendingOtp = false;
+                  _isLoading = false;
+                  _otpController.clear();
+                  _secondsRemaining = 10;
+                  _startTimer();
+                });
+
+                CustomSnackBar.showSuccess(
+                  context,
+                  title: 'OTP Sent',
+                  message: state.message,
+                );
+              } else if (state is AuthResendOtp) {
+                // ✅ Handle resend OTP
+                setState(() {
+                  _isResendingOtp = false;
+                  _isLoading = false;
+                  _otpController.clear();
+                  _secondsRemaining = 10;
+                  _startTimer();
+                });
+
+                CustomSnackBar.showSuccess(
+                  context,
+                  title: 'OTP Resent',
+                  message: state.message,
+                );
+              } else if (state is AuthError) {
+                setState(() {
+                  _isSnackBarShowing = true;
+                  _isResendingOtp = false;
+                  _isLoading = false;
+                  _isVerifyingOtp = false;
+                });
+                CustomSnackBar.showError(
+                  context,
+                  title: 'Error',
+                  message: state.errorMessage,
+                  actionLabel: 'Dismiss',
+                  onAction: () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
                     setState(() {
-                      _isVerifyingOtp = false;
-                      _isLoading = false;
+                      _isSnackBarShowing = false;
                     });
-                    Navigator.pushReplacementNamed(context, Routes.home);
-                  }
-                } else if (state is AuthOtpSent) {
-                  // First OTP only (from LoginScreen)
-                  setState(() {
-                    _isResendingOtp = false;
-                    _isLoading = false;
-                    _otpController.clear();
-                    _secondsRemaining = 10;
-                    _startTimer();
-                  });
-
-                  CustomSnackBar.showSuccess(
-                    context,
-                    title: 'OTP Sent',
-                    message: state.message,
-                  );
-
-                } else if (state is AuthResendOtp) {
-                  // ✅ Handle resend OTP
-                  setState(() {
-                    _isResendingOtp = false;
-                    _isLoading = false;
-                    _otpController.clear();
-                    _secondsRemaining = 10;
-                    _startTimer();
-                  });
-
-                  CustomSnackBar.showSuccess(
-                    context,
-                    title: 'OTP Resent',
-                    message: state.message,
-                  );
-
-                } else if (state is AuthError) {
-                  setState(() {
-                    _isSnackBarShowing = true;
-                    _isResendingOtp = false;
-                    _isLoading = false;
-                    _isVerifyingOtp = false;
-                  });
-                  CustomSnackBar.showError(
-                    context,
-                    title: 'Error',
-                    message: state.errorMessage,
-                    actionLabel: 'Dismiss',
-                    onAction: () {
-                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                      setState(() {
-                        _isSnackBarShowing = false;
-                      });
-                    },
-                  );
-                }
-              },
+                  },
+                );
+              }
+            },
             builder: (context, state) {
               return LayoutBuilder(
                 builder: (context, constraints) {
@@ -188,7 +189,8 @@ class _OtpScreenState extends State<OtpScreen> {
                                       ? Colors.white
                                       : ColorName.blackColor,
                                 ),
-                                onPressed: () => Navigator.pushReplacementNamed(context, Routes.login),
+                                onPressed: () => Navigator.pushReplacementNamed(
+                                    context, Routes.login),
                               ),
                               const Text(
                                 "Verify otp",
@@ -294,11 +296,11 @@ class _OtpScreenState extends State<OtpScreen> {
                             ),
                             child: _isLoading
                                 ? Center(
-                                      child: SpinKitWave(
-                                        color: ColorName.primaryColor,
-                                        size: 28,
-                                      ),
-                                    )
+                                    child: SpinKitWave(
+                                      color: ColorName.primaryColor,
+                                      size: 28,
+                                    ),
+                                  )
                                 : const Text(
                                     "Verify OTP",
                                     style: TextStyle(

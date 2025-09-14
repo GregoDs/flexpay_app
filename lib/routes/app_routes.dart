@@ -20,6 +20,7 @@
 // import 'package:flexpromoter/features/bookings/repo/bookings_repo.dart';
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/auth/cubit/auth_cubit.dart';
+import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/auth/repo/auth_repo.dart';
 import 'package:flexpay/features/auth/ui/login.dart';
 import 'package:flexpay/features/auth/ui/otp_verification.dart';
@@ -64,7 +65,12 @@ class AppRoutes {
     // Routes.home: (context) => HomeScreen(
     //       isDarkModeOn: Theme.of(context).brightness == Brightness.dark,
     //     ),
-    Routes.home: (context) => const NavigationWrapper(initialIndex: 0),
+    
+    Routes.home: (context) {
+        final userModel = ModalRoute.of(context)!.settings.arguments as UserModel;
+        return NavigationWrapper(initialIndex: 0, userModel: userModel);
+      },
+
     Routes.goals: (context) => GoalsPage(),
     Routes.viewChamas:
         (context) => 

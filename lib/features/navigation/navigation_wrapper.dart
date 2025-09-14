@@ -1,3 +1,4 @@
+import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/bookings/ui/bookings.dart';
 import 'package:flexpay/features/goals/ui/goals.dart';
 import 'package:flexpay/features/navigation/chamanav.dart';
@@ -8,8 +9,9 @@ import 'package:flexpay/features/navigation/navigation.dart';
 
 class NavigationWrapper extends StatefulWidget {
   final int initialIndex;
+  final UserModel userModel;
 
-  const NavigationWrapper({Key? key, this.initialIndex = 0}) : super(key: key);
+  const NavigationWrapper({Key? key, this.initialIndex = 0, required this.userModel}) : super(key: key);
 
   @override
   State<NavigationWrapper> createState() => _NavigationWrapperState();
@@ -40,7 +42,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   }
 
   List<Widget> get _pages => [
-        HomeScreen(isDarkModeOn: false),
+        HomeScreen(
+          isDarkModeOn: false,
+          userModel: widget.userModel,
+        ),
         GoalsPage(),
         FlexChamaTab(
           showOnBoard: showOnBoard,

@@ -1,3 +1,4 @@
+import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/home/ui/appbarhome.dart';
 import 'package:flexpay/features/home/ui/transactiondetails.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +8,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool isDarkModeOn;
+  final UserModel userModel;
 
-  const HomeScreen({super.key, required this.isDarkModeOn});
+  const HomeScreen({
+    super.key,
+    required this.isDarkModeOn,
+    required this.userModel,
+    });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -29,10 +35,11 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, constraints) {
         return Scaffold(
           appBar: PreferredSize(
-            preferredSize: Size.fromHeight(MediaQuery.of(context).size.height * 0.40), 
+            preferredSize:
+                Size.fromHeight(MediaQuery.of(context).size.height * 0.40),
             child: AppBarHome(
               context,
-              userName: "Gregory Kago",
+              userName: "${widget.userModel.user.username}",
               balance: 1234.56,
             ),
           ),
