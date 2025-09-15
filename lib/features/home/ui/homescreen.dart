@@ -373,6 +373,23 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(height: 10.h),
         _buildTransactionTile(
             "03 Feb 2025 21:35", "Booking", "Ksh 1", true, context),
+            // Second booking (Boxer Motor Booking)
+      _buildTransactionTile(
+        "Feb 19, 2025",
+        "Boxer Motor Booking",
+        "+Ksh 2,000.00",
+        true,
+        context,
+      ),
+
+      // Third booking (another Booking)
+      _buildTransactionTile(
+        "03 Feb 2025 21:35",
+        "Booking",
+        "Ksh 1",
+        false,
+        context,
+      ),
       ],
     );
   }

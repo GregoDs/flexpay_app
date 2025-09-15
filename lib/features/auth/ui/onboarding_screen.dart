@@ -2,6 +2,7 @@ import 'package:flexpay/features/navigation/navigation_wrapper.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/widgets/app_text.dart';
 import 'package:lottie/lottie.dart';
+import 'package:flutter/services.dart';
 
 import '../../../exports.dart';
 
@@ -32,8 +33,22 @@ class _OnBoardingState extends State<OnBoardingScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
+    // ✅ Make status bar match theme
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent, // extend body behind status bar
+        statusBarIconBrightness:
+            isDarkMode ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor:
+            isDarkMode ? Colors.black : Colors.white, // bottom nav bar color
+        systemNavigationBarIconBrightness:
+            isDarkMode ? Brightness.light : Brightness.dark,
+      ),
+    );
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true, // ✅ allows full background behind status bar
+      backgroundColor: isDarkMode ? Colors.black : ColorName.whiteColor,
       body: SingleChildScrollView(
         child: SizedBox(
           height: ScreenUtil().screenHeight,
@@ -43,11 +58,7 @@ class _OnBoardingState extends State<OnBoardingScreen> {
               Container(
                 height: double.maxFinite,
                 width: double.maxFinite,
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? const Color(0xFF1A1A1A)
-                      : ColorName.whiteColor,
-                ),
+                color: isDarkMode ? Colors.black : ColorName.whiteColor,
               ),
               PageView(
                 physics: const ClampingScrollPhysics(),

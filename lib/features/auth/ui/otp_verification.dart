@@ -114,9 +114,10 @@ class _OtpScreenState extends State<OtpScreen> {
                 // Get the userModel from the state
                 final userModel = state.userModel;
                 // Navigate to home and pass userModel as argument
-                Navigator.pushReplacementNamed(
+                Navigator.pushNamedAndRemoveUntil(
                   context,
                   Routes.home,
+                  (route) => false,
                   arguments: userModel,
                 );
               } else if (state is AuthOtpSent) {

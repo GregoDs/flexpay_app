@@ -11,7 +11,9 @@ class NavigationWrapper extends StatefulWidget {
   final int initialIndex;
   final UserModel userModel;
 
-  const NavigationWrapper({Key? key, this.initialIndex = 0, required this.userModel}) : super(key: key);
+  const NavigationWrapper(
+      {Key? key, this.initialIndex = 0, required this.userModel})
+      : super(key: key);
 
   @override
   State<NavigationWrapper> createState() => _NavigationWrapperState();
@@ -67,18 +69,30 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   Widget build(BuildContext context) {
     bool hideNavBar = _currentIndex == 2 && showOnBoard;
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
+    return WillPopScope(
+      onWillPop: () async {
+        if (_currentIndex != 0) {
+          // Not on Home → go back to Home instead of exiting
+          setState(() {
+            _currentIndex = 0;
+          });
+          return false; // prevent exiting
+        }
+        return false; // already on Home → do nothing
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentIndex,
+          children: _pages,
+        ),
+        bottomNavigationBar: hideNavBar
+            ? null
+            : BottomNavBar(
+                currentIndex: _currentIndex,
+                onTabTapped: _onTabTapped,
+                items: _navItems,
+              ),
       ),
-      bottomNavigationBar: hideNavBar
-          ? null
-          : BottomNavBar(
-              currentIndex: _currentIndex,
-              onTabTapped: _onTabTapped,
-              items: _navItems,
-            ),
     );
   }
 }

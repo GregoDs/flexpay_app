@@ -15,69 +15,77 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    // Shadow color adapts
+    final shadowColor = isDarkMode
+        ? Colors.black.withOpacity(0.4)
+        : Colors.grey.withOpacity(0.3);
+
+    // Active and inactive colors adapt
+    final activeColor = isDarkMode ? Colors.white : Colors.white;
+    final inactiveColor = Colors.grey;
 
     return Container(
-      color: isDarkMode
-          ? Colors.grey[900]
-          : Colors.transparent, // Debug background color
-      child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: items
-              .map((item) => _buildNavItem(
-                  context, item.icon, item.label, items.indexOf(item)))
-              .toList(),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
         ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-      BuildContext context, IconData icon, String label, int index) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final textScaleFactor = MediaQuery.of(context).textScaleFactor;
-    final isSelected = currentIndex == index;
-
-    return GestureDetector(
-      onTap: () => onTabTapped(index),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: screenWidth * 0.06,
-            color: isSelected
-                ? Colors.amber
-                : isDarkMode
-                    ? Colors.white70
-                    : Colors.black54,
-          ),
-          SizedBox(height: screenWidth * 0.02),
-          Text(
-            label,
-            style: GoogleFonts.montserrat(
-              fontSize: screenWidth * 0.03 * textScaleFactor,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected
-                  ? Colors.amber
-                  : isDarkMode
-                      ? Colors.white
-                      : Colors.black,
-            ),
-          ),
-          SizedBox(height: screenWidth * 0.004),
-          Container(
-            width: screenWidth * 0.08,
-            height: screenWidth * 0.005,
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.amber : Colors.transparent,
-              borderRadius: BorderRadius.circular(2),
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: shadowColor,
+            blurRadius: 12,
+            offset: const Offset(0, -2),
           ),
         ],
+        // ✅ Dark mode = solid dark bg, Light mode = background image
+        color: isDarkMode ? Colors.grey[900] : null,
+        image:  const DecorationImage(
+                image: AssetImage('assets/images/appbarbackground.png'),
+                fit: BoxFit.cover,
+              ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: screenWidth * 0.02,
+            horizontal: screenWidth * 0.05,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: items.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              final isSelected = currentIndex == index;
+
+              return GestureDetector(
+                onTap: () => onTabTapped(index),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      item.icon,
+                      size: screenWidth * 0.06,
+                      color: isSelected ? activeColor : inactiveColor,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.label,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 12,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? activeColor : inactiveColor,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
       ),
     );
   }
@@ -87,42 +95,8 @@ class BottomNavBarItem {
   final IconData icon;
   final String label;
 
-  BottomNavBarItem({required this.icon, required this.label});
-}
-
-class MyHomePage extends StatefulWidget {
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _currentIndex = 0;
-  final List<Widget> _pages = [
-    // Add your pages here
-  ];
-  final List<BottomNavBarItem> _navItems = [
-    // Add your BottomNavBarItems here
-  ];
-
-  void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentIndex,
-        onTabTapped: _onTabTapped,
-        items: _navItems,
-      ),
-    );
-  }
+  BottomNavBarItem({
+    required this.icon,
+    required this.label,
+  });
 }

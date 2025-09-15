@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 message: state.message,
               );
               Future.delayed(const Duration(seconds: 1), () {
-                Navigator.pushNamed(context, Routes.otp);
+                Navigator.pushReplacementNamed(context, Routes.otp);
               });
             } else if (state is AuthError && !_isSnackBarShowing) {
               setState(() {
