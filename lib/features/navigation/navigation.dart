@@ -24,8 +24,8 @@ class BottomNavBar extends StatelessWidget {
         : Colors.grey.withOpacity(0.3);
 
     // Active and inactive colors adapt
-    final activeColor = isDarkMode ? Colors.white : Colors.white;
-    final inactiveColor = Colors.grey;
+    final activeColor = isDarkMode ? Colors.amber : Colors.amber;
+    final inactiveColor = Colors.white;
 
     return Container(
       decoration: BoxDecoration(

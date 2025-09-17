@@ -1,6 +1,7 @@
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/home/ui/topupscreen.dart';
 import 'package:flexpay/features/home/ui/withdrawpage.dart';
+import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -130,7 +131,7 @@ class _AppBarHomeState extends State<AppBarHome> {
               children: [
                 _buildActionButton(Icons.shopping_cart, "Shop",
                     onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => TopUpPage()))),
+                        MaterialPageRoute(builder: (context) => MerchantsScreen()))),
                 _buildActionButton(Icons.account_balance_wallet, "Withdraw",
                     onTap: () => Navigator.push(context,
                         MaterialPageRoute(builder: (context) => WithdrawPage()))),
