@@ -210,7 +210,7 @@ class _SplashScreenState extends State<SplashScreen>
                             mode: LaunchMode.externalApplication,
                           );
                         }
-                        // await _decideNextScreen(); // fallback if user comes back
+                        await _decideNextScreen(); // fallback if user comes back
                       },
                       child: const Text('UPDATE'),
                     ),

@@ -25,6 +25,9 @@ import 'package:flexpay/features/auth/repo/auth_repo.dart';
 import 'package:flexpay/features/auth/ui/login.dart';
 import 'package:flexpay/features/auth/ui/otp_verification.dart';
 import 'package:flexpay/features/auth/ui/register.dart';
+import 'package:flexpay/features/bookings/cubit/bookings_cubit.dart';
+import 'package:flexpay/features/bookings/repo/bookings_repo.dart';
+import 'package:flexpay/features/bookings/ui/bookings.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_products_cubit.dart';
 import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
 import 'package:flexpay/features/flexchama/ui/viewchama.dart';
@@ -41,7 +44,7 @@ import 'package:flexpay/utils/services/api_service.dart';
 // Create global Cubit instances
 final authCubit = AuthCubit(AuthRepo());
 // final commissionsCubit = CommissionsCubit(repository: CommissionRepository());
-// final bookingsCubit = BookingsCubit(repository: BookingsRepository());
+final bookingsCubit = BookingsCubit(BookingsRepository());
 
 class AppRoutes {
   static final routes = {
@@ -54,14 +57,17 @@ class AppRoutes {
           value: authCubit,
           child: const CreateAccountPage(),
         ),
+
     Routes.login: (context) => BlocProvider.value(
           value: authCubit,
           child: const LoginScreen(),
         ),
+
     Routes.otp: (context) => BlocProvider.value(
           value: authCubit,
           child: const OtpScreen(),
         ),
+
     // Routes.home: (context) => HomeScreen(
     //       isDarkModeOn: Theme.of(context).brightness == Brightness.dark,
     //     ),
@@ -72,12 +78,18 @@ class AppRoutes {
       },
 
     Routes.goals: (context) => GoalsPage(),
+
     Routes.viewChamas:
         (context) => 
             BlocProvider(
               create: (context) => ChamaProductsCubit(ChamaRepo(ApiService())),
               child: ViewChamas(),
-            )
+            ),
+
+       Routes.bookings: (context) => BlocProvider.value(
+          value: bookingsCubit,
+          child: const BookingsPage(),
+        ),
 
     // Routes.makeBookings: (context) => BlocProvider(
     //       create: (context) => MakeBookingCubit(BookingsRepository()),
@@ -87,11 +99,7 @@ class AppRoutes {
     // Routes.validatedReceipts: (context) => ValidatedReceiptsPage(
     //       validatedReceipts: _validatedReceipts,
     //     ),
-    // Routes.bookings: (context) => BlocProvider.value(
-    //       value: bookingsCubit,
-    //       child: const BookingsScreen(),
-    //     ),
-
+   
     // Routes.bookingDetails: (context) => BlocProvider.value(
     //       value: bookingsCubit,
     //       child: const BookingDetailScreen(

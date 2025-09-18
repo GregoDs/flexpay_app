@@ -1,3 +1,4 @@
+import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/bookings/ui/bookings.dart';
 import 'package:flexpay/features/goals/ui/goals.dart';
@@ -53,7 +54,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           showOnBoard: showOnBoard,
           onOptIn: _onOptIn,
         ),
-        BookingsPage(),
+        BlocProvider.value(
+          value: bookingsCubit,
+          child: const BookingsPage(),
+        ),
         MerchantsScreen(),
       ];
 

@@ -1,51 +1,12 @@
+import 'package:flexpay/features/bookings/cubit/bookings_state.dart';
+import 'package:flexpay/features/bookings/models/bookings_models.dart';
 import 'package:flexpay/features/bookings/ui/booking_details.dart';
+import 'package:flexpay/features/bookings/cubit/bookings_cubit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
-
-final List<Map<String, dynamic>> dummyBookings = [
-  {
-    "image": "assets/images/bookings_imgs/samsungtv.avif",
-    "title": "Samsung 43 LED TV",
-    "subtitle": "Done on January 3rd",
-    "progress": 1.0,
-    "progressColor": Color(0xFFF7B53A),
-    "badge": true,
-    "percentage": 100,
-    "status": "Completed",
-  },
-  {
-    "image": null,
-    "title": "School Fees",
-    "subtitle": "Yours by February 20th",
-    "progress": 0.9,
-    "progressColor": Colors.green,
-    "badge": false,
-    "percentage": 90,
-    "status": "Active",
-  },
-  {
-    "image": "assets/images/bookings_imgs/Lseat.jpeg",
-    "title": "L seat",
-    "subtitle": "Yours by March 12th",
-    "progress": 0.6,
-    "progressColor": Colors.green,
-    "badge": false,
-    "percentage": 60,
-    "status": "Active",
-  },
-  {
-    "image": "assets/images/bookings_imgs/maldivesholiday.jpeg",
-    "title": "Maldives Vacation",
-    "subtitle": "Done on November 22",
-    "progress": 1.0,
-    "progressColor": Colors.amber,
-    "badge": true,
-    "percentage": 100,
-    "status": "Completed",
-  },
-];
 
 class BookingsPage extends StatefulWidget {
   const BookingsPage({Key? key}) : super(key: key);
@@ -57,9 +18,18 @@ class BookingsPage extends StatefulWidget {
 class _BookingsPageState extends State<BookingsPage> {
   String selectedTab = "All";
 
-  List<Map<String, dynamic>> get filteredBookings {
-    if (selectedTab == "All") return dummyBookings;
-    return dummyBookings.where((b) => b["status"] == selectedTab).toList();
+  @override
+  void initState() {
+    super.initState();
+    // fetch bookings immediately
+    context.read<BookingsCubit>().fetchBookingsByType("211422", "all");
+  }
+
+  void _onTabSelected(String tab) {
+    setState(() => selectedTab = tab);
+    context
+        .read<BookingsCubit>()
+        .fetchBookingsByType("211422", tab.toLowerCase());
   }
 
   @override
@@ -71,16 +41,14 @@ class _BookingsPageState extends State<BookingsPage> {
     final Color iconColor = isDarkMode ? Colors.white : Colors.black;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isDarkMode
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark, 
+      value: isDarkMode ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: bgColor,
         body: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top bar, title, search, tabs (fixed)
+              // Top bar
               Padding(
                 padding: EdgeInsets.only(
                     left: 24.w, right: 24.w, top: 22.h, bottom: 12),
@@ -90,10 +58,8 @@ class _BookingsPageState extends State<BookingsPage> {
                     Icon(Icons.menu, color: iconColor, size: 32.sp),
                     Center(
                       child: ColorFiltered(
-                        colorFilter: ColorFilter.mode(
-                          Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF337687)
-                              : const Color(0xFF337687),
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF337687),
                           BlendMode.srcIn,
                         ),
                         child: Image.asset(
@@ -109,6 +75,8 @@ class _BookingsPageState extends State<BookingsPage> {
                 ),
               ),
               SizedBox(height: 32.h),
+
+              // Title + Add Bookings
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 32.w),
                 child: Row(
@@ -137,7 +105,6 @@ class _BookingsPageState extends State<BookingsPage> {
                           width: 24.w,
                           height: 24.w,
                           decoration: BoxDecoration(
-                            color: Colors.transparent,
                             border: Border.all(
                               color: const Color(0xFFF7B53A),
                               width: 2,
@@ -153,13 +120,14 @@ class _BookingsPageState extends State<BookingsPage> {
                 ),
               ),
               SizedBox(height: 32.h),
+
+              // Search + Tabs
               Padding(
-                padding: EdgeInsets.only(
-                    top: 10.w, left: 20.w, right: 20.w, bottom: 0),
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Search bar and filter icon row
+                    // Search bar
                     Row(
                       children: [
                         Expanded(
@@ -179,9 +147,6 @@ class _BookingsPageState extends State<BookingsPage> {
                                   child: TextField(
                                     decoration: InputDecoration(
                                       border: InputBorder.none,
-                                      isDense: true,
-                                      contentPadding:
-                                          EdgeInsets.symmetric(vertical: 14.h),
                                       hintText: "Search",
                                       hintStyle: GoogleFonts.montserrat(
                                         fontSize: 16.sp,
@@ -202,8 +167,8 @@ class _BookingsPageState extends State<BookingsPage> {
                         Container(
                           width: 38.w,
                           height: 38.w,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF7B53A),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF7B53A),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(Icons.filter_list,
@@ -212,6 +177,7 @@ class _BookingsPageState extends State<BookingsPage> {
                       ],
                     ),
                     SizedBox(height: 18.h),
+
                     // Tabs
                     Center(
                       child: Row(
@@ -222,13 +188,11 @@ class _BookingsPageState extends State<BookingsPage> {
                             selected: selectedTab == "All",
                             color: selectedTab == "All"
                                 ? const Color(0xFFF7B53A)
-                                : (isDarkMode
-                                    ? const Color(0xFF23262B)
-                                    : const Color(0xFFF6F7F9)),
+                                : const Color(0xFFF6F7F9),
                             textColor: selectedTab == "All"
                                 ? Colors.white
                                 : const Color(0xFF1D3C4E),
-                            onTap: () => setState(() => selectedTab = "All"),
+                            onTap: () => _onTabSelected("All"),
                           ),
                           SizedBox(width: 12.w),
                           _BookingTab(
@@ -236,14 +200,9 @@ class _BookingsPageState extends State<BookingsPage> {
                             selected: selectedTab == "Completed",
                             color: selectedTab == "Completed"
                                 ? const Color(0xFFF7B53A)
-                                : (isDarkMode
-                                    ? const Color(0xFF23262B)
-                                    : const Color(0xFFF6F7F9)),
-                            textColor: selectedTab == "Completed"
-                                ? Colors.black
-                                : Colors.white,
-                            onTap: () =>
-                                setState(() => selectedTab = "Completed"),
+                                : const Color(0xFFF6F7F9),
+                            textColor: Colors.black,
+                            onTap: () => _onTabSelected("Completed"),
                           ),
                           SizedBox(width: 12.w),
                           _BookingTab(
@@ -251,13 +210,9 @@ class _BookingsPageState extends State<BookingsPage> {
                             selected: selectedTab == "Active",
                             color: selectedTab == "Active"
                                 ? const Color(0xFFF7B53A)
-                                : (isDarkMode
-                                    ? const Color(0xFF23262B)
-                                    : const Color(0xFFF6F7F9)),
-                            textColor: selectedTab == "Active"
-                                ? Colors.black
-                                : Colors.white,
-                            onTap: () => setState(() => selectedTab = "Active"),
+                                : const Color(0xFFF6F7F9),
+                            textColor: Colors.black,
+                            onTap: () => _onTabSelected("Active"),
                           ),
                         ],
                       ),
@@ -266,166 +221,203 @@ class _BookingsPageState extends State<BookingsPage> {
                   ],
                 ),
               ),
-              // Bookings List (scrollable)
+
+              // Bookings List
               Expanded(
-                child: ListView.builder(
-                  padding: EdgeInsets.only(top: 12.h, bottom: 24.h),
-                  itemCount: filteredBookings.length,
-                  itemBuilder: (context, index) {
-                    final booking = filteredBookings[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                BookingDetailsPage(booking: booking),
+                child: BlocBuilder<BookingsCubit, BookingsState>(
+                  builder: (context, state) {
+                    if (state is BookingsLoading) {
+                      return const Center(
+                          child: CircularProgressIndicator());
+                    } else if (state is BookingsError) {
+                      return Center(
+                        child: Text(
+                          state.message,
+                          style: GoogleFonts.montserrat(color: Colors.red),
+                        ),
+                      );
+                    } else if (state is BookingsFetched) {
+                      final bookings = state.bookingType == "all"
+                          ? state.bookings
+                          : state.bookings
+                              .where((b) =>
+                                  b.bookingStatus?.toLowerCase() ==
+                                  state.bookingType.toLowerCase())
+                              .toList();
+
+                      if (bookings.isEmpty) {
+                        return Center(
+                          child: Text(
+                            "No ${state.bookingType} bookings yet",
+                            style: GoogleFonts.montserrat(),
                           ),
                         );
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 12.w, vertical: 8.h),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(20.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 12,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: EdgeInsets.all(18.w),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Asset image or placeholder
-                                booking["image"] != null
-                                    ? ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(12.r),
-                                        child: Image.asset(
-                                          booking["image"],
-                                          width: 60.w,
-                                          height: 60.w,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      )
-                                    : Container(
-                                        width: 60.w,
-                                        height: 60.w,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                SizedBox(width: 18.w),
-                                // Title, subtitle, progress
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              booking["title"],
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: 18.sp,
-                                                fontWeight: FontWeight.w700,
-                                                color: textColor,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 4.h),
-                                      Text(
-                                        booking["subtitle"],
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 13.sp,
-                                          color: isDarkMode
-                                              ? Colors.white
-                                              : Colors.black54,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                      SizedBox(height: 14.h),
-                                      // Progress bar (dashed)
-                                      Row(
-                                        children: List.generate(10, (i) {
-                                          double fill =
-                                              booking["progress"] * 10;
-                                          bool filled = i < fill.round();
-                                          return Padding(
-                                            padding:
-                                                EdgeInsets.only(right: 4.w),
-                                            child: Container(
-                                              width: 16.w,
-                                              height: 6.h,
-                                              decoration: BoxDecoration(
-                                                color: filled
-                                                    ? booking["progressColor"]
-                                                    : Colors.grey[300],
-                                                borderRadius:
-                                                    BorderRadius.circular(4.r),
-                                              ),
-                                            ),
-                                          );
-                                        }),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(width: 10.w),
-                                // Badge and Percentage (right column)
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    if (booking["progress"] == 1.0)
-                                      Padding(
-                                        padding: EdgeInsets.only(bottom: 8.h),
-                                        child: Icon(Icons.verified,
-                                            color: Color(0xFFF7B53A),
-                                            size: 28.sp),
-                                      ),
-                                    if (booking["progress"] != 1.0)
-                                      SizedBox(
-                                          height: 22
-                                              .h), // Move percentage lower for non-100%
-                                    Text(
-                                      "${booking["percentage"]}%",
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 20.sp,
-                                        fontWeight: FontWeight.w700,
-                                        color: textColor,
-                                      ),
-                                    ),
-                                    Text(
-                                      "Saved",
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 13.sp,
-                                        color: textColor,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
+                      }
+
+                      return ListView.builder(
+                        padding: EdgeInsets.only(top: 12.h, bottom: 24.h),
+                        itemCount: bookings.length,
+                        itemBuilder: (context, index) {
+                          final booking = bookings[index];
+                          return _BookingCard(
+                            booking: booking,
+                            cardColor: cardColor,
+                            textColor: textColor,
+                          );
+                        },
+                      );
+                    }
+
+                    return const SizedBox();
                   },
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BookingCard extends StatelessWidget {
+  final Booking booking;
+  final Color cardColor;
+  final Color textColor;
+
+  const _BookingCard({
+    Key? key,
+    required this.booking,
+    required this.cardColor,
+    required this.textColor,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BookingDetailsPage(booking: booking.toJson()),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        child: Container(
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(20.r),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(18.w),
+            child: Row(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    booking.image != null
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(12.r),
+            child: booking.image != null && booking.image!.isNotEmpty
+                ? Image.network(
+                    booking.image!,
+                    width: 46.w,
+                    height: 46.w,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    width: 46.w,
+                    height: 46.w,
+                    color: Colors.grey[200],
+                    child: Icon(
+                      Icons.image_not_supported,
+                      color: Colors.grey[400],
+                      size: 26.sp,
+                    ),
+                  ),
+          )
+        : SizedBox(width: 46.w), // keep space consistent
+
+    SizedBox(width: 12.w), // 👈 spacing between image and info column
+
+    // Info column
+    Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            booking.productName ?? "Unknown Product",
+            style: GoogleFonts.montserrat(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+              color: textColor,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            booking.deadlineDate != null
+                ? "Due on ${booking.deadlineDate}"
+                : "Created on ${booking.createdAt}",
+            style: GoogleFonts.montserrat(
+              fontSize: 13.sp,
+              color: Colors.black54,
+            ),
+          ),
+          SizedBox(height: 14.h),
+
+          // Progress bar row
+          Row(
+            children: List.generate(10, (i) {
+              double progress = (booking.progress ?? 0).toDouble();
+              double fill = progress * 10;
+              bool filled = i < fill.round();
+
+              return Padding(
+                padding: EdgeInsets.only(right: 4.w),
+                child: Container(
+                  width: 16.w,
+                  height: 6.h,
+                  decoration: BoxDecoration(
+                    color: filled ? Colors.green : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    ),
+
+                // Right column
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if ((booking.progress ?? 0) >= 1.0)
+                      Icon(Icons.verified,
+                          color: const Color(0xFFF7B53A), size: 28.sp),
+                    SizedBox(height: 8.h),
+                    Text(
+                      "${((booking.progress ?? 0) * 100).round()}%",
+                      style: GoogleFonts.montserrat(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
+                    Text(
+                      "Saved",
+                      style: GoogleFonts.montserrat(fontSize: 13.sp),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
