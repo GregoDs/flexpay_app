@@ -115,114 +115,118 @@ class _SplashScreenState extends State<SplashScreen>
     context: context,
     barrierDismissible: false,
     builder: (context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding: const EdgeInsets.fromLTRB(22, 24, 24, 16),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Image.asset(
-                  'assets/icon/flexhomelogo.png',
-                  width: 36,
-                  height: 36,
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Update FlexPromoter?',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 18,
-                    color: Colors.black,
+      return WillPopScope(
+        onWillPop: () async => false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          contentPadding: const EdgeInsets.fromLTRB(22, 24, 24, 16),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Image.asset(
+                    'assets/icon/flexhomelogo.png',
+                    width: 36,
+                    height: 36,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Download size: 9.2 MB',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontWeight: FontWeight.w400,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'FlexPromoter recommends that you update to the latest version. Kindly update for the necessary changes to be applied.',
-              style: TextStyle(
-                fontFamily: 'Montserrat',
-                fontWeight: FontWeight.w400,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF388E3C), // Green
-                    textStyle: const TextStyle(
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Update FlexPromoter?',
+                    style: TextStyle(
                       fontFamily: 'Montserrat',
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: 18,
+                      color: Colors.black,
                     ),
                   ),
-                  onPressed: () async {
-                    Navigator.of(context).pop();
-                    await _decideNextScreen(); // continue normally
-                  },
-                  child: const Text('NO THANKS'),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Download size: 9.2 MB',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14,
+                  color: Colors.black87,
                 ),
-                const SizedBox(width: 16),
-                SizedBox(
-                  height: 36,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF388E3C), // Green
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'FlexPromoter recommends that you update to the latest version. Kindly update for the necessary changes to be applied.',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF388E3C), // Green
                       textStyle: const TextStyle(
                         fontFamily: 'Montserrat',
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
-                      minimumSize: const Size(88, 36),
-                      elevation: 0,
                     ),
-                    onPressed: () async {
-                      Navigator.of(context).pop();
-                      if (await canLaunchUrl(Uri.parse(updateUrl))) {
-                        await launchUrl(
-                          Uri.parse(updateUrl),
-                          mode: LaunchMode.externalApplication,
-                        );
-                      }
-                      await _decideNextScreen(); // fallback if user comes back
-                    },
-                    child: const Text('UPDATE'),
+                    onPressed: null,
+                    // onPressed: () async {
+                    //   Navigator.of(context).pop();
+                    //   await _decideNextScreen(); // continue normally
+                    // },
+                    child: const Text('NO THANKS'),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Center(
-              child: Image.asset(
-                'assets/icon/flexhomelogo.png',
-                width: 72,
-                height: 72,
+                  const SizedBox(width: 16),
+                  SizedBox(
+                    height: 36,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF388E3C), // Green
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        textStyle: const TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                        minimumSize: const Size(88, 36),
+                        elevation: 0,
+                      ),
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        if (await canLaunchUrl(Uri.parse(updateUrl))) {
+                          await launchUrl(
+                            Uri.parse(updateUrl),
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                        // await _decideNextScreen(); // fallback if user comes back
+                      },
+                      child: const Text('UPDATE'),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Center(
+                child: Image.asset(
+                  'assets/icon/flexhomelogo.png',
+                  width: 72,
+                  height: 72,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     },
