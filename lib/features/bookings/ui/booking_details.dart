@@ -1,221 +1,156 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flexpay/features/bookings/models/bookings_models.dart';
+import 'package:flexpay/gen/colors.gen.dart';
+import 'package:intl/intl.dart';
 
 class BookingDetailsPage extends StatelessWidget {
-  final Map<String, dynamic> booking;
+  final Booking booking;
 
   const BookingDetailsPage({Key? key, required this.booking}) : super(key: key);
 
+  
+
+String formatPaymentDate(String? dateStr) {
+  if (dateStr == null || dateStr.isEmpty) return "";
+  try {
+    final parsedDate = DateTime.parse(dateStr);
+    return DateFormat("dd-MM-yyyy").format(parsedDate); // 20-08-2025
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+String formatMaturityDate(String? dateStr) {
+  if (dateStr == null || dateStr.isEmpty) return "No maturity set";
+  try {
+    final parsedDate = DateTime.parse(dateStr);
+    return DateFormat("d MMM yyyy").format(parsedDate); // 23 Nov 2025
+  } catch (e) {
+    return dateStr;
+  }
+}
+
   @override
   Widget build(BuildContext context) {
-    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final Color bgColor = isDarkMode ? Colors.black : Colors.white;
-    final Color cardColor =
-        isDarkMode ? const Color(0xFF22313F) : const Color(0xFF22313F);
-    final Color textColor = isDarkMode ? Colors.white : Colors.black;
-    final Color accent = const Color(0xFF6FDA56);
-    final Color iconColor = isDarkMode ? Colors.white : Colors.black;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? Colors.black : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isDarkMode
-          ? SystemUiOverlayStyle.light // White status bar text/icons
-          : SystemUiOverlayStyle.dark, // Black status bar text/icons
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: bgColor,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 18.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 24.h),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.arrow_back,
-                            color: iconColor, size: 28.sp),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        booking["title"] ?? "Holiday Saving",
-                        style: GoogleFonts.montserrat(
-                          fontSize: 20.sp,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 18.h),
-
-                  //Booking card stack
-                  Stack(
-                    alignment: Alignment.topCenter,
-                    children: [
-                      Container(
-                        margin: EdgeInsets.only(top: 80.h),
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: cardColor,
-                          borderRadius: BorderRadius.circular(36.r),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            top: 98.h,
-                            left: 18.w,
-                            right: 18.w,
-                            bottom: 36.h,
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: bgColor,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: textColor),
+            onPressed: () => Navigator.pop(context),
+          ),
+          centerTitle: true,
+          title: Text(
+            "Booking Details",
+            style: GoogleFonts.montserrat(
+              fontWeight: FontWeight.w500,
+              color: textColor,
+            ),
+          ),
+        ),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 86.h),
+                child: Column(
+                  children: [
+                    // Card with booking image overlapping
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        // Card background
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.fromLTRB(20.w, 70.h, 20.w, 20.h),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20.r),
+                            image: DecorationImage(
+                              image: AssetImage("assets/images/appbarbackground.png"),
+                              fit: BoxFit.cover,
+                              colorFilter: ColorFilter.mode(
+                                Colors.black.withOpacity(0.6),
+                                BlendMode.darken,
+                              ),
+                            ),
                           ),
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
+                              // Title
                               Text(
-                                booking["title"] ?? "Holiday",
+                                booking.productName ?? "No Booking Name",
                                 style: GoogleFonts.montserrat(
-                                  fontSize: 28.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: textColor,
+                                  fontSize: 22.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
                                 ),
                               ),
-                              SizedBox(height: 18.h),
+                              SizedBox(height: 28.h),
+
+                              // Product Cost & Balance in one row
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Product Cost (NGN)",
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.blue[200],
-                                        ),
-                                      ),
-                                      SizedBox(height: 2.h),
-                                      Text(
-                                        booking["cost"]?.toString() ??
-                                            "77,000",
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 22.sp,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        "Earnings",
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.blue[200],
-                                        ),
-                                      ),
-                                      SizedBox(height: 2.h),
-                                      Text(
-                                        booking["earnings"]?.toString() ??
-                                            "19,000",
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 22.sp,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  _buildRowItem("Product Cost",
+                                      "Kshs ${booking.bookingPrice ?? 0}"),
+                                  _buildRowItem("Balance",
+                                      "Kshs ${(booking.bookingPrice ?? 0) - (booking.total ?? 0)}"),
                                 ],
                               ),
                               SizedBox(height: 14.h),
-                              // Balance and Maturity fields
+
+                              // Paid & Maturity in next row
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Balance",
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.blue[200],
-                                        ),
-                                      ),
-                                      SizedBox(height: 2.h),
-                                      Text(
-                                        booking["balance"]?.toString() ??
-                                            "50,000",
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 18.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        "Maturity",
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.blue[200],
-                                        ),
-                                      ),
-                                      SizedBox(height: 2.h),
-                                      Text(
-                                        booking["maturity"]?.toString() ??
-                                            "20th Dec 2025",
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 18.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  _buildRowItem("Paid",
+                                      "Kshs ${booking.total ?? 0}"),
+                                  _buildRowItem(
+                                      "Maturity",
+                                      formatMaturityDate(booking.deadlineDate),
+                                    ),
                                 ],
                               ),
-                              SizedBox(height: 18.h),
-                              Divider(color: Colors.white38, thickness: 1),
-                              SizedBox(height: 18.h),
+                              SizedBox(height: 20.h),
+                              Divider(thickness: 1, color: Colors.white30),
+                              SizedBox(height: 20.h),
+
+                              // Action Buttons
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: accent,
+                                    backgroundColor: ColorName.primaryColor,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(32.r),
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
                                     padding:
-                                        EdgeInsets.symmetric(vertical: 16.h),
+                                        EdgeInsets.symmetric(vertical: 14.h),
                                   ),
                                   onPressed: () {},
                                   child: Text(
-                                    "Complete",
+                                    "Complete Booking",
                                     style: GoogleFonts.montserrat(
-                                      fontSize: 20.sp,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 16.sp,
                                       color: Colors.white,
                                     ),
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 14.h),
-                              // Cancel Booking Button
+                              SizedBox(height: 12.h),
                               SizedBox(
                                 width: double.infinity,
                                 child: OutlinedButton(
@@ -223,17 +158,17 @@ class BookingDetailsPage extends StatelessWidget {
                                     side: BorderSide(
                                         color: Colors.redAccent, width: 2),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(32.r),
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
                                     padding:
-                                        EdgeInsets.symmetric(vertical: 16.h),
+                                        EdgeInsets.symmetric(vertical: 14.h),
                                   ),
                                   onPressed: () {},
                                   child: Text(
                                     "Cancel Booking",
                                     style: GoogleFonts.montserrat(
-                                      fontSize: 18.sp,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 16.sp,
                                       color: Colors.redAccent,
                                     ),
                                   ),
@@ -242,71 +177,138 @@ class BookingDetailsPage extends StatelessWidget {
                             ],
                           ),
                         ),
-                      ),
-                      // Image handling here 
-                      Positioned(
-                        top: 0,
-                        child: Container(
-                          width: 130.w,
-                          height: 130.w,
-                          decoration: BoxDecoration(
-                            color: accent,
-                            shape: BoxShape.circle,
+
+                        // Booking Image (overlapping on top)
+                        Positioned(
+                          top: -60.h,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              width: 120.w,
+                              height: 120.w,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
+                                ),
+                                color: Colors.grey[300],
+                              ),
+                              child: ClipOval(
+                                child: booking.image != null &&
+                                        booking.image!.isNotEmpty
+                                    ? Image.network(
+                                        booking.image!,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.asset(
+                                        "assets/images/bookings_imgs/maldivesholiday.jpeg",
+                                        fit: BoxFit.cover,
+                                      ),
+                              ),
+                            ),
                           ),
-                          child: booking["image"] != null
-                              ? ClipOval(
-                                  child: Image.asset(
-                                    booking["image"],
-                                    width: 130.w,
-                                    height: 130.w,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : null,
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 36.h),
-                  Text(
-                    "Payments",
-                    style: GoogleFonts.montserrat(
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.lightBlue[400],
+                      ],
                     ),
-                  ),
-                  SizedBox(height: 18.h),
-                  ...List.generate(
-                    4,
-                    (i) => Container(
-                      margin: EdgeInsets.only(bottom: 14.h),
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(
-                          vertical: 16.h, horizontal: 12.w),
-                      decoration: BoxDecoration(
-                        color: isDarkMode
-                            ? Colors.white10
-                            : const Color(0xFFF6F7F9),
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
+
+                    SizedBox(height: 32.h),
+
+                    // Payments Section
+                    Align(
+                      alignment: Alignment.centerLeft,
                       child: Text(
-                        "20TH Nov.    Holiday Bank Transfer    0,000",
+                        "Payments",
                         style: GoogleFonts.montserrat(
-                          fontSize: 15.sp,
-                          color: textColor,
+                          fontSize: 18.sp,
                           fontWeight: FontWeight.w500,
+                          color: ColorName.primaryColor,
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 24.h),
-                ],
-              ), 
-            ),
-          ),
+                    SizedBox(height: 14.h),
+                    
+                    if (booking.payments != null &&
+                        booking.payments!.isNotEmpty)
+                      ...booking.payments!.map(
+                        (p) => Container(
+                          margin: EdgeInsets.only(bottom: 10.h),
+                          padding: EdgeInsets.all(14.w),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[850] : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                formatPaymentDate(p.createdAt) ?? "",
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 13.sp,
+                                  color: isDark? Colors.white70 : Colors.black,
+                                ),
+                              ),
+                              Text(
+                                "Mobile Money Transfer",
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 13.sp,
+                                  color: isDark? Colors.white70 : Colors.black,
+                                ),
+                              ),
+                              Text(
+                                "Kshs ${p.paymentAmount}",
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark? Colors.white70 : Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Text(
+                        "No payments yet",
+                        style: GoogleFonts.montserrat(
+                          fontSize: 14.sp,
+                          color: textColor,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
+    );
+  }
+
+  Widget _buildRowItem(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w500,
+            color: Colors.white70,
+          ),
+        ),
+        SizedBox(height: 4.h),
+        Text(
+          value,
+          style: GoogleFonts.montserrat(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ],
     );
   }
 }

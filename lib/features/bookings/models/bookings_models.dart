@@ -4,7 +4,7 @@ import 'dart:convert';
 /// TOP LEVEL RESPONSE
 /// -------------------
 class AllBookingsResponse {
-  final BookingDataWrapper? data;
+  final BookingData? data;
   final List<dynamic>? errors;
   final bool? success;
   final int? statusCode;
@@ -18,7 +18,7 @@ class AllBookingsResponse {
 
   factory AllBookingsResponse.fromJson(Map<String, dynamic> json) {
     return AllBookingsResponse(
-      data: json['data'] != null ? BookingDataWrapper.fromJson(json['data']) : null,
+      data: json['data'] != null ? BookingData.fromJson(json['data']) : null,
       errors: json['errors'] ?? [],
       success: json['success'],
       statusCode: json['status_code'],
@@ -38,156 +38,121 @@ class AllBookingsResponse {
 /// -------------------
 /// WRAPPER → data.pBooking
 /// -------------------
-class BookingDataWrapper {
-  final PBooking? pBooking;
+class BookingData {
+  final List<Booking>? pBooking;
 
-  BookingDataWrapper({this.pBooking});
+  BookingData({this.pBooking});
 
-  factory BookingDataWrapper.fromJson(Map<String, dynamic> json) {
-    return BookingDataWrapper(
-      pBooking: json['pBooking'] != null ? PBooking.fromJson(json['pBooking']) : null,
+  factory BookingData.fromJson(Map<String, dynamic> json) {
+    final pBookingJson = json['pBooking'];
+    List<dynamic> bookingsList = [];
+    if (pBookingJson is List) {
+      bookingsList = pBookingJson;
+    } else if (pBookingJson is Map && pBookingJson['data'] is List) {
+      bookingsList = pBookingJson['data'];
+    }
+    return BookingData(
+      pBooking: bookingsList.map((e) => Booking.fromJson(e)).toList(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'pBooking': pBooking?.toJson(),
+      'pBooking': {
+        'data': pBooking?.map((e) => e.toJson()).toList(),
+      },
     };
   }
 }
 
 /// -------------------
-/// PAGINATION OBJECT
-/// -------------------
-class PBooking {
-  final int? currentPage;
-  final List<Booking>? data;
-  final String? firstPageUrl;
-  final int? from;
-  final int? lastPage;
-  final String? lastPageUrl;
-  final List<PageLink>? links;
-  final String? nextPageUrl;
-  final String? path;
-  final int? perPage;
-  final String? prevPageUrl;
-  final int? to;
-  final int? total;
-
-  PBooking({
-    this.currentPage,
-    this.data,
-    this.firstPageUrl,
-    this.from,
-    this.lastPage,
-    this.lastPageUrl,
-    this.links,
-    this.nextPageUrl,
-    this.path,
-    this.perPage,
-    this.prevPageUrl,
-    this.to,
-    this.total,
-  });
-
-  factory PBooking.fromJson(Map<String, dynamic> json) {
-    return PBooking(
-      currentPage: json['current_page'],
-      data: (json['data'] as List<dynamic>?)
-              ?.map((e) => Booking.fromJson(e))
-              .toList() ??
-          [],
-      firstPageUrl: json['first_page_url'],
-      from: json['from'],
-      lastPage: json['last_page'],
-      lastPageUrl: json['last_page_url'],
-      links: (json['links'] as List<dynamic>?)
-              ?.map((e) => PageLink.fromJson(e))
-              .toList() ??
-          [],
-      nextPageUrl: json['next_page_url'],
-      path: json['path'],
-      perPage: json['per_page'],
-      prevPageUrl: json['prev_page_url'],
-      to: json['to'],
-      total: json['total'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'current_page': currentPage,
-      'data': data?.map((e) => e.toJson()).toList(),
-      'first_page_url': firstPageUrl,
-      'from': from,
-      'last_page': lastPage,
-      'last_page_url': lastPageUrl,
-      'links': links?.map((e) => e.toJson()).toList(),
-      'next_page_url': nextPageUrl,
-      'path': path,
-      'per_page': perPage,
-      'prev_page_url': prevPageUrl,
-      'to': to,
-      'total': total,
-    };
-  }
-}
-
-/// -------------------
-/// BOOKING MODEL
+/// BOOKING MODEL (exact backend order)
 /// -------------------
 class Booking {
+  final int? id;
+  final int? countryId;
+  final int? productId;
+  final String? bookingSource;
+  final int? userId;
+  final int? merchantId;
+  final int? promoterId;
+  final int? outletId;
+  final String? bookingReference;
+  final String? referralCoupon;
+  final num? bookingPrice;
+  final num? validationPrice;
+  final num? bookingOfferPrice;
+  final num? initialDeposit;
+  final String? hasFixedDeadline;
+  final String? bookingStatus;
+  final int? isPromotional;
+  final num? promotionalAmount;
+  final String? endDate;
+  final String? deadlineDate;
+  final int? bookingOnCredit;
+  final String? accountName;
+  final String? accountNo;
+  final String? reference;
+  final String? phoneNumber;
+  final String? checkoutStatus;
+  final String? frequency;
+  final String? frequencyContribution;
+  final String? createdAt;
+  final String? updatedAt;
+  final String? deletedAt;
   final String? productName;
   final String? productCode;
-  final String? productCategoryName;
-  final String? productTypeName;
-  final String? bookingReference;
-  final String? bookingSource;
-  final String? deadlineDate;
-  final String? bookingStatus;
-  final num? bookingPrice;
-  final String? createdAt;
-  final int? bookingId;
-  final int? categoryId;
-  final int? outletId;
-  final int? merchantId;
-  final String? firstName;
   final String? outletName;
   final String? merchantName;
   final num? total;
-  final num? balance;
-  final List<Payment>? payments;
   final User? user;
-  final List<dynamic>? bookingInterest; // TODO: map if structure is known
+  final List<dynamic>? bookingInterest;
   final num? interestAmount;
   final String? maturityDate;
   final num? targetSaving;
   final String? chamaDescription;
   final String? image;
   final num? progress;
-  final List<dynamic>? payment; // Legacy field?
+  final List<Payment>? payments;
+  final Receipt? receipt;
 
   Booking({
+    this.id,
+    this.countryId,
+    this.productId,
+    this.bookingSource,
+    this.userId,
+    this.merchantId,
+    this.promoterId,
+    this.outletId,
+    this.bookingReference,
+    this.referralCoupon,
+    this.bookingPrice,
+    this.validationPrice,
+    this.bookingOfferPrice,
+    this.initialDeposit,
+    this.hasFixedDeadline,
+    this.bookingStatus,
+    this.isPromotional,
+    this.promotionalAmount,
+    this.endDate,
+    this.deadlineDate,
+    this.bookingOnCredit,
+    this.accountName,
+    this.accountNo,
+    this.reference,
+    this.phoneNumber,
+    this.checkoutStatus,
+    this.frequency,
+    this.frequencyContribution,
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
     this.productName,
     this.productCode,
-    this.productCategoryName,
-    this.productTypeName,
-    this.bookingReference,
-    this.bookingSource,
-    this.deadlineDate,
-    this.bookingStatus,
-    this.bookingPrice,
-    this.createdAt,
-    this.bookingId,
-    this.categoryId,
-    this.outletId,
-    this.merchantId,
-    this.firstName,
     this.outletName,
     this.merchantName,
     this.total,
-    this.balance,
-    this.payments,
     this.user,
     this.bookingInterest,
     this.interestAmount,
@@ -196,34 +161,48 @@ class Booking {
     this.chamaDescription,
     this.image,
     this.progress,
-    this.payment,
+    this.payments,
+    this.receipt,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
     return Booking(
+      id: json['id'],
+      countryId: json['country_id'],
+      productId: json['product_id'],
+      bookingSource: json['booking_source'],
+      userId: json['user_id'],
+      merchantId: json['merchant_id'],
+      promoterId: json['promoter_id'],
+      outletId: json['outlet_id'],
+      bookingReference: json['booking_reference'],
+      referralCoupon: json['referral_coupon'],
+      bookingPrice: json['booking_price'],
+      validationPrice: json['validation_price'],
+      bookingOfferPrice: json['booking_offer_price'],
+      initialDeposit: json['initial_deposit'],
+      hasFixedDeadline: json['has_fixed_deadline'],
+      bookingStatus: json['booking_status'],
+      isPromotional: json['is_promotional'],
+      promotionalAmount: json['promotional_amount'],
+      endDate: json['end_date'],
+      deadlineDate: json['deadline_date'],
+      bookingOnCredit: json['booking_on_credit'],
+      accountName: json['account_name'],
+      accountNo: json['account_no'],
+      reference: json['reference'],
+      phoneNumber: json['phone_number'],
+      checkoutStatus: json['checkout_status'],
+      frequency: json['frequency'],
+      frequencyContribution: json['frequency_contribution'],
+      createdAt: json['created_at'],
+      updatedAt: json['updated_at'],
+      deletedAt: json['deleted_at'],
       productName: json['product_name'],
       productCode: json['product_code'],
-      productCategoryName: json['product_category_name'],
-      productTypeName: json['product_type_name'],
-      bookingReference: json['booking_reference'],
-      bookingSource: json['booking_source'],
-      deadlineDate: json['deadline_date'],
-      bookingStatus: json['booking_status'],
-      bookingPrice: json['booking_price'],
-      createdAt: json['created_at'],
-      bookingId: json['booking_id'],
-      categoryId: json['category_id'],
-      outletId: json['outlet_id'],
-      merchantId: json['merchant_id'],
-      firstName: json['first_name'],
       outletName: json['outlet_name'],
       merchantName: json['merchant_name'],
       total: json['total'],
-      balance: json['balance'],
-      payments: (json['payments'] as List<dynamic>?)
-              ?.map((e) => Payment.fromJson(e))
-              .toList() ??
-          [],
       user: json['user'] != null ? User.fromJson(json['user']) : null,
       bookingInterest: json['booking_interest'] ?? [],
       interestAmount: json['interest_amount'],
@@ -232,32 +211,51 @@ class Booking {
       chamaDescription: json['chama_description'],
       image: json['image'],
       progress: json['progress'],
-      payment: json['payment'] ?? [],
+          payments: (json['payment'] as List<dynamic>?)
+        ?.map((e) => Payment.fromJson(e))
+        .toList(),
+      receipt: json['receipt'] != null ? Receipt.fromJson(json['receipt']) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
+      'country_id': countryId,
+      'product_id': productId,
+      'booking_source': bookingSource,
+      'user_id': userId,
+      'merchant_id': merchantId,
+      'promoter_id': promoterId,
+      'outlet_id': outletId,
+      'booking_reference': bookingReference,
+      'referral_coupon': referralCoupon,
+      'booking_price': bookingPrice,
+      'validation_price': validationPrice,
+      'booking_offer_price': bookingOfferPrice,
+      'initial_deposit': initialDeposit,
+      'has_fixed_deadline': hasFixedDeadline,
+      'booking_status': bookingStatus,
+      'is_promotional': isPromotional,
+      'promotional_amount': promotionalAmount,
+      'end_date': endDate,
+      'deadline_date': deadlineDate,
+      'booking_on_credit': bookingOnCredit,
+      'account_name': accountName,
+      'account_no': accountNo,
+      'reference': reference,
+      'phone_number': phoneNumber,
+      'checkout_status': checkoutStatus,
+      'frequency': frequency,
+      'frequency_contribution': frequencyContribution,
+      'created_at': createdAt,
+      'updated_at': updatedAt,
+      'deleted_at': deletedAt,
       'product_name': productName,
       'product_code': productCode,
-      'product_category_name': productCategoryName,
-      'product_type_name': productTypeName,
-      'booking_reference': bookingReference,
-      'booking_source': bookingSource,
-      'deadline_date': deadlineDate,
-      'booking_status': bookingStatus,
-      'booking_price': bookingPrice,
-      'created_at': createdAt,
-      'booking_id': bookingId,
-      'category_id': categoryId,
-      'outlet_id': outletId,
-      'merchant_id': merchantId,
-      'first_name': firstName,
       'outlet_name': outletName,
       'merchant_name': merchantName,
       'total': total,
-      'balance': balance,
-      'payments': payments?.map((e) => e.toJson()).toList(),
       'user': user?.toJson(),
       'booking_interest': bookingInterest,
       'interest_amount': interestAmount,
@@ -266,13 +264,73 @@ class Booking {
       'chama_description': chamaDescription,
       'image': image,
       'progress': progress,
-      'payment': payment,
+      'payment': payments?.map((e) => e.toJson()).toList(),
+      'receipt': receipt?.toJson(),
     };
   }
 }
 
 /// -------------------
-/// PAYMENT MODEL
+/// USER
+/// -------------------
+class User {
+  final int? id;
+  final int? userId;
+  final int? referralId;
+  final String? firstName;
+  final String? lastName;
+  final String? phoneNumber1;
+  final String? idNumber;
+  final String? passportNumber;
+  final String? dob;
+  final String? country;
+
+  User({
+    this.id,
+    this.userId,
+    this.referralId,
+    this.firstName,
+    this.lastName,
+    this.phoneNumber1,
+    this.idNumber,
+    this.passportNumber,
+    this.dob,
+    this.country,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      userId: json['user_id'],
+      referralId: json['referral_id'],
+      firstName: json['first_name'],
+      lastName: json['last_name'],
+      phoneNumber1: json['phone_number_1'],
+      idNumber: json['id_number'],
+      passportNumber: json['passport_number'],
+      dob: json['dob'],
+      country: json['country'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'referral_id': referralId,
+      'first_name': firstName,
+      'last_name': lastName,
+      'phone_number_1': phoneNumber1,
+      'id_number': idNumber,
+      'passport_number': passportNumber,
+      'dob': dob,
+      'country': country,
+    };
+  }
+}
+
+/// -------------------
+/// PAYMENT
 /// -------------------
 class Payment {
   final int? id;
@@ -339,45 +397,60 @@ class Payment {
 }
 
 /// -------------------
-/// USER MODEL
+/// RECEIPT
 /// -------------------
-class User {
+class Receipt {
   final int? id;
   final int? userId;
-  final int? referralId;
-  final String? firstName;
-  final String? lastName;
-  final String? phoneNumber1;
-  final String? idNumber;
-  final String? passportNumber;
-  final String? dob;
-  final String? country;
+  final int? merchantId;
+  final int? bookingId;
+  final String? paymentRef;
+  final String? receiptNo;
+  final num? expectedAmount;
+  final num? paidAmount;
+  final String? receiptStatus;
+  final int? closedBy;
+  final int? revokedBy;
+  final String? createdAt;
+  final String? updatedAt;
+  final String? deletedAt;
+  final String? validatedAt;
 
-  User({
+  Receipt({
     this.id,
     this.userId,
-    this.referralId,
-    this.firstName,
-    this.lastName,
-    this.phoneNumber1,
-    this.idNumber,
-    this.passportNumber,
-    this.dob,
-    this.country,
+    this.merchantId,
+    this.bookingId,
+    this.paymentRef,
+    this.receiptNo,
+    this.expectedAmount,
+    this.paidAmount,
+    this.receiptStatus,
+    this.closedBy,
+    this.revokedBy,
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
+    this.validatedAt,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
+  factory Receipt.fromJson(Map<String, dynamic> json) {
+    return Receipt(
       id: json['id'],
       userId: json['user_id'],
-      referralId: json['referral_id'],
-      firstName: json['first_name'],
-      lastName: json['last_name'],
-      phoneNumber1: json['phone_number_1'],
-      idNumber: json['id_number'],
-      passportNumber: json['passport_number'],
-      dob: json['dob'],
-      country: json['country'],
+      merchantId: json['merchant_id'],
+      bookingId: json['booking_id'],
+      paymentRef: json['payment_ref'],
+      receiptNo: json['receipt_no'],
+      expectedAmount: json['expected_amount'],
+      paidAmount: json['paid_amount'],
+      receiptStatus: json['receipt_status'],
+      closedBy: json['closed_by'],
+      revokedBy: json['revoked_by'],
+      createdAt: json['created_at'],
+      updatedAt: json['updated_at'],
+      deletedAt: json['deleted_at'],
+      validatedAt: json['validated_at'],
     );
   }
 
@@ -385,41 +458,19 @@ class User {
     return {
       'id': id,
       'user_id': userId,
-      'referral_id': referralId,
-      'first_name': firstName,
-      'last_name': lastName,
-      'phone_number_1': phoneNumber1,
-      'id_number': idNumber,
-      'passport_number': passportNumber,
-      'dob': dob,
-      'country': country,
-    };
-  }
-}
-
-/// -------------------
-/// PAGINATION LINKS
-/// -------------------
-class PageLink {
-  final String? url;
-  final String? label;
-  final bool? active;
-
-  PageLink({this.url, this.label, this.active});
-
-  factory PageLink.fromJson(Map<String, dynamic> json) {
-    return PageLink(
-      url: json['url'],
-      label: json['label'],
-      active: json['active'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'url': url,
-      'label': label,
-      'active': active,
+      'merchant_id': merchantId,
+      'booking_id': bookingId,
+      'payment_ref': paymentRef,
+      'receipt_no': receiptNo,
+      'expected_amount': expectedAmount,
+      'paid_amount': paidAmount,
+      'receipt_status': receiptStatus,
+      'closed_by': closedBy,
+      'revoked_by': revokedBy,
+      'created_at': createdAt,
+      'updated_at': updatedAt,
+      'deleted_at': deletedAt,
+      'validated_at': validatedAt,
     };
   }
 }

@@ -2,11 +2,13 @@ import 'package:flexpay/features/bookings/cubit/bookings_state.dart';
 import 'package:flexpay/features/bookings/models/bookings_models.dart';
 import 'package:flexpay/features/bookings/ui/booking_details.dart';
 import 'package:flexpay/features/bookings/cubit/bookings_cubit.dart';
+import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
+import 'package:lottie/lottie.dart';
 
 class BookingsPage extends StatefulWidget {
   const BookingsPage({Key? key}) : super(key: key);
@@ -16,20 +18,18 @@ class BookingsPage extends StatefulWidget {
 }
 
 class _BookingsPageState extends State<BookingsPage> {
-  String selectedTab = "All";
+  String selectedTab = "all";
 
   @override
   void initState() {
     super.initState();
     // fetch bookings immediately
-    context.read<BookingsCubit>().fetchBookingsByType("211422", "all");
+    context.read<BookingsCubit>().fetchBookingsByType("all");
   }
 
   void _onTabSelected(String tab) {
     setState(() => selectedTab = tab);
-    context
-        .read<BookingsCubit>()
-        .fetchBookingsByType("211422", tab.toLowerCase());
+    context.read<BookingsCubit>().fetchBookingsByType(tab.toLowerCase());
   }
 
   @override
@@ -41,7 +41,8 @@ class _BookingsPageState extends State<BookingsPage> {
     final Color iconColor = isDarkMode ? Colors.white : Colors.black;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isDarkMode ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      value:
+          isDarkMode ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: bgColor,
         body: SafeArea(
@@ -51,7 +52,7 @@ class _BookingsPageState extends State<BookingsPage> {
               // Top bar
               Padding(
                 padding: EdgeInsets.only(
-                    left: 24.w, right: 24.w, top: 22.h, bottom: 12),
+                    left: 12.w, right: 12.w, top: 22.h, bottom: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -74,11 +75,11 @@ class _BookingsPageState extends State<BookingsPage> {
                   ],
                 ),
               ),
-              SizedBox(height: 32.h),
+              SizedBox(height: 22.h),
 
               // Title + Add Bookings
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32.w),
+                padding: EdgeInsets.only(left: 16.w, right: 14.w),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -119,7 +120,7 @@ class _BookingsPageState extends State<BookingsPage> {
                   ],
                 ),
               ),
-              SizedBox(height: 32.h),
+              SizedBox(height: 22.h),
 
               // Search + Tabs
               Padding(
@@ -180,41 +181,64 @@ class _BookingsPageState extends State<BookingsPage> {
 
                     // Tabs
                     Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _BookingTab(
-                            label: "All",
-                            selected: selectedTab == "All",
-                            color: selectedTab == "All"
-                                ? const Color(0xFFF7B53A)
-                                : const Color(0xFFF6F7F9),
-                            textColor: selectedTab == "All"
-                                ? Colors.white
-                                : const Color(0xFF1D3C4E),
-                            onTap: () => _onTabSelected("All"),
-                          ),
-                          SizedBox(width: 12.w),
-                          _BookingTab(
-                            label: "Completed",
-                            selected: selectedTab == "Completed",
-                            color: selectedTab == "Completed"
-                                ? const Color(0xFFF7B53A)
-                                : const Color(0xFFF6F7F9),
-                            textColor: Colors.black,
-                            onTap: () => _onTabSelected("Completed"),
-                          ),
-                          SizedBox(width: 12.w),
-                          _BookingTab(
-                            label: "Active",
-                            selected: selectedTab == "Active",
-                            color: selectedTab == "Active"
-                                ? const Color(0xFFF7B53A)
-                                : const Color(0xFFF6F7F9),
-                            textColor: Colors.black,
-                            onTap: () => _onTabSelected("Active"),
-                          ),
-                        ],
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // _BookingTab(
+                            //   label: "All",
+                            //   selected: selectedTab == "All",
+                            //   color: selectedTab == "All"
+                            //       ? const Color(0xFFF7B53A)
+                            //       : const Color(0xFFF6F7F9),
+                            //   textColor: selectedTab == "All"
+                            //       ? Colors.white
+                            //       : const Color(0xFF1D3C4E),
+                            //   onTap: () => _onTabSelected("All"),
+                            // ),
+                            // SizedBox(width: 12.w),
+                            _BookingTab(
+                              label: "Active",
+                              selected: selectedTab == "active",
+                              color: selectedTab == "active"
+                                  ? const Color(0xFFF7B53A)
+                                  : const Color(0xFFF6F7F9),
+                              textColor: Colors.black,
+                              onTap: () => _onTabSelected("active"),
+                            ),
+                            SizedBox(width: 12.w),
+                            _BookingTab(
+                              label: "Overdue",
+                              selected: selectedTab == "Overdue",
+                              color: selectedTab == "Overdue"
+                                  ? const Color(0xFFF7B53A)
+                                  : const Color(0xFFF6F7F9),
+                              textColor: Colors.black,
+                              onTap: () => _onTabSelected("Overdue"),
+                            ),
+                            SizedBox(width: 12.w),
+                            _BookingTab(
+                              label: "Unpaid",
+                              selected: selectedTab == "unserviced",
+                              color: selectedTab == "unserviced"
+                                  ? const Color(0xFFF7B53A)
+                                  : const Color(0xFFF6F7F9),
+                              textColor: Colors.black,
+                              onTap: () => _onTabSelected("unserviced"),
+                            ),
+                            SizedBox(width: 12.w),
+                            _BookingTab(
+                              label: "Completed",
+                              selected: selectedTab == "complete",
+                              color: selectedTab == "complete"
+                                  ? const Color(0xFFF7B53A)
+                                  : const Color(0xFFF6F7F9),
+                              textColor: Colors.black,
+                              onTap: () => _onTabSelected("complete"),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     SizedBox(height: 12.h),
@@ -226,24 +250,57 @@ class _BookingsPageState extends State<BookingsPage> {
               Expanded(
                 child: BlocBuilder<BookingsCubit, BookingsState>(
                   builder: (context, state) {
-                    if (state is BookingsLoading) {
-                      return const Center(
-                          child: CircularProgressIndicator());
-                    } else if (state is BookingsError) {
+                      if (state is BookingsLoading) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Lottie.asset(
+                                'assets/images/LoadingPlane.json',
+                                width: 360.w,
+                                height: 360.w,
+                                fit: BoxFit.contain,
+                              ),
+                            ],
+                          ),
+                        );
+                      } else if (state is BookingsError) {
+                      // Show snack bar with real error message
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        CustomSnackBar.showError(
+                          context,
+                          title: "Error",
+                          message: state.message,
+                        );
+                      });
+
+                      // Show friendly error UI
                       return Center(
-                        child: Text(
-                          state.message,
-                          style: GoogleFonts.montserrat(color: Colors.red),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Lottie.asset(
+                              'assets/images/chamatype.json', // 👈 error animation file
+                              width: 220.w,
+                              height: 220.w,
+                              fit: BoxFit.contain,
+                            ),
+                            SizedBox(height: 16.h),
+                            Text(
+                              "An error occurred",
+                              style: GoogleFonts.montserrat(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white70
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     } else if (state is BookingsFetched) {
-                      final bookings = state.bookingType == "all"
-                          ? state.bookings
-                          : state.bookings
-                              .where((b) =>
-                                  b.bookingStatus?.toLowerCase() ==
-                                  state.bookingType.toLowerCase())
-                              .toList();
+                      final bookings = state.bookings;
 
                       if (bookings.isEmpty) {
                         return Center(
@@ -298,7 +355,7 @@ class _BookingCard extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => BookingDetailsPage(booking: booking.toJson()),
+          builder: (_) => BookingDetailsPage(booking: booking),
         ),
       ),
       child: Padding(
@@ -318,81 +375,87 @@ class _BookingCard extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.all(18.w),
             child: Row(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    booking.image != null
-        ? ClipRRect(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                booking.image != null
+                    ?  ClipRRect(
+          borderRadius: BorderRadius.circular(12.r),
+          child: Image.asset(
+            "assets/images/bookings_imgs/maldivesholiday.jpeg",
+            width: 46.w,
+            height: 46.w,
+            fit: BoxFit.cover,
+          ),
+        )
+      : Container(
+          width: 46.w,
+          height: 46.w,
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
             borderRadius: BorderRadius.circular(12.r),
-            child: booking.image != null && booking.image!.isNotEmpty
-                ? Image.network(
-                    booking.image!,
-                    width: 46.w,
-                    height: 46.w,
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    width: 46.w,
-                    height: 46.w,
-                    color: Colors.grey[200],
-                    child: Icon(
-                      Icons.image_not_supported,
-                      color: Colors.grey[400],
-                      size: 26.sp,
-                    ),
-                  ),
-          )
-        : SizedBox(width: 46.w), // keep space consistent
-
-    SizedBox(width: 12.w), // 👈 spacing between image and info column
-
-    // Info column
-    Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            booking.productName ?? "Unknown Product",
-            style: GoogleFonts.montserrat(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: textColor,
-            ),
           ),
-          SizedBox(height: 4.h),
-          Text(
-            booking.deadlineDate != null
-                ? "Due on ${booking.deadlineDate}"
-                : "Created on ${booking.createdAt}",
-            style: GoogleFonts.montserrat(
-              fontSize: 13.sp,
-              color: Colors.black54,
-            ),
+          child: Icon(
+            Icons.image_not_supported,
+            color: Colors.grey[400],
+            size: 26.sp,
           ),
-          SizedBox(height: 14.h),
+        ),
+              
+                    // : SizedBox(width: 46.w), // keep space consistent
 
-          // Progress bar row
-          Row(
-            children: List.generate(10, (i) {
-              double progress = (booking.progress ?? 0).toDouble();
-              double fill = progress * 10;
-              bool filled = i < fill.round();
+                SizedBox(
+                    width: 12.w), // 👈 spacing between image and info column
 
-              return Padding(
-                padding: EdgeInsets.only(right: 4.w),
-                child: Container(
-                  width: 16.w,
-                  height: 6.h,
-                  decoration: BoxDecoration(
-                    color: filled ? Colors.green : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(4.r),
+                // Info column
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        booking.productName ?? "Unknown Product",
+                        style: GoogleFonts.montserrat(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        booking.deadlineDate != null
+                            ? "Due on ${booking.deadlineDate}"
+                            : "Created on ${booking.createdAt}",
+                        style: GoogleFonts.montserrat(
+                          fontSize: 13.sp,
+                          color:  textColor,
+                        ),
+                      ),
+                      SizedBox(height: 14.h),
+
+                      // Progress bar row
+                      Row(
+                        children: List.generate(10, (i) {
+                          double total = (booking.total ?? 0).toDouble();
+                          double price = (booking.bookingPrice ?? 1).toDouble();
+                          double progress = total / price;
+                          double fill = progress * 10;
+                          bool filled = i < fill.round();
+
+                          return Padding(
+                            padding: EdgeInsets.only(right: 4.w),
+                            child: Container(
+                              width: 16.w,
+                              height: 6.h,
+                              decoration: BoxDecoration(
+                                color: filled ? Colors.green : Colors.grey[300],
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            }),
-          ),
-        ],
-      ),
-    ),
 
                 // Right column
                 Column(
@@ -403,7 +466,7 @@ class _BookingCard extends StatelessWidget {
                           color: const Color(0xFFF7B53A), size: 28.sp),
                     SizedBox(height: 8.h),
                     Text(
-                      "${((booking.progress ?? 0) * 100).round()}%",
+                      "${(((booking.total ?? 0) / (booking.bookingPrice ?? 1)) * 100).round()}%",
                       style: GoogleFonts.montserrat(
                         fontSize: 20.sp,
                         fontWeight: FontWeight.w700,
@@ -411,7 +474,7 @@ class _BookingCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "Saved",
+                      "Paid",
                       style: GoogleFonts.montserrat(fontSize: 13.sp),
                     ),
                   ],
