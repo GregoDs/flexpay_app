@@ -3,7 +3,6 @@ import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/bookings/ui/bookings.dart';
 import 'package:flexpay/features/goals/ui/goals.dart';
 import 'package:flexpay/features/navigation/chamanav.dart';
-import 'package:flutter/material.dart';
 import 'package:flexpay/features/home/ui/homescreen.dart';
 import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/features/navigation/navigation.dart';
@@ -58,7 +57,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           value: bookingsCubit,
           child: const BookingsPage(),
         ),
-        MerchantsScreen(),
+        BlocProvider.value(
+          value: merchantsCubit,
+          child: MerchantsScreen(),
+        ),
       ];
 
   final List<BottomNavBarItem> _navItems = [

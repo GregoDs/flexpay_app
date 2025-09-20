@@ -38,6 +38,9 @@ import 'package:flexpay/features/home/ui/homescreen.dart';
 import 'package:flexpay/features/auth/ui/onboarding_screen.dart';
 
 import 'package:flexpay/features/auth/ui/splash_screen.dart';
+import 'package:flexpay/features/merchants/cubits/merchant_cubit.dart';
+import 'package:flexpay/features/merchants/repo/merchants_repo.dart';
+import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 
@@ -45,15 +48,15 @@ import 'package:flexpay/utils/services/api_service.dart';
 final authCubit = AuthCubit(AuthRepo());
 // final commissionsCubit = CommissionsCubit(repository: CommissionRepository());
 final bookingsCubit = BookingsCubit(BookingsRepository());
+final merchantsCubit = MerchantsCubit(MerchantsRepository());
 
 class AppRoutes {
   static final routes = {
-
     Routes.splash: (context) => const SplashScreen(),
 
     Routes.onboarding: (context) => const OnBoardingScreen(),
 
-    Routes.register: (context) =>  BlocProvider.value(
+    Routes.register: (context) => BlocProvider.value(
           value: authCubit,
           child: const CreateAccountPage(),
         ),
@@ -71,52 +74,28 @@ class AppRoutes {
     // Routes.home: (context) => HomeScreen(
     //       isDarkModeOn: Theme.of(context).brightness == Brightness.dark,
     //     ),
-    
+
     Routes.home: (context) {
-        final userModel = ModalRoute.of(context)!.settings.arguments as UserModel;
-        return NavigationWrapper(initialIndex: 0, userModel: userModel);
-      },
+      final userModel = ModalRoute.of(context)!.settings.arguments as UserModel;
+      return NavigationWrapper(initialIndex: 0, userModel: userModel);
+    },
 
     Routes.goals: (context) => GoalsPage(),
 
-    Routes.viewChamas:
-        (context) => 
-            BlocProvider(
-              create: (context) => ChamaProductsCubit(ChamaRepo(ApiService())),
-              child: ViewChamas(),
-            ),
+    Routes.viewChamas: (context) => BlocProvider(
+          create: (context) => ChamaProductsCubit(ChamaRepo(ApiService())),
+          child: ViewChamas(),
+        ),
 
-       Routes.bookings: (context) => BlocProvider.value(
+    Routes.bookings: (context) => BlocProvider.value(
           value: bookingsCubit,
           child: const BookingsPage(),
         ),
 
-    // Routes.makeBookings: (context) => BlocProvider(
-    //       create: (context) => MakeBookingCubit(BookingsRepository()),
-    //       child: const MakeBookingsScreen(),
-    //     ),
-
-    // Routes.validatedReceipts: (context) => ValidatedReceiptsPage(
-    //       validatedReceipts: _validatedReceipts,
-    //     ),
-   
-    // Routes.bookingDetails: (context) => BlocProvider.value(
-    //       value: bookingsCubit,
-    //       child: const BookingDetailScreen(
-    //         bookings: [],
-    //         bookings: [],
-    //         title: '',
-    //       ),
-    //     ),
-
-    // Routes.commissions: (context) => BlocProvider.value(
-    //       value: commissionsCubit,
-    //       child: const Commissions(),
-    //     ),
-    // Routes.leaderboard: (context) => BlocProvider.value(
-    //       value: LeaderboardCubit(repository: LeaderboardRepository()),
-    //       child: const LeaderboardScreen(),
-    //     ),
+    Routes.merchants: (context) => BlocProvider.value(
+          value: merchantsCubit,
+          child: MerchantsScreen(),
+        ),
   };
 }
 
@@ -130,10 +109,7 @@ class Routes {
   static const home = '/home';
   static const viewChamas = 'viewChamas';
   static const goals = 'goals';
-  static const makeBookings = '/make-bookings';
-  static const validatedReceipts = '/validated-receipts';
   static const bookings = '/bookings';
-  static const commissions = '/commissions';
-  static const leaderboard = '/leaderboard';
+  static const merchants = '/merchants';
   static const bookingDetails = '/booking-details';
 }

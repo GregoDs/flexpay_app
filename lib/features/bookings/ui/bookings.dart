@@ -18,13 +18,13 @@ class BookingsPage extends StatefulWidget {
 }
 
 class _BookingsPageState extends State<BookingsPage> {
-  String selectedTab = "all";
+  String selectedTab = "active";
 
   @override
   void initState() {
     super.initState();
     // fetch bookings immediately
-    context.read<BookingsCubit>().fetchBookingsByType("all");
+    context.read<BookingsCubit>().fetchBookingsByType("active");
   }
 
   void _onTabSelected(String tab) {
@@ -280,7 +280,7 @@ class _BookingsPageState extends State<BookingsPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Lottie.asset(
-                              'assets/images/chamatype.json', // 👈 error animation file
+                              'assets/images/chamatype.json', 
                               width: 220.w,
                               height: 220.w,
                               fit: BoxFit.contain,
