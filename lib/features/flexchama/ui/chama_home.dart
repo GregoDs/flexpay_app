@@ -1,4 +1,5 @@
-import 'package:flexpay/features/flexchama/ui/appbarchama.dart';
+import 'package:flexpay/features/flexchama/models/chama_profile_model/chama_profile_model.dart';
+import 'package:flexpay/features/flexchama/ui/appbar_chama_home.dart';
 import 'package:flexpay/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -6,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart'; // Add this import
 
 class FlexChama extends StatefulWidget {
-  const FlexChama({super.key});
+  const FlexChama({super.key, required ChamaProfile profile});
 
   @override
   State<FlexChama> createState() => _FlexChamaState();

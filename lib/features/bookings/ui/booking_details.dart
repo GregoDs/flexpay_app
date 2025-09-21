@@ -259,6 +259,7 @@ String formatMaturityDate(String? dateStr) {
                               ),
                               Text(
                                 "Kshs ${p.paymentAmount}",
+                                // "Kshs 1000000",
                                 style: GoogleFonts.montserrat(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.bold,

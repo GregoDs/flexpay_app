@@ -28,7 +28,7 @@ import 'package:flexpay/features/auth/ui/register.dart';
 import 'package:flexpay/features/bookings/cubit/bookings_cubit.dart';
 import 'package:flexpay/features/bookings/repo/bookings_repo.dart';
 import 'package:flexpay/features/bookings/ui/bookings.dart';
-import 'package:flexpay/features/flexchama/cubits/chama_products_cubit.dart';
+import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
 import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
 import 'package:flexpay/features/flexchama/ui/viewchama.dart';
 import 'package:flexpay/features/goals/ui/goals.dart';
@@ -46,7 +46,7 @@ import 'package:flexpay/utils/services/api_service.dart';
 
 // Create global Cubit instances
 final authCubit = AuthCubit(AuthRepo());
-// final commissionsCubit = CommissionsCubit(repository: CommissionRepository());
+final chamaCubit = ChamaCubit(ChamaRepo());
 final bookingsCubit = BookingsCubit(BookingsRepository());
 final merchantsCubit = MerchantsCubit(MerchantsRepository());
 
@@ -56,25 +56,18 @@ class AppRoutes {
 
     Routes.onboarding: (context) => const OnBoardingScreen(),
 
-    Routes.register: (context) => BlocProvider.value(
-          value: authCubit,
-          child: const CreateAccountPage(),
-        ),
+    Routes.register: (context) =>
+        BlocProvider.value(value: authCubit, child: const CreateAccountPage()),
 
-    Routes.login: (context) => BlocProvider.value(
-          value: authCubit,
-          child: const LoginScreen(),
-        ),
+    Routes.login: (context) =>
+        BlocProvider.value(value: authCubit, child: const LoginScreen()),
 
-    Routes.otp: (context) => BlocProvider.value(
-          value: authCubit,
-          child: const OtpScreen(),
-        ),
+    Routes.otp: (context) =>
+        BlocProvider.value(value: authCubit, child: const OtpScreen()),
 
     // Routes.home: (context) => HomeScreen(
     //       isDarkModeOn: Theme.of(context).brightness == Brightness.dark,
     //     ),
-
     Routes.home: (context) {
       final userModel = ModalRoute.of(context)!.settings.arguments as UserModel;
       return NavigationWrapper(initialIndex: 0, userModel: userModel);
@@ -82,20 +75,16 @@ class AppRoutes {
 
     Routes.goals: (context) => GoalsPage(),
 
-    Routes.viewChamas: (context) => BlocProvider(
-          create: (context) => ChamaProductsCubit(ChamaRepo(ApiService())),
-          child: ViewChamas(),
-        ),
+    Routes.viewChamas: (context) => BlocProvider.value(
+      value: chamaCubit,
+      child: const ViewChamas(), 
+    ),
 
-    Routes.bookings: (context) => BlocProvider.value(
-          value: bookingsCubit,
-          child: const BookingsPage(),
-        ),
+    Routes.bookings: (context) =>
+        BlocProvider.value(value: bookingsCubit, child: const BookingsPage()),
 
-    Routes.merchants: (context) => BlocProvider.value(
-          value: merchantsCubit,
-          child: MerchantsScreen(),
-        ),
+    Routes.merchants: (context) =>
+        BlocProvider.value(value: merchantsCubit, child: MerchantsScreen()),
   };
 }
 

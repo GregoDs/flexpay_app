@@ -1,11 +1,15 @@
-import 'package:flexpay/exports.dart';
+import 'package:flexpay/exports.dart' hide CustomSnackBar;
 import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/bookings/ui/bookings.dart';
+import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
+import 'package:flexpay/features/flexchama/cubits/chama_state.dart';
+import 'package:flexpay/features/flexchama/ui/chama_home.dart';
+import 'package:flexpay/features/flexchama/ui/opt_chama_screen.dart';
 import 'package:flexpay/features/goals/ui/goals.dart';
-import 'package:flexpay/features/navigation/chamanav.dart';
 import 'package:flexpay/features/home/ui/homescreen.dart';
 import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/features/navigation/navigation.dart';
+import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 
 class NavigationWrapper extends StatefulWidget {
   final int initialIndex;
@@ -27,6 +31,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+
+    Future.microtask(() {
+    chamaCubit.fetchChamaUserProfile();
+  });
   }
 
   void _onTabTapped(int index) {
@@ -48,15 +56,56 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           isDarkModeOn: false,
           userModel: widget.userModel,
         ),
+
         GoalsPage(),
-        FlexChamaTab(
-          showOnBoard: showOnBoard,
-          onOptIn: _onOptIn,
-        ),
+
+        BlocListener<ChamaCubit, ChamaState>(
+            bloc: chamaCubit,
+            listener: (context, state) {
+              if (state is ChamaError) {
+                CustomSnackBar.showError(
+                  context,
+                  title: "Oops!",
+                  message: state.message,
+                );
+                if (_currentIndex != 0) {
+                setState(() {
+                  _currentIndex = 0;
+                });
+              }
+              }
+            },
+            child: BlocBuilder<ChamaCubit, ChamaState>(
+                      bloc: chamaCubit,
+                      builder: (context, state) {
+                        if (state is ChamaLoading) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (state is ChamaProfileFetched) {
+                          // ensure nav bar shows for members
+                          if (showOnBoard) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              setState(() {
+                                showOnBoard = false;
+                              });
+                            });
+                          }
+                          return FlexChama(profile: state.profile);
+                        } else if (state is ChamaNotMember) {
+                          return OnBoardFlexChama(
+                            onOptIn: _onOptIn,
+                            userModel: widget.userModel,
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                      ),
+                            ),
+        
         BlocProvider.value(
           value: bookingsCubit,
           child: const BookingsPage(),
         ),
+
         BlocProvider.value(
           value: merchantsCubit,
           child: MerchantsScreen(),

@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: AppBarHome(
               context,
               userName: "${widget.userModel.user.username}",
-              balance: 1234.56,
+              balance: 1234.56, userModel: widget.userModel,
             ),
           ),
           body: SingleChildScrollView(

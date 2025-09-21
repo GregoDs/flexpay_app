@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
+import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flexpay/features/merchants/cubits/merchant_state.dart';
 import 'package:flexpay/features/merchants/cubits/merchant_cubit.dart';
@@ -160,8 +161,20 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
                   padding: const EdgeInsets.all(12),
                   child: BlocBuilder<MerchantsCubit, MerchantsState>(
                     builder: (context, state) {
-                      if (state is MerchantsLoading) {
-                        return const Center(child: CircularProgressIndicator());
+                     if (state is MerchantsLoading) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Lottie.asset(
+                                'assets/images/LoadingPlane.json',
+                                width: 360.w,
+                                height: 360.w,
+                                fit: BoxFit.contain,
+                              ),
+                            ],
+                          ),
+                        );
                       } else if (state is MerchantsError) {
                         return Center(
                           child: Text(
