@@ -32,9 +32,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     super.initState();
     _currentIndex = widget.initialIndex;
 
+    // Fetch profile (savings will auto-fetch inside cubit)
     Future.microtask(() {
-    chamaCubit.fetchChamaUserProfile();
-  });
+      context.read<ChamaCubit>().fetchChamaUserProfile();
+    });
   }
 
   void _onTabTapped(int index) {
@@ -59,48 +60,60 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
 
         GoalsPage(),
 
+        /// FlexChama Tab
         BlocListener<ChamaCubit, ChamaState>(
-            bloc: chamaCubit,
-            listener: (context, state) {
-              if (state is ChamaError) {
-                CustomSnackBar.showError(
-                  context,
-                  title: "Oops!",
-                  message: state.message,
-                );
-                if (_currentIndex != 0) {
+          listener: (context, state) {
+            if (state is ChamaError) {
+              CustomSnackBar.showError(
+                context,
+                title: "Oops!",
+                message: state.message,
+              );
+              if (_currentIndex != 0) {
                 setState(() {
                   _currentIndex = 0;
                 });
               }
+            }
+          },
+          child: BlocBuilder<ChamaCubit, ChamaState>(
+            builder: (context, state) {
+              // Handle loading & initial states
+              if (state is ChamaInitial || state is ChamaProfileLoading || state is ChamaSavingsLoading) {
+                return const Center(child: CircularProgressIndicator());
               }
+
+              // Not a member → show onboarding
+              if (state is ChamaNotMember) {
+                return OnBoardFlexChama(
+                  onOptIn: _onOptIn,
+                  userModel: widget.userModel,
+                );
+              }
+
+              // Profile + savings fetched → show FlexChama
+              if (state is ChamaProfileFetched || state is ChamaSavingsFetched) {
+                final profile = (state is ChamaProfileFetched)
+                    ? state.profile
+                    : (state as ChamaSavingsFetched).savingsResponse.data!.chamaDetails;
+
+                if (showOnBoard) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    setState(() {
+                      showOnBoard = false;
+                    });
+                  });
+                }
+
+                return FlexChama(profile: profile);
+              }
+
+              // Fallback loader
+              return const Center(child: CircularProgressIndicator());
             },
-            child: BlocBuilder<ChamaCubit, ChamaState>(
-                      bloc: chamaCubit,
-                      builder: (context, state) {
-                        if (state is ChamaLoading) {
-                          return const Center(child: CircularProgressIndicator());
-                        } else if (state is ChamaProfileFetched) {
-                          // ensure nav bar shows for members
-                          if (showOnBoard) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              setState(() {
-                                showOnBoard = false;
-                              });
-                            });
-                          }
-                          return FlexChama(profile: state.profile);
-                        } else if (state is ChamaNotMember) {
-                          return OnBoardFlexChama(
-                            onOptIn: _onOptIn,
-                            userModel: widget.userModel,
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                      ),
-                            ),
-        
+          ),
+        ),
+
         BlocProvider.value(
           value: bookingsCubit,
           child: const BookingsPage(),
@@ -127,13 +140,12 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     return WillPopScope(
       onWillPop: () async {
         if (_currentIndex != 0) {
-          // Not on Home → go back to Home instead of exiting
           setState(() {
             _currentIndex = 0;
           });
-          return false; // prevent exiting
+          return false;
         }
-        return false; // already on Home → do nothing
+        return false;
       },
       child: Scaffold(
         body: IndexedStack(

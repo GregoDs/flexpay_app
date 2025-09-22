@@ -42,7 +42,6 @@ import 'package:flexpay/features/merchants/cubits/merchant_cubit.dart';
 import 'package:flexpay/features/merchants/repo/merchants_repo.dart';
 import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
-import 'package:flexpay/utils/services/api_service.dart';
 
 // Create global Cubit instances
 final authCubit = AuthCubit(AuthRepo());
@@ -69,16 +68,19 @@ class AppRoutes {
     //       isDarkModeOn: Theme.of(context).brightness == Brightness.dark,
     //     ),
     Routes.home: (context) {
-      final userModel = ModalRoute.of(context)!.settings.arguments as UserModel;
-      return NavigationWrapper(initialIndex: 0, userModel: userModel);
-    },
+  final userModel = ModalRoute.of(context)!.settings.arguments as UserModel;
+  return BlocProvider.value(
+    value: chamaCubit, // using your global instance
+    child: NavigationWrapper(initialIndex: 0, userModel: userModel),
+  );
+},
 
     Routes.goals: (context) => GoalsPage(),
 
-    Routes.viewChamas: (context) => BlocProvider.value(
-      value: chamaCubit,
-      child: const ViewChamas(), 
-    ),
+    
+
+    Routes.viewChamas: (context) =>
+        BlocProvider.value(value: chamaCubit, child: const ViewChamas()),
 
     Routes.bookings: (context) =>
         BlocProvider.value(value: bookingsCubit, child: const BookingsPage()),
@@ -96,6 +98,7 @@ class Routes {
   static const otp = '/otp';
   static const main = '/main';
   static const home = '/home';
+  static const flexchama = '/flexchama';
   static const viewChamas = 'viewChamas';
   static const goals = 'goals';
   static const bookings = '/bookings';

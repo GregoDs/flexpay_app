@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flexpay/features/flexchama/models/chama_profile_model/chama_profile_model.dart';
+import 'package:flexpay/features/flexchama/models/chama_savings_model/chama_savings_model.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/services/error_handler.dart';
@@ -58,4 +59,52 @@ class ChamaRepo {
       throw Exception(message);
     }
   }
+
+/// Fetch the Chama savings for the logged-in user.
+Future<ChamaSavingsResponse?> fetchUserChamaSavings() async {
+  try {
+    final userModel = await SharedPreferencesHelper.getUserModel();
+    // final phoneNumber = userModel?.user.phoneNumber;
+    final phoneNumber = "254707968841";
+
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      throw Exception("User phone number not found in storage.");
+    }
+
+    AppLogger.log("📞 Fetching User Chama savings for phone: $phoneNumber");
+
+    final url = "${ApiService.prodEndpointChama}/user-savings/$phoneNumber";
+    final response = await _apiService.get(url);
+
+    // ✅ Parse into response model
+    final chamaSavingsResponse = ChamaSavingsResponse.fromJson(response.data);
+
+    // ✅ Check for backend errors
+    if (chamaSavingsResponse.errors != null &&
+        chamaSavingsResponse.errors!.isNotEmpty) {
+      AppLogger.log("⚠️ Backend errors: ${chamaSavingsResponse.errors}");
+      throw Exception(
+        chamaSavingsResponse.errors!.first.toString(),
+      );
+    }
+
+    // ✅ Extract ChamaDetails for easier usage
+    final chamaDetails = chamaSavingsResponse.data?.chamaDetails;
+
+    if (chamaDetails == null) {
+      AppLogger.log("❌ No valid Chama savings found.");
+      return null;
+    }
+
+    // ✅ Pretty-print ChamaDetails JSON for debugging
+    final prettyJson = const JsonEncoder.withIndent('  ').convert(chamaDetails.toJson());
+    AppLogger.log("📦 Parsed Chama Savings:\n$prettyJson");
+
+    return chamaSavingsResponse; // return full response for reusability
+  } catch (e) {
+    final message = ErrorHandler.handleGenericError(e);
+    AppLogger.log("❌ Error in fetchUserChamaSavings: $message");
+    throw Exception(message);
+  }
+}
 }

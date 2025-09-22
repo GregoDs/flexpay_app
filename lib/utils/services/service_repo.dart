@@ -2,6 +2,7 @@ import 'package:flexpay/features/auth/repo/auth_repo.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart'; // <-- import intl for number formatting
 
 class StartupService {
   final AuthRepo _authRepo = AuthRepo();
@@ -48,6 +49,7 @@ class StartupService {
   }
 }
 
+/// ---------------- Text Formatter ----------------
 class CapitalizeFirstLetterFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -64,5 +66,20 @@ class CapitalizeFirstLetterFormatter extends TextInputFormatter {
       text: capitalized,
       selection: newValue.selection, // keep cursor position
     );
+  }
+}
+
+/// ---------------- Global Utility Class ----------------
+class AppUtils {
+  /// Format integer amounts with commas (financial standard)
+  static String formatAmount(int amount) {
+    final formatter = NumberFormat('#,##0');
+    return formatter.format(amount);
+  }
+
+  /// Optional: format double amounts with 2 decimals
+  static String formatDecimal(double amount) {
+    final formatter = NumberFormat('#,##0.00');
+    return formatter.format(amount);
   }
 }
