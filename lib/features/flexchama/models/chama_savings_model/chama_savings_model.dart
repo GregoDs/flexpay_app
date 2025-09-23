@@ -21,6 +21,40 @@ class ChamaSavingsResponse {
       _$ChamaSavingsResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$ChamaSavingsResponseToJson(this);
+
+  /// ✅ Factory for safe defaults if no savings found or any error occurs
+  factory ChamaSavingsResponse.empty({String? errorMessage, int statusCode = 400}) {
+  return ChamaSavingsResponse(
+    data: ChamaSavingsData(
+      chamaDetails: ChamaDetails(
+        targetAmount: 0,
+        packageAmount: 0,
+        dateStarted: "",
+        maturityDate: "",
+        loanLimit: 0,
+        totalSavings: 0,
+        loanTaken: 0,
+        withdrawableAmount: 0,
+      ),
+      payments: Payments(
+        currentPage: 1,
+        data: [],
+        firstPageUrl: "",
+        from: 0,
+        lastPage: 1,
+        lastPageUrl: "",
+        links: [],
+        path: "",
+        perPage: 10,
+        to: 0,
+        total: 0,
+      ),
+    ),
+    errors: errorMessage != null ? [errorMessage] : [],
+    success: false,
+    statusCode: statusCode, // ✅ just use the parameter
+  );
+}
 }
 
 @JsonSerializable(explicitToJson: true)

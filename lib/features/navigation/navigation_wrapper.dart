@@ -11,6 +11,7 @@ import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/features/navigation/navigation.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 
+
 class NavigationWrapper extends StatefulWidget {
   final int initialIndex;
   final UserModel userModel;
@@ -57,9 +58,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           isDarkModeOn: false,
           userModel: widget.userModel,
         ),
-
         GoalsPage(),
-
         /// FlexChama Tab
         BlocListener<ChamaCubit, ChamaState>(
           listener: (context, state) {
@@ -78,12 +77,6 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           },
           child: BlocBuilder<ChamaCubit, ChamaState>(
             builder: (context, state) {
-              // Handle loading & initial states
-              if (state is ChamaInitial || state is ChamaProfileLoading || state is ChamaSavingsLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              // Not a member → show onboarding
               if (state is ChamaNotMember) {
                 return OnBoardFlexChama(
                   onOptIn: _onOptIn,
@@ -91,11 +84,14 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
                 );
               }
 
-              // Profile + savings fetched → show FlexChama
-              if (state is ChamaProfileFetched || state is ChamaSavingsFetched) {
+              if (state is ChamaProfileFetched ||
+                  state is ChamaSavingsFetched ||
+                  state is ChamaSavingsLoading) {
                 final profile = (state is ChamaProfileFetched)
-                    ? state.profile
-                    : (state as ChamaSavingsFetched).savingsResponse.data!.chamaDetails;
+                  ? state.profile
+                  : (state is ChamaSavingsFetched)
+                      ? state.savingsResponse.data?.chamaDetails
+                      : (state as ChamaSavingsLoading).previousProfile;
 
                 if (showOnBoard) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -108,17 +104,18 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
                 return FlexChama(profile: profile);
               }
 
-              // Fallback loader
+              if (state is ChamaInitial || state is ChamaProfileLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
               return const Center(child: CircularProgressIndicator());
             },
           ),
         ),
-
         BlocProvider.value(
           value: bookingsCubit,
           child: const BookingsPage(),
         ),
-
         BlocProvider.value(
           value: merchantsCubit,
           child: MerchantsScreen(),
@@ -137,28 +134,32 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   Widget build(BuildContext context) {
     bool hideNavBar = _currentIndex == 2 && showOnBoard;
 
-    return WillPopScope(
-      onWillPop: () async {
-        if (_currentIndex != 0) {
-          setState(() {
-            _currentIndex = 0;
-          });
+    // PROVIDE ChamaCubit once here for all children
+    return BlocProvider.value(
+      value: chamaCubit,
+      child: WillPopScope(
+        onWillPop: () async {
+          if (_currentIndex != 0) {
+            setState(() {
+              _currentIndex = 0;
+            });
+            return false;
+          }
           return false;
-        }
-        return false;
-      },
-      child: Scaffold(
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _pages,
+        },
+        child: Scaffold(
+          body: IndexedStack(
+            index: _currentIndex,
+            children: _pages,
+          ),
+          bottomNavigationBar: hideNavBar
+              ? null
+              : BottomNavBar(
+                  currentIndex: _currentIndex,
+                  onTabTapped: _onTabTapped,
+                  items: _navItems,
+                ),
         ),
-        bottomNavigationBar: hideNavBar
-            ? null
-            : BottomNavBar(
-                currentIndex: _currentIndex,
-                onTabTapped: _onTabTapped,
-                items: _navItems,
-              ),
       ),
     );
   }

@@ -1,13 +1,19 @@
+import 'dart:math';
 import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_state.dart';
 import 'package:flexpay/features/flexchama/ui/appbar_chama_home.dart';
+import 'package:flexpay/features/flexchama/ui/shimmer_chama_products.dart';
 import 'package:flexpay/routes/app_routes.dart';
 import 'package:flexpay/utils/services/service_repo.dart';
+import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shimmer/shimmer.dart';
+
+import '../../../utils/services/logger.dart';
 
 class FlexChama extends StatefulWidget {
   final dynamic profile;
@@ -18,11 +24,8 @@ class FlexChama extends StatefulWidget {
 }
 
 class _FlexChamaState extends State<FlexChama> {
-  @override
-  void initState() {
-    super.initState();
-    // Trigger fetch on init
-    // context.read<ChamaCubit>().fetchChamaUserSavings();
+  Future<void> _refresh() async {
+    await context.read<ChamaCubit>().fetchChamaUserSavings();
   }
 
   @override
@@ -31,14 +34,12 @@ class _FlexChamaState extends State<FlexChama> {
     final bool isSystemDarkMode =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
 
-    final Color backgroundColor = isSystemDarkMode
-        ? Colors.black
-        : Colors.white;
+    final Color backgroundColor =
+        isSystemDarkMode ? Colors.black : Colors.white;
     final Color textColor = isSystemDarkMode ? Colors.white : Colors.black;
     final Color cardColor = isSystemDarkMode ? Colors.grey[900]! : Colors.white;
-    final highlightColor = isSystemDarkMode
-        ? Colors.blueAccent
-        : Color(0xFF57A5D8);
+    final highlightColor =
+        isSystemDarkMode ? Colors.blueAccent : const Color(0xFF57A5D8);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -46,68 +47,90 @@ class _FlexChamaState extends State<FlexChama> {
         preferredSize: Size.fromHeight(screenHeight * 0.48),
         child: AppBarChama(context),
       ),
-      body: BlocBuilder<ChamaCubit, ChamaState>(
+      body:  BlocListener<ChamaCubit, ChamaState>(
+        listener: (context, state) {
+    if (state is ChamaSavingsFetched &&
+        state.savingsResponse.statusCode != 400 &&
+        state.savingsResponse.errors?.isNotEmpty == true) {
+      final response = state.savingsResponse;
+      // Only show snackbar for non-400 errors
+      if ((response.errors?.isNotEmpty ?? false) &&
+          response.statusCode != 400) {
+        final errorMsg = response.errors!.first.toString();
+        CustomSnackBar.showError(
+          context,
+          title: "Error",
+          message: errorMsg,
+        );
+      } else if (response.statusCode == 400) {
+        AppLogger.log("ℹ️ 400 error ignored for UI: ${response.errors?.first}");
+      }
+    }
+  },
+   
+      child: BlocBuilder<ChamaCubit, ChamaState>(
         builder: (context, state) {
+          // Show shimmer during loading
+          if (state is ChamaSavingsLoading) {
+            return const FlexChamaShimmer();
+          }
+          // Show error
+          if (state is ChamaError) {
+            return Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
+
+          // Set default balances
           int loanBalance = 0;
           int loanLimit = 0;
-          int maturedSavings = 0;
-
           if (state is ChamaSavingsFetched) {
             final chamaDetails = state.savingsResponse.data!.chamaDetails;
-            maturedSavings = chamaDetails.withdrawableAmount;
             loanBalance = chamaDetails.loanTaken;
             loanLimit = chamaDetails.loanLimit;
           }
 
-          if (state is ChamaSavingsLoading) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          if (state is ChamaError) {
-            return Center(
-              child: Text(state.message, style: TextStyle(color: Colors.red)),
-            );
-          }
-
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Padding(
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            color: highlightColor,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.all(16.0.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Loan Balance & Limit Cards
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildBalanceCard(
-                        FontAwesomeIcons.creditCard,
-                        'Loan Balance',
-                        // 'Kshs $loanBalance',
-                        'Kshs ${AppUtils.formatAmount(loanBalance)}',
-
-                        Colors.green,
-                        textColor,
-                        cardColor,
-                      ),
-                      _buildBalanceCard(
-                        FontAwesomeIcons.handHoldingDollar,
-                        'Loan Limit',
-                        'Kshs ${AppUtils.formatAmount(loanLimit)}',
-                        Colors.orange,
-                        textColor,
-                        cardColor,
-                      ),
+                      state is ChamaSavingsLoading
+                          ? _buildShimmerBalanceCard(cardColor, highlightColor)
+                          : _buildBalanceCard(
+                              FontAwesomeIcons.creditCard,
+                              'Loan Balance',
+                              'Kshs ${AppUtils.formatAmount(loanBalance)}',
+                              Colors.green,
+                              textColor,
+                              cardColor,
+                            ),
+                      state is ChamaSavingsLoading
+                          ? _buildShimmerBalanceCard(cardColor, highlightColor)
+                          : _buildBalanceCard(
+                              FontAwesomeIcons.handHoldingDollar,
+                              'Loan Limit',
+                              'Kshs ${AppUtils.formatAmount(loanLimit)}',
+                              Colors.orange,
+                              textColor,
+                              cardColor,
+                            ),
                     ],
                   ),
-                  // SizedBox(height: 20.h),
-                  // _buildBalanceCard(
-                  //     FontAwesomeIcons.wallet,
-                  //     'Matured Savings',
-                  //     'Kshs $maturedSavings',
-                  //     Colors.blue,
-                  //     textColor,
-                  //     cardColor),
                   SizedBox(height: 20.h),
+
+                  // Chamas card
                   GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, Routes.viewChamas);
@@ -122,6 +145,8 @@ class _FlexChamaState extends State<FlexChama> {
                     ),
                   ),
                   SizedBox(height: 20.h),
+
+                  // Transactions
                   Text(
                     'Transactions',
                     style: GoogleFonts.montserrat(
@@ -131,35 +156,55 @@ class _FlexChamaState extends State<FlexChama> {
                     ),
                   ),
                   SizedBox(height: 10.h),
-                  if (state is ChamaSavingsFetched)
-                    ListView.builder(
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount:
-                          state.savingsResponse.data!.payments.data.length,
-                      itemBuilder: (context, index) {
-                        final payment =
-                            state.savingsResponse.data!.payments.data[index];
-                        return _buildTransactionRow(
-                          payment.createdAt,
-                          payment.paymentSource,
-                          // payment.paymentAddress,
-                          // 'Kshs ${payment.paymentAmount}',
-                          'Kshs ${AppUtils.formatAmount(payment.paymentAmount)}',
-                          textColor,
-                          cardColor,
+
+                  if (state is ChamaSavingsFetched) ...[
+                    Builder(
+                      builder: (_) {
+                        final payments = state.savingsResponse.data?.payments.data ?? [];
+
+                        if (payments.isEmpty) {
+                          return Padding(
+                            padding: EdgeInsets.all(16.w),
+                            child: Text(
+                              "No Payments yet",
+                              style: GoogleFonts.montserrat(
+                                fontSize: 14.sp,
+                                fontStyle: FontStyle.italic,
+                                color: textColor,
+                              ),
+                            ),
+                          );
+                        }
+
+                        return ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: min(5, payments.length),
+                          itemBuilder: (context, index) {
+                            final payment = payments[index];
+                            return _buildTransactionRow(
+                              payment.createdAt,
+                              payment.paymentSource,
+                              'Kshs ${AppUtils.formatAmount(payment.paymentAmount)}',
+                              textColor,
+                              cardColor,
+                            );
+                          },
                         );
                       },
                     ),
-                ],
+                  ],
+                  ],
               ),
             ),
           );
         },
       ),
+      ),
     );
   }
 
+  // Original balance card
   Widget _buildBalanceCard(
     IconData icon,
     String title,
@@ -206,6 +251,34 @@ class _FlexChamaState extends State<FlexChama> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Shimmer balance card
+  Widget _buildShimmerBalanceCard(Color cardColor, Color highlightColor) {
+    final baseColor = Colors.grey[300]!;
+    return Container(
+      width: 160.w,
+      height: 144.h,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Shimmer.fromColors(
+        baseColor: baseColor,
+        highlightColor: highlightColor,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(width: 28.sp, height: 28.sp, color: baseColor),
+            SizedBox(height: 10.h),
+            Container(width: 80.w, height: 12.h, color: baseColor),
+            SizedBox(height: 5.h),
+            Container(width: 100.w, height: 18.h, color: baseColor),
+          ],
+        ),
       ),
     );
   }
@@ -267,7 +340,6 @@ class _FlexChamaState extends State<FlexChama> {
   Widget _buildTransactionRow(
     String date,
     String description,
-    // String method,
     String amount,
     Color textColor,
     Color cardColor,
@@ -282,10 +354,8 @@ class _FlexChamaState extends State<FlexChama> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            date,
-            style: GoogleFonts.montserrat(fontSize: 14.sp, color: textColor),
-          ),
+          Text(date,
+              style: GoogleFonts.montserrat(fontSize: 14.sp, color: textColor)),
           SizedBox(width: 20.w),
           Expanded(
             child: Text(
@@ -294,16 +364,11 @@ class _FlexChamaState extends State<FlexChama> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          // Text(method,
-          //     style: GoogleFonts.montserrat(fontSize: 14.sp, color: textColor)),
-          Text(
-            amount,
-            style: GoogleFonts.montserrat(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
-          ),
+          Text(amount,
+              style: GoogleFonts.montserrat(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.bold,
+                  color: textColor)),
         ],
       ),
     );

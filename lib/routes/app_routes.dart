@@ -1,23 +1,3 @@
-// import 'package:flexpromoter/features/auth/ui/otpverification.dart';
-// import 'package:flexpromoter/features/bookings/cubit/make_booking_cubit.dart';
-// import 'package:flexpromoter/features/bookings/ui/booking_details.dart';
-// import 'package:flexpromoter/features/bookings/ui/bookings.dart';
-// import 'package:flexpromoter/features/bookings/ui/make_bookings.dart';
-// import 'package:flexpromoter/features/commissions/cubit/commissions_cubit.dart';
-// import 'package:flexpromoter/features/commissions/ui/commissions.dart';
-// import 'package:flexpromoter/features/leaderboard/ui/leaderboard_screen.dart';
-// import 'package:flexpromoter/features/leaderboard/cubit/leaderboard_cubit.dart';
-// import 'package:flexpromoter/features/leaderboard/repo/leaderboard_repository.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:flexpromoter/features/auth/cubit/auth_cubit.dart';
-// import 'package:flexpromoter/features/auth/repo/auth_repo.dart';
-// import 'package:flexpromoter/features/auth/ui/login.dart';
-// import 'package:flexpromoter/features/home/ui/home.dart';
-// import 'package:flexpromoter/features/onboarding/splash_screen.dart';
-// import 'package:flexpromoter/features/onboarding/onboarding_screen.dart';
-// import 'package:flexpromoter/features/commissions/repo/commission_repo.dart';
-// import 'package:flexpromoter/features/bookings/cubit/bookings_cubit.dart';
-// import 'package:flexpromoter/features/bookings/repo/bookings_repo.dart';
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/auth/cubit/auth_cubit.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
@@ -30,13 +10,10 @@ import 'package:flexpay/features/bookings/repo/bookings_repo.dart';
 import 'package:flexpay/features/bookings/ui/bookings.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
 import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
+import 'package:flexpay/features/flexchama/ui/chama_reg.dart';
 import 'package:flexpay/features/flexchama/ui/viewchama.dart';
 import 'package:flexpay/features/goals/ui/goals.dart';
-
-import 'package:flexpay/features/home/ui/homescreen.dart';
-
 import 'package:flexpay/features/auth/ui/onboarding_screen.dart';
-
 import 'package:flexpay/features/auth/ui/splash_screen.dart';
 import 'package:flexpay/features/merchants/cubits/merchant_cubit.dart';
 import 'package:flexpay/features/merchants/repo/merchants_repo.dart';
@@ -77,6 +54,11 @@ class AppRoutes {
 
     Routes.goals: (context) => GoalsPage(),
 
+    Routes.registerChama: (context) => 
+    BlocProvider.value(
+      value: chamaCubit,
+      child: ChamaRegistrationPage(),
+    ),
     
 
     Routes.viewChamas: (context) =>
@@ -98,7 +80,7 @@ class Routes {
   static const otp = '/otp';
   static const main = '/main';
   static const home = '/home';
-  static const flexchama = '/flexchama';
+  static const registerChama = '/registerChama';
   static const viewChamas = 'viewChamas';
   static const goals = 'goals';
   static const bookings = '/bookings';

@@ -1,8 +1,9 @@
 import 'package:flexpay/features/flexchama/ui/chama_reg.dart';
+import 'package:flexpay/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
-import 'package:flexpay/gen/colors.gen.dart'; 
+import 'package:flexpay/gen/colors.gen.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
 
 class OnBoardFlexChama extends StatelessWidget {
@@ -22,8 +23,9 @@ class OnBoardFlexChama extends StatelessWidget {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    final textTheme =
-        GoogleFonts.montserratTextTheme(Theme.of(context).textTheme);
+    final textTheme = GoogleFonts.montserratTextTheme(
+      Theme.of(context).textTheme,
+    );
 
     return Scaffold(
       body: Stack(
@@ -121,10 +123,7 @@ class OnBoardFlexChama extends StatelessWidget {
                     height: 52,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ChamaRegistrationPage()),
-                        );
+                        Navigator.pushNamed(context, Routes.registerChama);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: ColorName.primaryColor,
@@ -149,7 +148,9 @@ class OnBoardFlexChama extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => NavigationWrapper(
-                              userModel: userModel, initialIndex: 0),
+                            userModel: userModel,
+                            initialIndex: 0,
+                          ),
                         ),
                       );
                     },
