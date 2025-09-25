@@ -2,7 +2,9 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'chama_products_model.g.dart';
 
-/// Represents a single Chama Product
+/// ------------------------------
+/// ✅ MODEL FOR ALL PRODUCTS OFFERED
+/// ------------------------------
 @JsonSerializable()
 class ChamaProduct {
   final int id;
@@ -31,7 +33,6 @@ class ChamaProduct {
   Map<String, dynamic> toJson() => _$ChamaProductToJson(this);
 }
 
-/// Represents the entire backend response
 @JsonSerializable()
 class ChamaProductsResponse {
   final List<ChamaProduct> data;
@@ -52,4 +53,50 @@ class ChamaProductsResponse {
       _$ChamaProductsResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$ChamaProductsResponseToJson(this);
+}
+
+/// ------------------------------
+/// ✅ MODEL FOR USER’S OWN CHAMAS
+/// ------------------------------
+
+@JsonSerializable()
+class UserChama {
+  final int id;
+  final String name;
+
+  @JsonKey(name: 'total_savings')
+  final String totalSavings;
+
+  UserChama({
+    required this.id,
+    required this.name,
+    required this.totalSavings,
+  });
+
+  factory UserChama.fromJson(Map<String, dynamic> json) =>
+      _$UserChamaFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserChamaToJson(this);
+}
+
+@JsonSerializable()
+class UserChamasResponse {
+  final List<UserChama> data;
+  final List<dynamic> errors;
+  final bool success;
+
+  @JsonKey(name: 'status_code')
+  final int statusCode;
+
+  UserChamasResponse({
+    required this.data,
+    required this.errors,
+    required this.success,
+    required this.statusCode,
+  });
+
+  factory UserChamasResponse.fromJson(Map<String, dynamic> json) =>
+      _$UserChamasResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserChamasResponseToJson(this);
 }

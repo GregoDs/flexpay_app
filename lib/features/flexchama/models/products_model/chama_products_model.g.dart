@@ -42,3 +42,33 @@ Map<String, dynamic> _$ChamaProductsResponseToJson(
   'success': instance.success,
   'status_code': instance.statusCode,
 };
+
+UserChama _$UserChamaFromJson(Map<String, dynamic> json) => UserChama(
+  id: (json['id'] as num).toInt(),
+  name: json['name'] as String,
+  totalSavings: json['total_savings'] as String,
+);
+
+Map<String, dynamic> _$UserChamaToJson(UserChama instance) => <String, dynamic>{
+  'id': instance.id,
+  'name': instance.name,
+  'total_savings': instance.totalSavings,
+};
+
+UserChamasResponse _$UserChamasResponseFromJson(Map<String, dynamic> json) =>
+    UserChamasResponse(
+      data: (json['data'] as List<dynamic>)
+          .map((e) => UserChama.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      errors: json['errors'] as List<dynamic>,
+      success: json['success'] as bool,
+      statusCode: (json['status_code'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$UserChamasResponseToJson(UserChamasResponse instance) =>
+    <String, dynamic>{
+      'data': instance.data,
+      'errors': instance.errors,
+      'success': instance.success,
+      'status_code': instance.statusCode,
+    };

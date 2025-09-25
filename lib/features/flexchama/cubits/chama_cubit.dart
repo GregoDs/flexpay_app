@@ -14,9 +14,6 @@ class ChamaCubit extends Cubit<ChamaState> {
 
   ChamaCubit(this._repo) : super(ChamaInitial());
 
-
-
-
   /// ---------------- Fetch Profile ----------------
   Future<void> fetchChamaUserProfile() async {
     emit(ChamaProfileLoading());
@@ -55,10 +52,6 @@ class ChamaCubit extends Cubit<ChamaState> {
     }
   }
 
-
-
-
-
   /// ---------------- Fetch Chama User Savings ----------------
   Future<void> fetchChamaUserSavings() async {
     emit(ChamaSavingsLoading(previousProfile: _currentProfile));
@@ -67,27 +60,20 @@ class ChamaCubit extends Cubit<ChamaState> {
 
     // ✅ Always emit Fetched so FlexChama page renders
     emit(ChamaSavingsFetched(savingsResponse));
-    
 
-    // ✅ Show error if there is one in the logs..the user doesnt need to see the errors here 
+    // ✅ Show error if there is one in the logs..the user doesnt need to see the errors here
     // Show snackbar only for non-400 errors
-  if (savingsResponse.errors?.isNotEmpty ?? false) {
-    final errorMsg = savingsResponse.errors!.first.toString();
+    if (savingsResponse.errors?.isNotEmpty ?? false) {
+      final errorMsg = savingsResponse.errors!.first.toString();
 
-    if (!errorMsg.toLowerCase().contains("member product not found")) {
-      // Show error only for serious errors
-      AppLogger.log("⚠️ Non-400 error: $errorMsg");
-    } else {
-      AppLogger.log("ℹ️ 400 error ignored for UI: $errorMsg");
+      if (!errorMsg.toLowerCase().contains("member product not found")) {
+        // Show error only for serious errors
+        AppLogger.log("⚠️ Non-400 error: $errorMsg");
+      } else {
+        AppLogger.log("ℹ️ 400 error ignored for UI: $errorMsg");
+      }
     }
   }
-  }
-
-
-
-
-
-
 
   /// ---------------- Register Chama User ----------------
   Future<void> registerChamaUser({
@@ -131,18 +117,68 @@ class ChamaCubit extends Cubit<ChamaState> {
     }
   }
 
+  /// ---------------- Get All Chama Products ----------------
+  Future<void> getAllChamaProducts({required String type}) async {
+    emit(ChamaAllProductsLoading());
+
+    try {
+      final response = await _repo.getAllChamaProducts(type: type);
+      emit(ChamaAllProductsFetched(response));
+      
+    } catch (e) {
+      emit(ChamaAllProductsFailure(e.toString()));
+    }
+  }
+
+  /// ---------------- Get User Chamas  ----------------
+  Future<void> getUserChamas() async {
+    emit(UserChamasLoading());
+
+    try {
+      final response = await _repo.getUserChamas();
+      emit(UserChamasFetched(response));
+    } catch (e) {
+      emit(UserChamasFailure(e.toString()));
+    }
+  }
 
 
-/// ---------------- Get All Chama Products ----------------
-Future<void> getAllChamaProducts({required String type}) async {
-  emit(ChamaAllProductsLoading());
 
-  try {
-    final response = await _repo.getAllChamaProducts(type: type);
-    emit(ChamaAllProductsFetched(response));
-  } catch (e) {
-    emit(ChamaAllProductsFailure(e.toString()));
+   /// ---------------- Fetch All At Once ----------------
+  Future<void> fetchAllChamaDetails({String type = "yearly", bool refreshListOnly = false}) async {
+    // 👉 if refreshListOnly = true → only shimmer the list, not wallet
+    if (refreshListOnly) {
+      emit(
+        ChamaViewState(
+          isListLoading: true,
+          isWalletLoading: false,
+          savings: state is ChamaViewState ? (state as ChamaViewState).savings : null,
+          userChamas: state is ChamaViewState ? (state as ChamaViewState).userChamas : null,
+          allProducts: state is ChamaViewState ? (state as ChamaViewState).allProducts : null,
+        ),
+      );
+    } else {
+      // 👉 full page loading (first time)
+      emit(const ChamaViewState(isWalletLoading: true, isListLoading: true));
+    }
+
+    try {
+      final savings = await _repo.fetchUserChamaSavings();
+      final userChamas = await _repo.getUserChamas();
+      final products = await _repo.getAllChamaProducts(type: type);
+
+      emit(
+        ChamaViewState(
+          isWalletLoading: false,
+          isListLoading: false,
+          savings: savings,
+          userChamas: userChamas,
+          allProducts: products,
+        ),
+      );
+    } catch (e) {
+      emit(ChamaError(e.toString()));
+    }
   }
 }
 
-}

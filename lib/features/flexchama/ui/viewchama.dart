@@ -8,8 +8,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 
-import '../../../utils/services/logger.dart';
-
 class ViewChamas extends StatefulWidget {
   const ViewChamas({super.key});
 
@@ -42,62 +40,67 @@ class _ViewChamasState extends State<ViewChamas> {
   @override
   void initState() {
     super.initState();
-    context.read<ChamaCubit>().fetchChamaUserSavings();
+    _fetchOurChamas(refreshListOnly: false);
   }
 
-  void _fetchOurChamas() {
-    final type = isYearly ? "yearly" : "half_yearly";
-    context.read<ChamaCubit>().getAllChamaProducts(type: type);
-  }
+  void _fetchOurChamas({bool refreshListOnly = false}) {
+  final type = isYearly ? "yearly" : "half_yearly";
+  context.read<ChamaCubit>().fetchAllChamaDetails(
+        type: type,
+        refreshListOnly: refreshListOnly,
+      );
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
-        child: BlocListener<ChamaCubit, ChamaState>(
+        child: BlocConsumer<ChamaCubit, ChamaState>(
           listener: (context, state) {
-            if (state is ChamaSavingsFetched &&
-                state.savingsResponse.statusCode != 400 &&
-                state.savingsResponse.errors?.isNotEmpty == true) {
-              final response = state.savingsResponse;
-              if ((response.errors?.isNotEmpty ?? false) &&
-                  response.statusCode != 400) {
-                final errorMsg = response.errors!.first.toString();
+            if (state is ChamaViewState) {
+              final response = state.savings;
+              if (response != null && response.errors?.isNotEmpty == true) {
                 CustomSnackBar.showError(
                   context,
                   title: "Error",
-                  message: errorMsg,
+                  message: response.errors!.first.toString(),
                 );
-              } else if (response.statusCode == 400) {
-                AppLogger.log("ℹ️ 400 error ignored for UI: ${response.errors?.first}");
               }
             }
           },
-          child: BlocBuilder<ChamaCubit, ChamaState>(
-            builder: (context, state) {
-              String totalSavings = "_";
-              String maturityDate = "_";
-              double progress = 0.0;
-              String progressText = "0%";
+          builder: (context, state) {
+            if (state is! ChamaViewState) {
+              return const FlexChamaShimmer();
+            }
 
-              myChamaCount = 0;
-              ourChamasCount = 0;
+            final ChamaViewState view = state;
 
-              if (state is ChamaSavingsFetched) {
-                final chamaDetails = state.savingsResponse.data?.chamaDetails;
-                if (chamaDetails != null) {
-                  myChamaCount = 1;
-                  totalSavings = chamaDetails.totalSavings.toString();
-                  maturityDate = chamaDetails.maturityDate;
-                }
+            myChamaCount = view.userChamas?.data.length ?? 0;
+            ourChamasCount = view.allProducts?.data.length ?? 0;
+
+            String totalSavings = "_";
+            String maturityDate = "_";
+            double progress = 0.0;
+            String progressText = "0%";
+
+            final chamaDetails = view.savings?.data?.chamaDetails;
+            if (chamaDetails != null) {
+              totalSavings = chamaDetails.totalSavings.toString();
+              maturityDate = chamaDetails.maturityDate;
+              if (chamaDetails.targetAmount > 0) {
+                progress =
+                    chamaDetails.totalSavings / chamaDetails.targetAmount;
+                progressText = "${(progress * 100).toStringAsFixed(1)}%";
               }
+            }
 
-              if (state is ChamaAllProductsFetched) {
-                ourChamasCount = state.productsResponse.data.length;
-              }
+            return RefreshIndicator(
+              onRefresh: () async {
+                _fetchOurChamas(refreshListOnly: false);
+              },
 
-              return SingleChildScrollView(
+              child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 child: Column(
@@ -108,8 +111,11 @@ class _ViewChamasState extends State<ViewChamas> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                          icon: Icon(Icons.arrow_back,
-                              color: textColor, size: 22.sp),
+                          icon: Icon(
+                            Icons.arrow_back,
+                            color: textColor,
+                            size: 22.sp,
+                          ),
                           onPressed: () => Navigator.pop(context),
                         ),
                         Center(
@@ -125,8 +131,11 @@ class _ViewChamasState extends State<ViewChamas> {
                             ),
                           ),
                         ),
-                        Icon(Icons.notifications_none,
-                            color: textColor, size: 22.sp),
+                        Icon(
+                          Icons.notifications_none,
+                          color: textColor,
+                          size: 22.sp,
+                        ),
                       ],
                     ),
                     SizedBox(height: 8.h),
@@ -142,26 +151,23 @@ class _ViewChamasState extends State<ViewChamas> {
                     ),
                     SizedBox(height: 16.h),
 
-                    if (state is ChamaSavingsLoading)
-                      const WalletShimmer()
-                    else
-                      _buildWalletCard(
+                   view.isWalletLoading
+                    ? const WalletShimmer()
+                    : _buildWalletCard(
                         totalSavings,
                         maturityDate,
                         progress,
                         progressText,
                       ),
 
+
+
                     SizedBox(height: 20.h),
                     _buildCampaignCard(context),
                     SizedBox(height: 20.h),
 
-                    /// Chama Cards Row
-                    if (state is ChamaSavingsLoading ||
-                        state is ChamaAllProductsLoading)
-                      const ChamaCardsRowShimmer()
-                    else
-                      _buildChamaCardsRow(),
+                    
+                         _buildChamaCardsRow(),
 
                     SizedBox(height: 24.h),
 
@@ -211,55 +217,80 @@ class _ViewChamasState extends State<ViewChamas> {
                           SizedBox(height: 16.h),
 
                           if (selectedChamaType == 1 &&
-                              state is ChamaSavingsLoading)
+                              view.userChamas == null &&
+                              view.isListLoading)
                             const MyChamaListShimmer(),
-
                           if (selectedChamaType == 1 &&
-                              state is ChamaSavingsFetched)
-                            _ChamaListItem(
-                              icon: Icons.group,
-                              title: "My Chama Plan",
-                              savings: "KES $totalSavings",
-                              onSave: () {},
-                            ),
-
-                          if (selectedChamaType == 2 &&
-                              state is ChamaAllProductsLoading)
-                            const OurChamaListShimmer(),
-
-                          if (selectedChamaType == 2 &&
-                              state is ChamaAllProductsFetched)
-                            ...List.generate(
-                              state.productsResponse.data.length,
-                              (index) {
-                                final product =
-                                    state.productsResponse.data[index];
+                              view.userChamas != null) ...[
+                            if (view.userChamas!.data.isEmpty)
+                              Center(
+                                child: Text(
+                                  "You don’t have any chamas yet.",
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 14.sp,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              )
+                            else
+                              ...List.generate(view.userChamas!.data.length, (
+                                index,
+                              ) {
+                                final chama = view.userChamas!.data[index];
                                 return Padding(
                                   padding: EdgeInsets.only(bottom: 14.h),
                                   child: _ChamaListItem(
-                                    icon: Icons.savings,
-                                    title: product.name,
-                                    savings: "KES ${product.targetAmount}",
-                                    onSave: () {},
+                                    icon: Icons.group,
+                                    title: chama.name,
+                                    savings: "KES ${chama.totalSavings}",
+                                    onSave: () {
+                                      // TODO
+                                    },
                                   ),
                                 );
-                              },
-                            ),
+                              }),
+                          ],
+
+                          if (selectedChamaType == 2 &&
+                              view.allProducts == null &&
+                              view.isListLoading)
+                            const OurChamaListShimmer(),
+                          if (selectedChamaType == 2 &&
+                              view.allProducts != null)
+                            ...List.generate(view.allProducts!.data.length, (
+                              index,
+                            ) {
+                              final product = view.allProducts!.data[index];
+                              return Padding(
+                                padding: EdgeInsets.only(bottom: 14.h),
+                                child: _ChamaListItem(
+                                  icon: Icons.savings,
+                                  title: product.name,
+                                  savings: "KES ${product.targetAmount}",
+                                  onSave: () {},
+                                ),
+                              );
+                            }),
                         ],
                       ),
                     ),
                   ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
   /// ✅ Wallet card helper
-  Widget _buildWalletCard(String savings, String maturity, double progress, String progressText) {
+  Widget _buildWalletCard(
+    String savings,
+    String maturity,
+    double progress,
+    String progressText,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20.w),
@@ -276,33 +307,42 @@ class _ViewChamasState extends State<ViewChamas> {
               color: const Color(0xFFE6F7FB),
               borderRadius: BorderRadius.circular(12.r),
             ),
-            child: Icon(Icons.account_balance_wallet,
-                color: primaryColor, size: 26.sp),
+            child: Icon(
+              Icons.account_balance_wallet,
+              color: primaryColor,
+              size: 26.sp,
+            ),
           ),
           SizedBox(width: 14.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Savings Balance",
-                    style: GoogleFonts.montserrat(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      color: primaryColor,
-                    )),
-                FittedBox(
-                  child: Text(savings,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 32.sp,
-                        fontWeight: FontWeight.w600,
-                        color: textColor,
-                      )),
+                Text(
+                  "Savings Balance",
+                  style: GoogleFonts.montserrat(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: primaryColor,
+                  ),
                 ),
-                Text("Maturity date: $maturity",
+                FittedBox(
+                  child: Text(
+                    savings,
                     style: GoogleFonts.montserrat(
-                      fontSize: 11.sp,
+                      fontSize: 32.sp,
+                      fontWeight: FontWeight.w600,
                       color: textColor,
-                    )),
+                    ),
+                  ),
+                ),
+                Text(
+                  "Maturity date: $maturity",
+                  style: GoogleFonts.montserrat(
+                    fontSize: 11.sp,
+                    color: textColor,
+                  ),
+                ),
                 SizedBox(height: 10.h),
                 Row(
                   children: [
@@ -313,8 +353,11 @@ class _ViewChamasState extends State<ViewChamas> {
                         color: Colors.blue.withOpacity(0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.calendar_month,
-                          color: Colors.blue, size: 16.sp),
+                      child: Icon(
+                        Icons.calendar_month,
+                        color: Colors.blue,
+                        size: 16.sp,
+                      ),
                     ),
                     SizedBox(width: 10.w),
                     Expanded(
@@ -324,20 +367,21 @@ class _ViewChamasState extends State<ViewChamas> {
                           value: progress,
                           minHeight: 6.h,
                           backgroundColor: Colors.blue.withOpacity(0.15),
-                          valueColor:
-                              const AlwaysStoppedAnimation(Colors.blue),
+                          valueColor: const AlwaysStoppedAnimation(Colors.blue),
                         ),
                       ),
                     ),
                     SizedBox(width: 10.w),
-                    Text(progressText,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        )),
+                    Text(
+                      progressText,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
+                    ),
                   ],
-                )
+                ),
               ],
             ),
           ),
@@ -354,7 +398,7 @@ class _ViewChamasState extends State<ViewChamas> {
           child: GestureDetector(
             onTap: () => setState(() {
               selectedChamaType = 1;
-              context.read<ChamaCubit>().fetchChamaUserSavings();
+              _fetchOurChamas();
             }),
             child: _buildSelectedChamaCard(
               FontAwesomeIcons.creditCard,
@@ -434,8 +478,6 @@ Widget _buildCampaignCard(BuildContext context) {
 }
 
 void _showCampaignModal(BuildContext context) {
-  bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.white,

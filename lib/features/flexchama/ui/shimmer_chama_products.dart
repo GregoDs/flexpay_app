@@ -264,7 +264,7 @@ class MyChamaListShimmer extends StatelessWidget {
 }
 
 /// =====================
-/// Our Chama List Shimmer
+/// Our Chama List Shimmer (fixed to look like MyChamaListShimmer)
 /// =====================
 class OurChamaListShimmer extends StatelessWidget {
   const OurChamaListShimmer({super.key});
@@ -276,21 +276,36 @@ class OurChamaListShimmer extends StatelessWidget {
     final base = isDark ? Colors.grey[800]! : Colors.grey[300]!;
     final highlight = isDark ? Colors.grey[700]! : Colors.grey[100]!;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Transactions',
-          style: GoogleFonts.montserrat(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: 24.h),
+      padding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 14.w),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(22.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header placeholders
+          Row(
+            children: [
+              _rectShimmer(base, highlight, 80.w, 16.h),
+              SizedBox(width: 24.w),
+              _rectShimmer(base, highlight, 100.w, 16.h),
+            ],
           ),
-        ),
-        SizedBox(height: 10.h),
-        for (int i = 0; i < 5; i++)
-          _buildTransactionRowShimmer(base, highlight, cardColor),
-      ],
+          SizedBox(height: 20.h),
+          _rectShimmer(base, highlight, 120.w, 14.h),
+          SizedBox(height: 18.h),
+
+          // Placeholder list items
+          for (int i = 0; i < 3; i++) ...[
+            _buildChamaListItemShimmer(base, highlight, cardColor),
+            SizedBox(height: 18.h),
+          ],
+        ],
+      ),
     );
   }
 }

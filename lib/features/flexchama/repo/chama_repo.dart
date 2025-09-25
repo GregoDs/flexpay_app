@@ -11,7 +11,6 @@ import 'package:flexpay/utils/services/logger.dart';
 class ChamaRepo {
   final ApiService _apiService = ApiService();
 
-
   /// ---FETCH CHAMA USER PROFILE ---///
   Future<ChamaProfile?> fetchChamaUserProfile() async {
     try {
@@ -65,14 +64,6 @@ class ChamaRepo {
     }
   }
 
-
-
-
-
-
-
-
-
   ///--- REGISTER NEW CHAMA MEMBER ---///
   Future<ChamaRegistrationResponse> registerChamaUser({
     required String firstName,
@@ -125,22 +116,14 @@ class ChamaRepo {
     }
   }
 
-
-
-
-
-
-
-
-
   ///---FETCH CHAMA SAVINGS---///
   Future<ChamaSavingsResponse> fetchUserChamaSavings() async {
     try {
       final userModel = await SharedPreferencesHelper.getUserModel();
-      final phoneNumber = userModel?.user.phoneNumber;
+      // final phoneNumber = userModel?.user.phoneNumber;
 
       //when testing fetch details for a new member using this
-      // final phoneNumber = '25470622077';
+      final phoneNumber = '254723005304';
 
       if (phoneNumber != null) {
         AppLogger.log("User phone number not found.");
@@ -206,44 +189,69 @@ class ChamaRepo {
     }
   }
 
-
-
-
-
-
-
-
-
   /// ---GET CHAMA PRODUCT ---///
-Future<ChamaProductsResponse> getAllChamaProducts({
-  required String type,
-}) async {
+  Future<ChamaProductsResponse> getAllChamaProducts({
+    required String type,
+  }) async {
+    try {
+      AppLogger.log("📥 Fetching all chama products for type: $type");
+
+      final url = "${ApiService.prodEndpointChama}/products";
+
+      final body = {"type": type};
+      final response = await _apiService.post(url, data: body);
+
+      final allChamasResponse = ChamaProductsResponse.fromJson(response.data);
+
+      if (allChamasResponse.errors.isNotEmpty) {
+        AppLogger.log("⚠️ Backend errors: ${allChamasResponse.errors}");
+        throw Exception(allChamasResponse.errors.first.toString());
+      }
+
+      final prettyJson = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(allChamasResponse.toJson());
+      AppLogger.log("📦 All Chamas Response:\n$prettyJson");
+
+      return allChamasResponse;
+    } catch (e) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in getAllChamaProducts: $message");
+      throw Exception(message);
+    }
+  }
+
+
+
+
+
+ /// ---GET USER'S CHAMAS ---///
+Future<UserChamasResponse> getUserChamas() async {
   try {
-    AppLogger.log("📥 Fetching all chama products for type: $type");
+    AppLogger.log("📥 Fetching user’s own chamas...");
+    final userModel = await SharedPreferencesHelper.getUserModel();
+    final phoneNumber = userModel?.user.phoneNumber;
+    //final phoneNumber = "254706622077";
 
-    final url = "${ApiService.prodEndpointChama}/products";
+    final url = "${ApiService.prodEndpointChama}/user-chamas/$phoneNumber"; 
+    final response = await _apiService.get(url);
 
-    final body = {"type": type};
-    final response = await _apiService.post(url, data: body);
+    final userChamasResponse = UserChamasResponse.fromJson(response.data);
 
-    final allChamasResponse = ChamaProductsResponse.fromJson(response.data);
-
-    if (allChamasResponse.errors.isNotEmpty) {
-      AppLogger.log("⚠️ Backend errors: ${allChamasResponse.errors}");
-      throw Exception(allChamasResponse.errors.first.toString());
+    if (userChamasResponse.errors.isNotEmpty) {
+      AppLogger.log("⚠️ Backend errors: ${userChamasResponse.errors}");
+      throw Exception(userChamasResponse.errors.first.toString());
     }
 
     final prettyJson = const JsonEncoder.withIndent('  ')
-        .convert(allChamasResponse.toJson());
-    AppLogger.log("📦 All Chamas Response:\n$prettyJson");
+        .convert(userChamasResponse.toJson());
+    AppLogger.log("📦 User Chamas Response:\n$prettyJson");
 
-    return allChamasResponse;
+    return userChamasResponse;
   } catch (e) {
     final message = ErrorHandler.handleGenericError(e);
-    AppLogger.log("❌ Error in getAllChamaProducts: $message");
+    AppLogger.log("❌ Error in getUserChamas: $message");
     throw Exception(message);
   }
 }
-
-  
 }

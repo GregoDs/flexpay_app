@@ -120,6 +120,34 @@ class ChamaAllProductsFailure extends ChamaState {
 }
 
 
+
+
+/// ---------------- Get Users Chamas States ----------------
+
+class UserChamasInitial extends ChamaState {}
+
+class UserChamasLoading extends ChamaState {}
+
+class UserChamasFetched extends ChamaState {
+  final UserChamasResponse productsResponse;
+
+  const UserChamasFetched(this.productsResponse);
+
+  @override
+  List<Object?> get props => [productsResponse];
+}
+
+class UserChamasFailure extends ChamaState {
+  final String message;
+
+  const UserChamasFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+
+
 /// ---------------- Error States ----------------
 class ChamaError extends ChamaState {
   final String message;
@@ -128,4 +156,41 @@ class ChamaError extends ChamaState {
 
   @override
   List<Object?> get props => [message];
+}
+
+/// ---------------- View Chama sub class ----------------
+
+class ChamaViewState extends ChamaState {
+  final bool isLoading;
+  final bool isWalletLoading;
+  final bool isListLoading;
+  final ChamaSavingsResponse? savings;
+  final UserChamasResponse? userChamas;
+  final ChamaProductsResponse? allProducts;
+
+  const ChamaViewState({
+    this.isLoading = false,
+    this.isListLoading =false,
+    this.isWalletLoading = false,
+    this.savings,
+    this.userChamas,
+    this.allProducts,
+  });
+
+  ChamaViewState copyWith({
+    bool? isLoading,
+    ChamaSavingsResponse? savings,
+    UserChamasResponse? userChamas,
+    ChamaProductsResponse? allProducts,
+  }) {
+    return ChamaViewState(
+      isLoading: isLoading ?? this.isLoading,
+      savings: savings ?? this.savings,
+      userChamas: userChamas ?? this.userChamas,
+      allProducts: allProducts ?? this.allProducts,
+    );
+  }
+
+  @override
+  List<Object?> get props => [isLoading, savings, userChamas, allProducts];
 }
