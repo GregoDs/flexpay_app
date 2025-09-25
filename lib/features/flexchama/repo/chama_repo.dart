@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'package:flexpay/features/flexchama/models/chama_profile_model/chama_profile_model.dart';
-import 'package:flexpay/features/flexchama/models/chama_reg_model/chama_reg_model.dart';
-import 'package:flexpay/features/flexchama/models/chama_savings_model/chama_savings_model.dart';
+import 'package:flexpay/features/flexchama/models/products_model/chama_products_model.dart';
+import 'package:flexpay/features/flexchama/models/profile_model/chama_profile_model.dart';
+import 'package:flexpay/features/flexchama/models/registration_model/chama_reg_model.dart';
+import 'package:flexpay/features/flexchama/models/savings_model/chama_savings_model.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/services/error_handler.dart';
@@ -10,12 +11,15 @@ import 'package:flexpay/utils/services/logger.dart';
 class ChamaRepo {
   final ApiService _apiService = ApiService();
 
-  /// Fetch the chama user profile for the logged-in user.
+
+  /// ---FETCH CHAMA USER PROFILE ---///
   Future<ChamaProfile?> fetchChamaUserProfile() async {
     try {
       final userModel = await SharedPreferencesHelper.getUserModel();
       final phoneNumber = userModel?.user.phoneNumber;
-      // final phoneNumber = "254706622073";
+
+      //when fetching details for a new member
+      // final phoneNumber = "254706622071"
 
       if (phoneNumber == null || phoneNumber.isEmpty) {
         throw Exception("User phone number not found in storage.");
@@ -61,75 +65,15 @@ class ChamaRepo {
     }
   }
 
-  /// FETCH CHAMA SAVINGS ///
-  Future<ChamaSavingsResponse> fetchUserChamaSavings() async {
-    try {
-      final userModel = await SharedPreferencesHelper.getUserModel();
-      final phoneNumber = userModel?.user.phoneNumber;
-      // final phoneNumber = "0706622077";
 
-      if (phoneNumber != null) {
-        AppLogger.log("User phone number not found.");
-      }
-      AppLogger.log("📞 Fetching User Chama savings for phone: $phoneNumber");
 
-      final url = "${ApiService.prodEndpointChama}/user-savings/$phoneNumber";
-      final response = await _apiService.get(url);
 
-      // ✅ Parse into response model
-      final chamaSavingsResponse = ChamaSavingsResponse.fromJson(response.data);
 
-      // 400: No member product → safe default
-      final isEmptyResponse =
-          chamaSavingsResponse.statusCode == 400 ||
-          chamaSavingsResponse.data?.chamaDetails == null;
 
-      if (isEmptyResponse) {
-        AppLogger.log("ℹ️ No valid savings found. Returning empty defaults.");
-        return ChamaSavingsResponse.empty(
-          errorMessage: chamaSavingsResponse.errors?.first,
-          statusCode: chamaSavingsResponse.statusCode,
-        );
-      }
 
-      // If success is false but not 400 → show snackbar
-      if (chamaSavingsResponse.success == false) {
-        AppLogger.log(
-          "⚠️ Non-400 error: ${chamaSavingsResponse.errors?.first}",
-        );
-        // propagate the error in the response so BlocListener can show snackbar
-        return ChamaSavingsResponse.empty(
-          errorMessage: chamaSavingsResponse.errors?.first ?? "Unknown error",
-          statusCode: chamaSavingsResponse.statusCode,
-        );
-      }
 
-      // ✅ Extract ChamaDetails for easier usage
-      final chamaDetails = chamaSavingsResponse.data?.chamaDetails;
-      if (chamaDetails == null) {
-        AppLogger.log("❌ No valid Chama savings found.");
-      }
-      // ✅ Pretty-print ChamaDetails JSON for debugging
-      final prettyJson = chamaSavingsResponse.data?.chamaDetails != null
-          ? const JsonEncoder.withIndent(
-              '  ',
-            ).convert(chamaSavingsResponse.data!.chamaDetails.toJson())
-          : null;
-      if (prettyJson != null) {
-        AppLogger.log("📦 Parsed Chama Savings:\n$prettyJson");
-      }
 
-      //if its a normal case return full response
-      return chamaSavingsResponse;
-
-    } catch (e) {
-      final message = ErrorHandler.handleGenericError(e);
-      AppLogger.log("❌ Error in fetchUserChamaSavings: $message");
-      return ChamaSavingsResponse.empty(errorMessage: message);
-    }
-  }
-
-  /// Registers a new Chama user
+  ///--- REGISTER NEW CHAMA MEMBER ---///
   Future<ChamaRegistrationResponse> registerChamaUser({
     required String firstName,
     required String lastName,
@@ -148,8 +92,8 @@ class ChamaRepo {
         "first_name": firstName,
         "last_name": lastName,
         "id_number": idNumber,
-        // "phone_number": phoneNumber,
-        "phone_number": "0706622077",
+        "phone_number": phoneNumber,
+        // "phone_number": "0706622077",
         "dob": dob ?? "",
         "gender": gender.toLowerCase() == "male" ? 1 : 2,
       };
@@ -180,4 +124,126 @@ class ChamaRepo {
       throw Exception(message);
     }
   }
+
+
+
+
+
+
+
+
+
+  ///---FETCH CHAMA SAVINGS---///
+  Future<ChamaSavingsResponse> fetchUserChamaSavings() async {
+    try {
+      final userModel = await SharedPreferencesHelper.getUserModel();
+      final phoneNumber = userModel?.user.phoneNumber;
+
+      //when testing fetch details for a new member using this
+      // final phoneNumber = '25470622077';
+
+      if (phoneNumber != null) {
+        AppLogger.log("User phone number not found.");
+      }
+      AppLogger.log("📞 Fetching User Chama savings for phone: $phoneNumber");
+
+      final url = "${ApiService.prodEndpointChama}/user-savings/$phoneNumber";
+      final response = await _apiService.get(url);
+
+      // ✅ Parse into response model
+      final chamaSavingsResponse = ChamaSavingsResponse.fromJson(response.data);
+
+      // 400: No member product → safe default
+      final isEmptyResponse =
+          chamaSavingsResponse.statusCode == 400 ||
+          chamaSavingsResponse.data?.chamaDetails == null;
+
+      if (isEmptyResponse) {
+        AppLogger.log("ℹ️ No valid savings found. Returning empty defaults.");
+        return ChamaSavingsResponse.empty(
+          errorMessage: chamaSavingsResponse.errors?.first,
+          statusCode: chamaSavingsResponse.statusCode,
+          isCriticalError: false, // normal safe empty
+        );
+      }
+
+      // Non-400 failure
+      if (chamaSavingsResponse.success == false) {
+        AppLogger.log(
+          "⚠️ Non-400 error: ${chamaSavingsResponse.errors?.first}",
+        );
+        return ChamaSavingsResponse.empty(
+          errorMessage: chamaSavingsResponse.errors?.first ?? "Unknown error",
+          statusCode: chamaSavingsResponse.statusCode,
+          isCriticalError: true, // mark as critical → UI shows "_"
+        );
+      }
+
+      // ✅ Extract ChamaDetails for easier usage
+      final chamaDetails = chamaSavingsResponse.data?.chamaDetails;
+      if (chamaDetails == null) {
+        AppLogger.log("❌ No valid Chama savings found.");
+      }
+      // ✅ Pretty-print ChamaDetails JSON for debugging
+      final prettyJson = chamaSavingsResponse.data?.chamaDetails != null
+          ? const JsonEncoder.withIndent(
+              '  ',
+            ).convert(chamaSavingsResponse.data!.chamaDetails.toJson())
+          : null;
+      if (prettyJson != null) {
+        AppLogger.log("📦 Parsed Chama Savings:\n$prettyJson");
+      }
+
+      //if its a normal case return full response
+      return chamaSavingsResponse;
+    } catch (e) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in fetchUserChamaSavings: $message");
+      return ChamaSavingsResponse.empty(
+        errorMessage: message,
+        isCriticalError: true, // network/unknown → show "_"
+      );
+    }
+  }
+
+
+
+
+
+
+
+
+
+  /// ---GET CHAMA PRODUCT ---///
+Future<ChamaProductsResponse> getAllChamaProducts({
+  required String type,
+}) async {
+  try {
+    AppLogger.log("📥 Fetching all chama products for type: $type");
+
+    final url = "${ApiService.prodEndpointChama}/products";
+
+    final body = {"type": type};
+    final response = await _apiService.post(url, data: body);
+
+    final allChamasResponse = ChamaProductsResponse.fromJson(response.data);
+
+    if (allChamasResponse.errors.isNotEmpty) {
+      AppLogger.log("⚠️ Backend errors: ${allChamasResponse.errors}");
+      throw Exception(allChamasResponse.errors.first.toString());
+    }
+
+    final prettyJson = const JsonEncoder.withIndent('  ')
+        .convert(allChamasResponse.toJson());
+    AppLogger.log("📦 All Chamas Response:\n$prettyJson");
+
+    return allChamasResponse;
+  } catch (e) {
+    final message = ErrorHandler.handleGenericError(e);
+    AppLogger.log("❌ Error in getAllChamaProducts: $message");
+    throw Exception(message);
+  }
+}
+
+  
 }

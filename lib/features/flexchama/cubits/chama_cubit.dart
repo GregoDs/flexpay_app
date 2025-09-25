@@ -1,6 +1,6 @@
 import 'package:flexpay/features/flexchama/mappers/membership_mapper.dart';
-import 'package:flexpay/features/flexchama/models/chama_profile_model/chama_profile_model.dart';
-import 'package:flexpay/features/flexchama/models/chama_savings_model/chama_savings_model.dart';
+import 'package:flexpay/features/flexchama/models/profile_model/chama_profile_model.dart';
+import 'package:flexpay/features/flexchama/models/savings_model/chama_savings_model.dart';
 import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
 import 'package:flexpay/utils/services/logger.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,6 +13,9 @@ class ChamaCubit extends Cubit<ChamaState> {
   ChamaProfile? _currentProfile;
 
   ChamaCubit(this._repo) : super(ChamaInitial());
+
+
+
 
   /// ---------------- Fetch Profile ----------------
   Future<void> fetchChamaUserProfile() async {
@@ -52,6 +55,10 @@ class ChamaCubit extends Cubit<ChamaState> {
     }
   }
 
+
+
+
+
   /// ---------------- Fetch Chama User Savings ----------------
   Future<void> fetchChamaUserSavings() async {
     emit(ChamaSavingsLoading(previousProfile: _currentProfile));
@@ -75,6 +82,12 @@ class ChamaCubit extends Cubit<ChamaState> {
     }
   }
   }
+
+
+
+
+
+
 
   /// ---------------- Register Chama User ----------------
   Future<void> registerChamaUser({
@@ -117,4 +130,19 @@ class ChamaCubit extends Cubit<ChamaState> {
       emit(ChamaRegistrationFailure(e.toString()));
     }
   }
+
+
+
+/// ---------------- Get All Chama Products ----------------
+Future<void> getAllChamaProducts({required String type}) async {
+  emit(ChamaAllProductsLoading());
+
+  try {
+    final response = await _repo.getAllChamaProducts(type: type);
+    emit(ChamaAllProductsFetched(response));
+  } catch (e) {
+    emit(ChamaAllProductsFailure(e.toString()));
+  }
+}
+
 }

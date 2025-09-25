@@ -1,7 +1,7 @@
 import 'package:flexpay/features/auth/models/user_model.dart';
-import 'package:flexpay/features/flexchama/models/chama_profile_model/chama_profile_model.dart';
-import 'package:flexpay/features/flexchama/models/chama_reg_model/chama_reg_model.dart';
-import 'package:flexpay/features/flexchama/models/chama_savings_model/chama_savings_model.dart';
+import 'package:flexpay/features/flexchama/models/profile_model/chama_profile_model.dart';
+import 'package:flexpay/features/flexchama/models/registration_model/chama_reg_model.dart';
+import 'package:flexpay/features/flexchama/models/savings_model/chama_savings_model.dart';
 
 extension MembershipMapper on ChamaMembership {
   ChamaProfile toChamaProfile() {

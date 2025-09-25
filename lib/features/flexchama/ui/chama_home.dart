@@ -28,6 +28,8 @@ class _FlexChamaState extends State<FlexChama> {
     await context.read<ChamaCubit>().fetchChamaUserSavings();
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -111,7 +113,7 @@ class _FlexChamaState extends State<FlexChama> {
                           : _buildBalanceCard(
                               FontAwesomeIcons.creditCard,
                               'Loan Balance',
-                              'Kshs ${AppUtils.formatAmount(loanBalance)}',
+                              '${AppUtils.formatAmount(loanBalance)}',
                               Colors.green,
                               textColor,
                               cardColor,
@@ -121,7 +123,7 @@ class _FlexChamaState extends State<FlexChama> {
                           : _buildBalanceCard(
                               FontAwesomeIcons.handHoldingDollar,
                               'Loan Limit',
-                              'Kshs ${AppUtils.formatAmount(loanLimit)}',
+                              '${AppUtils.formatAmount(loanLimit)}',
                               Colors.orange,
                               textColor,
                               cardColor,
