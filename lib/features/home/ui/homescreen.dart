@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return Scaffold(
           appBar: PreferredSize(
             preferredSize:
-                Size.fromHeight(MediaQuery.of(context).size.height * 0.40),
+                Size.fromHeight(MediaQuery.of(context).size.height * 0.60),
             child: AppBarHome(
               context,
               userName: "${widget.userModel.user.username}",

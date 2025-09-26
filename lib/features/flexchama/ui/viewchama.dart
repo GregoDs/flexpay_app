@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class ViewChamas extends StatefulWidget {
   const ViewChamas({super.key});
@@ -34,8 +35,35 @@ class _ViewChamasState extends State<ViewChamas> {
   bool isYearly = true;
   int selectedChamaType = 1;
 
-  int myChamaCount = 0;
-  int ourChamasCount = 0;
+  String myChamaCount = "_";
+  String ourChamasCount = "_";
+
+  // Preserve the last successful view so transient states (e.g., subscribe/save loading)
+  // do not replace the UI with a shimmer
+  ChamaViewState? _lastView;
+  bool _isBottomSheetOpen = false;
+
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(child: SpinKitWave(color: primaryColor, size: 36)),
+    );
+  }
+
+  Future<void> _hideLoadingAndPopSheet({
+    Duration delay = const Duration(milliseconds: 350),
+  }) async {
+    await Future.delayed(delay);
+    // Close loading dialog (rootNavigator true because dialogs use root navigator by default here)
+    if (Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+    // Pop only the bottom sheet (not the page) if it is open
+    if (_isBottomSheetOpen && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+  }
 
   @override
   void initState() {
@@ -44,12 +72,12 @@ class _ViewChamasState extends State<ViewChamas> {
   }
 
   void _fetchOurChamas({bool refreshListOnly = false}) {
-  final type = isYearly ? "yearly" : "half_yearly";
-  context.read<ChamaCubit>().fetchAllChamaDetails(
-        type: type,
-        refreshListOnly: refreshListOnly,
-      );
-}
+    final type = isYearly ? "yearly" : "half_yearly";
+    context.read<ChamaCubit>().fetchAllChamaDetails(
+      type: type,
+      refreshListOnly: refreshListOnly,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +87,7 @@ class _ViewChamasState extends State<ViewChamas> {
         child: BlocConsumer<ChamaCubit, ChamaState>(
           listener: (context, state) {
             if (state is ChamaViewState) {
+              _lastView = state;
               final response = state.savings;
               if (response != null && response.errors?.isNotEmpty == true) {
                 CustomSnackBar.showError(
@@ -68,16 +97,69 @@ class _ViewChamasState extends State<ViewChamas> {
                 );
               }
             }
+            if (state is SubscribeChamaLoading || state is SaveToChamaLoading) {
+              _showLoadingDialog();
+            }
+            if (state is SaveToChamaSuccess) {
+              CustomSnackBar.showSuccess(
+                context,
+                title: "Success",
+                message: "Your savings have been updated!",
+              );
+              _hideLoadingAndPopSheet();
+              _fetchOurChamas(
+                refreshListOnly: false,
+              ); // 🔄 refresh after saving
+            }
+
+            if (state is SubscribeChamaSuccess) {
+              CustomSnackBar.showSuccess(
+                context,
+                title: "Success",
+                message: "You joined the Chama successfully!",
+              );
+              _hideLoadingAndPopSheet();
+              _fetchOurChamas(
+                refreshListOnly: false,
+              ); // 🔄 refresh after joining
+            }
+
+            // Show failures via our custom snackbar
+            if (state is SubscribeChamaFailure) {
+              CustomSnackBar.showError(
+                context,
+                title: "Error",
+                message: state.message,
+              );
+              _hideLoadingAndPopSheet();
+            }
+
+            if (state is SaveToChamaFailure) {
+              CustomSnackBar.showError(
+                context,
+                title: "Error",
+                message: state.message,
+              );
+              _hideLoadingAndPopSheet();
+            }
           },
+
           builder: (context, state) {
-            if (state is! ChamaViewState) {
+            // Keep rendering the last known good view while subscribe/save emits
+            final ChamaViewState? view = state is ChamaViewState
+                ? state
+                : _lastView;
+            if (view == null) {
               return const FlexChamaShimmer();
             }
 
-            final ChamaViewState view = state;
+            myChamaCount = (view.userChamas?.data.length != null)
+                ? view.userChamas!.data.length.toString()
+                : "_";
 
-            myChamaCount = view.userChamas?.data.length ?? 0;
-            ourChamasCount = view.allProducts?.data.length ?? 0;
+            ourChamasCount = (view.allProducts?.data.length != null)
+                ? view.allProducts!.data.length.toString()
+                : "_";
 
             String totalSavings = "_";
             String maturityDate = "_";
@@ -151,23 +233,20 @@ class _ViewChamasState extends State<ViewChamas> {
                     ),
                     SizedBox(height: 16.h),
 
-                   view.isWalletLoading
-                    ? const WalletShimmer()
-                    : _buildWalletCard(
-                        totalSavings,
-                        maturityDate,
-                        progress,
-                        progressText,
-                      ),
-
-
+                    view.isWalletLoading
+                        ? const WalletShimmer()
+                        : _buildWalletCard(
+                            totalSavings,
+                            maturityDate,
+                            progress,
+                            progressText,
+                          ),
 
                     SizedBox(height: 20.h),
                     _buildCampaignCard(context),
                     SizedBox(height: 20.h),
 
-                    
-                         _buildChamaCardsRow(),
+                    _buildChamaCardsRow(),
 
                     SizedBox(height: 24.h),
 
@@ -243,8 +322,20 @@ class _ViewChamasState extends State<ViewChamas> {
                                     icon: Icons.group,
                                     title: chama.name,
                                     savings: "KES ${chama.totalSavings}",
+                                    productId: chama.id,
                                     onSave: () {
-                                      // TODO
+                                      final userPhone = "254706622071";
+                                      _showSaveToMyChamaModal(
+                                        context,
+                                        chama.id,
+                                        chama.name,
+                                        userPhone,
+                                        onSheetVisibility: (v) {
+                                          setState(
+                                            () => _isBottomSheetOpen = v,
+                                          );
+                                        },
+                                      );
                                     },
                                   ),
                                 );
@@ -267,7 +358,17 @@ class _ViewChamasState extends State<ViewChamas> {
                                   icon: Icons.savings,
                                   title: product.name,
                                   savings: "KES ${product.targetAmount}",
-                                  onSave: () {},
+                                  productId: product.id,
+                                  onJoin: () {
+                                    _showJoinOurChamaPaymentModal(
+                                      context,
+                                      product.id,
+                                      product.name,
+                                      onSheetVisibility: (v) {
+                                        setState(() => _isBottomSheetOpen = v);
+                                      },
+                                    );
+                                  },
                                 ),
                               );
                             }),
@@ -651,6 +752,525 @@ Widget _referralRow(String label, String value) {
   );
 }
 
+void _showJoinOurChamaPaymentModal(
+  BuildContext parentContext,
+  int productId,
+  String chamaName, {
+  ValueChanged<bool>? onSheetVisibility,
+}) {
+  onSheetVisibility?.call(true);
+  showModalBottomSheet(
+    context: parentContext,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (modalContext) {
+      final depositController = TextEditingController();
+
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // === Top header with gradient ===
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 22.h, horizontal: 16.w),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF337687), Color(0xFF1D3C4E)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.account_balance_wallet,
+                        size: 40.sp, color: Colors.white),
+                    SizedBox(height: 8.h),
+                    Text(
+                      "Join $chamaName",
+                      style: GoogleFonts.montserrat(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      "Enter your initial deposit to subscribe",
+                      style: GoogleFonts.montserrat(
+                        fontSize: 14.sp,
+                        color: Colors.white70,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+
+              // === Content section ===
+              Padding(
+                padding: EdgeInsets.fromLTRB(24.w, 24.h, 24.w, 12.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Deposit Amount",
+                      style: GoogleFonts.montserrat(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+
+                    // Deposit field
+                    TextField(
+                      controller: depositController,
+                      keyboardType: TextInputType.number,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 15.sp,
+                        color: Colors.black,
+                        ),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFFF3F4F6),
+                        prefixIcon: Icon(Icons.currency_exchange,
+                            color: Colors.blue[800]),
+                        hintText: "Enter amount",
+                        hintStyle: GoogleFonts.montserrat(
+                          color: Colors.grey[500],
+                          fontSize: 15.sp,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 24.h),
+
+                    // Action button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52.h,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final deposit = double.tryParse(
+                            depositController.text.trim(),
+                          );
+                          if (deposit == null || deposit <= 0) {
+                            ScaffoldMessenger.of(modalContext).showSnackBar(
+                              const SnackBar(
+                                  content: Text("Please enter a valid deposit")),
+                            );
+                            return;
+                          }
+
+                          parentContext.read<ChamaCubit>().subscribeToChama(
+                                productId: productId,
+                                depositAmount: deposit,
+                              );
+                          Navigator.pop(modalContext);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF337687),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: Text(
+                          "Join Chama",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 17.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+
+                    // Secure note
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.lock, size: 16.sp, color: Colors.grey[600]),
+                        SizedBox(width: 6.w),
+                        Text(
+                          "Your deposit is secure",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 13.sp,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // === Footer ===
+              Padding(
+                padding: EdgeInsets.only(bottom: 16.h, top: 8.h),
+                child: Text(
+                  "Powered by FlexPay",
+                  style: GoogleFonts.montserrat(
+                    fontSize: 12.sp,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  ).whenComplete(() {
+    onSheetVisibility?.call(false);
+  });
+}
+
+
+
+
+void _showSaveToMyChamaModal(
+  BuildContext parentContext,
+  int productId,
+  String chamaName,
+  String initialPhone, {
+  ValueChanged<bool>? onSheetVisibility,
+}) {
+  final amountController = TextEditingController();
+  final phoneController = TextEditingController(text: initialPhone);
+  String selectedSource = "M-Pesa";
+
+  onSheetVisibility?.call(true);
+  showModalBottomSheet(
+    context: parentContext,
+    backgroundColor: Colors.white,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+    ),
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // === Header with gradient ===
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(vertical: 22.h, horizontal: 16.w),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF009AC1), Color(0xFF1D3C4E)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.savings, size: 40.sp, color: Colors.white),
+                        SizedBox(height: 8.h),
+                        Text(
+                          "Save to $chamaName",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          "Choose source and enter details to save",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 14.sp,
+                            color: Colors.white70,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // === Body ===
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(24.w, 24.h, 24.w, 12.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Payment Method section
+                        Text(
+                          "Payment Method",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        SizedBox(height: 2.h),
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              PaymentOptionCard(
+                                imagePath: "assets/images/payment_platform/mpesa_img.png",
+                                label: "M-Pesa",
+                                isSelected: selectedSource == "M-Pesa",
+                                onTap: () => setState(() => selectedSource = "M-Pesa"),
+                              ),
+                              PaymentOptionCard(
+                                imagePath: "assets/images/payment_platform/wallet_img.webp",
+                                label: "Wallet",
+                                isSelected: selectedSource == "Wallet",
+                                onTap: () => setState(() => selectedSource = "Wallet"),
+                              ),
+                            ],
+                          ),
+                        SizedBox(height: 16.h),
+
+                        // Phone number field
+                        Text(
+                          "Phone Number",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        TextField(
+                          controller: phoneController,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 15.sp,
+                            color: Colors.black,
+                            ),
+                          keyboardType: TextInputType.phone,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color(0xFFF3F4F6),
+                            prefixIcon: Icon(Icons.phone, color: Colors.blue[800]),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 16.h),
+
+                        // Amount field
+                        Text(
+                          "Amount",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        TextField(
+                          controller: amountController,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 15.sp,
+                            color: Colors.black,
+                            ),
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color(0xFFF3F4F6),
+                            prefixIcon: Icon(Icons.currency_exchange,
+                                color: Colors.blue[800]),
+                            hintText: "Enter amount",
+                            hintStyle: GoogleFonts.montserrat(
+                              color: Colors.grey[500],
+                              fontSize: 15.sp,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 24.h),
+
+                        // Save button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52.h,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              final amount = double.tryParse(amountController.text.trim());
+                              final phoneNumber = phoneController.text.trim();
+
+                              if (amount == null || amount <= 0) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Enter valid amount")),
+                                );
+                                return;
+                              }
+                              if (phoneNumber.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Enter phone number")),
+                                );
+                                return;
+                              }
+
+                              if (selectedSource == "M-Pesa") {
+                                // 👉 Call Mpesa-specific Cubit
+                                parentContext.read<ChamaCubit>().saveToChamaMpesa(
+                                      productId: productId,
+                                      amount: amount,
+                                    );
+                              } else if (selectedSource == "Wallet") {
+                                // 👉 Placeholder: later we’ll connect Wallet repo method
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Wallet integration coming soon")),
+                                );
+                              }
+
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF009AC1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: Text(
+                              "Save",
+                              style: GoogleFonts.montserrat(
+                                fontSize: 17.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 16.h),
+
+                        // Secure note
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.lock,
+                                size: 16.sp, color: Colors.grey[600]),
+                            SizedBox(width: 6.w),
+                            Text(
+                              "Transactions are encrypted",
+                              style: GoogleFonts.montserrat(
+                                fontSize: 13.sp,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Footer
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 16.h, top: 8.h),
+                    child: Text(
+                      "Powered by FlexPay",
+                      style: GoogleFonts.montserrat(
+                        fontSize: 12.sp,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  ).whenComplete(() {
+    onSheetVisibility?.call(false);
+  });
+}
+
+class PaymentOptionCard extends StatelessWidget {
+  final String imagePath;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const PaymentOptionCard({
+    Key? key,
+    required this.imagePath,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 10.w),
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16.r),
+          // border: isSelected
+          //     ? Border.all(
+          //         color: Colors.amber,
+          //         width: 2,
+          //       )
+          //     : null, // ❌ no border if not selected
+          // boxShadow: isSelected
+          //     ? [
+          //         BoxShadow(
+          //           color: Colors.amber.withOpacity(0.4),
+          //           blurRadius: 10,
+          //           spreadRadius: 1,
+          //         ),
+          //       ]
+          //     : [],
+          color: Colors.white,
+        ),
+        child: Column(
+          children: [
+            Image.asset(
+              imagePath,
+              height: 120.h,
+              width: 120.h,
+              fit: BoxFit.contain,
+            ),
+            SizedBox(height: 2.h),
+            Text(
+              label,
+              style: GoogleFonts.montserrat(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.amber[800] : Colors.grey[800],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 Widget _buildSelectedChamaCard(
   IconData icon,
   String title,
@@ -748,13 +1368,17 @@ class _ChamaListItem extends StatelessWidget {
   final IconData icon;
   final String title;
   final String savings;
-  final VoidCallback onSave;
+  final int productId;
+  final VoidCallback? onSave; // NEW
+  final VoidCallback? onJoin; // NEW
 
   const _ChamaListItem({
     required this.icon,
     required this.title,
     required this.savings,
-    required this.onSave,
+    required this.productId,
+    this.onSave,
+    this.onJoin,
   });
 
   @override
@@ -763,7 +1387,6 @@ class _ChamaListItem extends StatelessWidget {
       children: [
         Row(
           children: [
-            // Icon for chama
             Container(
               margin: EdgeInsets.only(right: 12.w),
               padding: EdgeInsets.all(10.w),
@@ -773,7 +1396,6 @@ class _ChamaListItem extends StatelessWidget {
               ),
               child: Icon(icon, color: const Color(0xFF3399CC), size: 28.sp),
             ),
-            // Chama info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -798,12 +1420,16 @@ class _ChamaListItem extends StatelessWidget {
                 ],
               ),
             ),
-            // Save button
             SizedBox(
               width: 90.w,
               height: 44.h,
               child: ElevatedButton(
-                onPressed: onSave,
+                onPressed:
+                    onSave ??
+                    onJoin ??
+                    () {
+                      _showJoinOurChamaPaymentModal(context, productId, title);
+                    },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4CA0C6),
                   shape: RoundedRectangleBorder(
@@ -813,7 +1439,7 @@ class _ChamaListItem extends StatelessWidget {
                   padding: EdgeInsets.zero,
                 ),
                 child: Text(
-                  "Save",
+                  onSave != null ? "Save" : "Join",
                   style: GoogleFonts.montserrat(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w500,
@@ -824,7 +1450,6 @@ class _ChamaListItem extends StatelessWidget {
             ),
           ],
         ),
-        // Bottom divider
         Padding(
           padding: EdgeInsets.only(top: 18.h),
           child: Divider(color: Colors.grey[300], thickness: 1, height: 1),
@@ -833,3 +1458,4 @@ class _ChamaListItem extends StatelessWidget {
     );
   }
 }
+

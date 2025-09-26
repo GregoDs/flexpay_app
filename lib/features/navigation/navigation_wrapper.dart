@@ -11,14 +11,15 @@ import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/features/navigation/navigation.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 
-
 class NavigationWrapper extends StatefulWidget {
   final int initialIndex;
   final UserModel userModel;
 
-  const NavigationWrapper(
-      {Key? key, this.initialIndex = 0, required this.userModel})
-      : super(key: key);
+  const NavigationWrapper({
+    Key? key,
+    this.initialIndex = 0,
+    required this.userModel,
+  }) : super(key: key);
 
   @override
   State<NavigationWrapper> createState() => _NavigationWrapperState();
@@ -54,73 +55,70 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   }
 
   List<Widget> get _pages => [
-        HomeScreen(
-          isDarkModeOn: false,
-          userModel: widget.userModel,
-        ),
-        GoalsPage(),
-        /// FlexChama Tab
-        BlocListener<ChamaCubit, ChamaState>(
-          listener: (context, state) {
-            if (state is ChamaError) {
-              CustomSnackBar.showError(
-                context,
-                title: "Oops!",
-                message: state.message,
-              );
-              if (_currentIndex != 0) {
+    HomeScreen(isDarkModeOn: false, userModel: widget.userModel),
+    GoalsPage(),
+
+    /// FlexChama Tab
+    BlocListener<ChamaCubit, ChamaState>(
+      listener: (context, state) {
+        if (state is ChamaError) {
+          CustomSnackBar.showError(
+            context,
+            title: "Oops!",
+            message: state.message,
+          );
+          if (_currentIndex != 0) {
+            setState(() {
+              _currentIndex = 0;
+            });
+          }
+        }
+      },
+      child: BlocBuilder<ChamaCubit, ChamaState>(
+        builder: (context, state) {
+          if (state is ChamaNotMember) {
+            return OnBoardFlexChama(
+              onOptIn: _onOptIn,
+              userModel: widget.userModel,
+            );
+          }
+
+          // Also show FlexChama when we are in ChamaViewState (used by ViewChamas),
+          // so navigating back does not show a loader.
+          if (state is ChamaProfileFetched ||
+              state is ChamaSavingsFetched ||
+              state is ChamaSavingsLoading ||
+              state is ChamaViewState) {
+            final profile = (state is ChamaProfileFetched)
+                ? state.profile
+                : (state is ChamaSavingsFetched)
+                ? state.savingsResponse.data?.chamaDetails
+                : (state is ChamaSavingsLoading)
+                ? state.previousProfile
+                : null; // ChamaViewState has no profile; keep UI stable
+
+            if (showOnBoard) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
                 setState(() {
-                  _currentIndex = 0;
+                  showOnBoard = false;
                 });
-              }
+              });
             }
-          },
-          child: BlocBuilder<ChamaCubit, ChamaState>(
-            builder: (context, state) {
-              if (state is ChamaNotMember) {
-                return OnBoardFlexChama(
-                  onOptIn: _onOptIn,
-                  userModel: widget.userModel,
-                );
-              }
 
-              if (state is ChamaProfileFetched ||
-                  state is ChamaSavingsFetched ||
-                  state is ChamaSavingsLoading) {
-                final profile = (state is ChamaProfileFetched)
-                  ? state.profile
-                  : (state is ChamaSavingsFetched)
-                      ? state.savingsResponse.data?.chamaDetails
-                      : (state as ChamaSavingsLoading).previousProfile;
+            return FlexChama(profile: profile);
+          }
 
-                if (showOnBoard) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    setState(() {
-                      showOnBoard = false;
-                    });
-                  });
-                }
+          if (state is ChamaInitial || state is ChamaProfileLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                return FlexChama(profile: profile);
-              }
-
-              if (state is ChamaInitial || state is ChamaProfileLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              return const Center(child: CircularProgressIndicator());
-            },
-          ),
-        ),
-        BlocProvider.value(
-          value: bookingsCubit,
-          child: const BookingsPage(),
-        ),
-        BlocProvider.value(
-          value: merchantsCubit,
-          child: MerchantsScreen(),
-        ),
-      ];
+          return const Center(child: CircularProgressIndicator());
+        },
+      ),
+    ),
+    BlocProvider.value(value: bookingsCubit, child: const BookingsPage()),
+    BlocProvider.value(value: merchantsCubit, child: MerchantsScreen()),
+  ];
 
   final List<BottomNavBarItem> _navItems = [
     BottomNavBarItem(icon: Icons.home, label: "Home"),
@@ -148,10 +146,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           return false;
         },
         child: Scaffold(
-          body: IndexedStack(
-            index: _currentIndex,
-            children: _pages,
-          ),
+          body: IndexedStack(index: _currentIndex, children: _pages),
           bottomNavigationBar: hideNavBar
               ? null
               : BottomNavBar(

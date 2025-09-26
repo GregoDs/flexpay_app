@@ -144,7 +144,7 @@ class ChamaCubit extends Cubit<ChamaState> {
 
 
 
-   /// ---------------- Fetch All At Once ----------------
+   /// ---------------- Fetch All Products At Once ----------------
   Future<void> fetchAllChamaDetails({String type = "yearly", bool refreshListOnly = false}) async {
     // 👉 if refreshListOnly = true → only shimmer the list, not wallet
     if (refreshListOnly) {
@@ -180,5 +180,41 @@ class ChamaCubit extends Cubit<ChamaState> {
       emit(ChamaError(e.toString()));
     }
   }
+
+
+  /// ---------------- Subscribe to Chama ----------------
+  Future<void> subscribeToChama({
+    required int productId,
+    required double depositAmount,
+  }) async {
+    emit(SubscribeChamaLoading());
+    try {
+      final response = await _repo.subscribeChama(
+        productId: productId,
+        depositAmount: depositAmount,
+      );
+      emit(SubscribeChamaSuccess(response));
+    } catch (e) {
+      emit(SubscribeChamaFailure(e.toString()));
+    }
+  }
+
+ 
+/// ---------------- Save to Chama (Mpesa) ----------------
+Future<void> saveToChamaMpesa({
+  required int productId,
+  required double amount,
+}) async {
+  emit(SaveToChamaLoading());
+  try {
+    final response = await _repo.saveToChama(
+      productId: productId,
+      amount: amount,
+    );
+    emit(SaveToChamaSuccess(response));
+  } catch (e) {
+    emit(SaveToChamaFailure(e.toString()));
+  }
+}
 }
 

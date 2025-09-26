@@ -3,6 +3,7 @@ import 'package:flexpay/features/flexchama/models/products_model/chama_products_
 import 'package:flexpay/features/flexchama/models/profile_model/chama_profile_model.dart';
 import 'package:flexpay/features/flexchama/models/registration_model/chama_reg_model.dart';
 import 'package:flexpay/features/flexchama/models/savings_model/chama_savings_model.dart';
+import 'package:flexpay/features/flexchama/models/subscribe_chama_model/subscribe_chama_model.dart';
 
 abstract class ChamaState extends Equatable {
   const ChamaState();
@@ -193,4 +194,48 @@ class ChamaViewState extends ChamaState {
 
   @override
   List<Object?> get props => [isLoading, savings, userChamas, allProducts];
+
+}
+
+  /// ---------------- Subscribe to chama states  ----------------
+class SubscribeChamaLoading extends ChamaState {}
+
+class SubscribeChamaSuccess extends ChamaState {
+  final SubscribeChamaResponse response;
+
+  const SubscribeChamaSuccess(this.response);
+
+  @override
+  List<Object?> get props => [response];
+}
+
+class SubscribeChamaFailure extends ChamaState {
+  final String message;
+
+  const SubscribeChamaFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+
+/// ---------------- Save to Chama states ----------------
+class SaveToChamaLoading extends ChamaState {}
+
+class SaveToChamaSuccess extends ChamaState {
+  final SubscribeChamaResponse response; 
+
+  const SaveToChamaSuccess(this.response);
+
+  @override
+  List<Object?> get props => [response];
+}
+
+class SaveToChamaFailure extends ChamaState {
+  final String message;
+
+  const SaveToChamaFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
 }

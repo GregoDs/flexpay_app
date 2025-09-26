@@ -1,4 +1,6 @@
 import 'package:flexpay/exports.dart';
+import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
+import 'package:flexpay/features/flexchama/ui/statements_chama.dart';
 import 'package:flexpay/features/home/ui/topupscreen.dart';
 import 'package:flexpay/features/home/ui/withdrawpage.dart';
 import 'package:flexpay/features/merchants/ui/merchants.dart';
@@ -160,13 +162,15 @@ class _AppBarChamaState extends State<AppBarChama> {
                             screenWidth)),
                     SizedBox(width: screenWidth * 0.02),
                     Expanded(
-                        child: _buildNavigationActionButton(
-                            FontAwesomeIcons.fileInvoiceDollar,
-                            'Statement',
-                            2,
-                            MerchantsScreen(),
-                            context,
-                            screenWidth)),
+                    child: _buildNavigationActionButton(
+                      FontAwesomeIcons.fileInvoiceDollar,
+                      'Statement',
+                      2,
+                      const ChamaStatementPage(), 
+                      context,
+                      screenWidth,
+                    ),
+                  ),
                   ],
                 ),
               ],
@@ -206,30 +210,48 @@ class _AppBarChamaState extends State<AppBarChama> {
     );
   }
 
-  Widget _buildNavigationActionButton(IconData icon, String label, int index,
-      Widget page, BuildContext context, double screenWidth) {
-    return GestureDetector(
-      onTap: () {},
-      child: Column(
-        children: [
-          CircleAvatar(
-            backgroundColor: Colors.white24,
-            radius: screenWidth.clamp(28.0, 40.0) * 0.4,
-            child: Icon(icon,
-                color: Colors.white,
-                size: screenWidth.clamp(18.0, 28.0) * 0.8),
+  Widget _buildNavigationActionButton(
+  IconData icon,
+  String label,
+  int index,
+  Widget page,
+  BuildContext context,
+  double screenWidth,
+) {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => ChamaCubit(ChamaRepo())..fetchChamaUserProfile(),
+            child: page,
           ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontSize: screenWidth.clamp(10.0, 16.0) * 0.8,
-            ),
-            textAlign: TextAlign.center,
+        ),
+      );
+    },
+    child: Column(
+      children: [
+        CircleAvatar(
+          backgroundColor: Colors.white24,
+          radius: screenWidth.clamp(28.0, 40.0) * 0.4,
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: screenWidth.clamp(18.0, 28.0) * 0.8,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontSize: screenWidth.clamp(10.0, 16.0) * 0.8,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    ),
+  );
+}
 }

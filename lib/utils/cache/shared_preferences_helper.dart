@@ -47,6 +47,15 @@ class SharedPreferencesHelper {
     await prefs.remove(_userModelKey);
   }
 
+
+
+
+
+  // ----------------- Save Product -----------------
+
+
+
+
   // ----------------- Logout -----------------
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();

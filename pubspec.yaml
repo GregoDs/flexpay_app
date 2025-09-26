@@ -92,4 +92,5 @@ flutter:
     - assets/images/bookings_imgs/
     - assets/images/flags/
     - assets/images/goals_imgs/
+    - assets/images/payment_platform/
     - .env 

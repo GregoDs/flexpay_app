@@ -3,6 +3,7 @@ import 'package:flexpay/features/flexchama/models/products_model/chama_products_
 import 'package:flexpay/features/flexchama/models/profile_model/chama_profile_model.dart';
 import 'package:flexpay/features/flexchama/models/registration_model/chama_reg_model.dart';
 import 'package:flexpay/features/flexchama/models/savings_model/chama_savings_model.dart';
+import 'package:flexpay/features/flexchama/models/subscribe_chama_model/subscribe_chama_model.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/services/error_handler.dart';
@@ -123,7 +124,7 @@ class ChamaRepo {
       // final phoneNumber = userModel?.user.phoneNumber;
 
       //when testing fetch details for a new member using this
-      final phoneNumber = '254723005304';
+      final phoneNumber = '254706622071';
 
       if (phoneNumber != null) {
         AppLogger.log("User phone number not found.");
@@ -221,37 +222,142 @@ class ChamaRepo {
     }
   }
 
+  /// ---GET USER'S CHAMAS ---///
+  Future<UserChamasResponse> getUserChamas() async {
+    try {
+      AppLogger.log("📥 Fetching user’s own chamas...");
+      final userModel = await SharedPreferencesHelper.getUserModel();
+      // final phoneNumber = userModel?.user.phoneNumber;
+      final phoneNumber = "254706622071";
 
+      final url = "${ApiService.prodEndpointChama}/user-chamas/$phoneNumber";
+      final response = await _apiService.get(url);
 
+      final userChamasResponse = UserChamasResponse.fromJson(response.data);
 
+      if (userChamasResponse.errors.isNotEmpty) {
+        AppLogger.log("⚠️ Backend errors: ${userChamasResponse.errors}");
+        throw Exception(userChamasResponse.errors.first.toString());
+      }
 
- /// ---GET USER'S CHAMAS ---///
-Future<UserChamasResponse> getUserChamas() async {
-  try {
-    AppLogger.log("📥 Fetching user’s own chamas...");
-    final userModel = await SharedPreferencesHelper.getUserModel();
-    final phoneNumber = userModel?.user.phoneNumber;
-    //final phoneNumber = "254706622077";
+      final prettyJson = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(userChamasResponse.toJson());
+      AppLogger.log("📦 User Chamas Response:\n$prettyJson");
 
-    final url = "${ApiService.prodEndpointChama}/user-chamas/$phoneNumber"; 
-    final response = await _apiService.get(url);
-
-    final userChamasResponse = UserChamasResponse.fromJson(response.data);
-
-    if (userChamasResponse.errors.isNotEmpty) {
-      AppLogger.log("⚠️ Backend errors: ${userChamasResponse.errors}");
-      throw Exception(userChamasResponse.errors.first.toString());
+      return userChamasResponse;
+    } catch (e) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in getUserChamas: $message");
+      throw Exception(message);
     }
-
-    final prettyJson = const JsonEncoder.withIndent('  ')
-        .convert(userChamasResponse.toJson());
-    AppLogger.log("📦 User Chamas Response:\n$prettyJson");
-
-    return userChamasResponse;
-  } catch (e) {
-    final message = ErrorHandler.handleGenericError(e);
-    AppLogger.log("❌ Error in getUserChamas: $message");
-    throw Exception(message);
   }
-}
+
+  ///--- SUBSCRIBE TO A CHAMA ---///
+  Future<SubscribeChamaResponse> subscribeChama({
+    required int productId,
+    required double depositAmount,
+  }) async {
+    try {
+      final userModel = await SharedPreferencesHelper.getUserModel();
+      // final phoneNumber = userModel?.user.phoneNumber;
+      final phoneNumber = '254706622071';
+
+      if (phoneNumber == null || phoneNumber.isEmpty) {
+        throw Exception("User phone number not found in storage.");
+      }
+
+      final url = "${ApiService.prodEndpointChama}/subscribe";
+
+      final body = {
+        "phone_number": phoneNumber,
+        "product_id": productId,
+        "deposit_amount": depositAmount,
+      };
+
+      AppLogger.log(
+        "📤 Subscribing user $phoneNumber to product $productId "
+        "with deposit $depositAmount",
+      );
+
+      // ✅ 4. Send request
+      final response = await _apiService.post(url, data: body);
+
+      // ✅ 5. Parse into model
+      final subscribeResponse = SubscribeChamaResponse.fromJson(response.data);
+
+      // ✅ 6. Handle backend errors
+      if (subscribeResponse.errors != null &&
+          subscribeResponse.errors!.isNotEmpty) {
+        AppLogger.log("⚠️ Backend errors: ${subscribeResponse.errors}");
+        throw Exception(subscribeResponse.errors!.first.toString());
+      }
+
+      // ✅ 7. Pretty-print for debugging
+      final prettyJson = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(subscribeResponse.toJson());
+      AppLogger.log("📦 Subscribe Chama Response:\n$prettyJson");
+
+      return subscribeResponse;
+    } catch (e) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in subscribeChama: $message");
+      throw Exception(message);
+    }
+  }
+
+  ///--- Pay for CHAMA selected using Mpesa  ---///
+  Future<SubscribeChamaResponse> saveToChama({
+    required int productId,
+    required double amount,
+  }) async {
+    try {
+      final userModel = await SharedPreferencesHelper.getUserModel();
+      // final phoneNumber = userModel?.user.phoneNumber;
+      final phoneNumber = '254706622071';
+
+      if (phoneNumber == null || phoneNumber.isEmpty) {
+        throw Exception("User phone number not found in storage.");
+      }
+
+      final url = "${ApiService.prodEndpointChama}/save";
+
+      final body = {
+        "phone_number": phoneNumber,
+        "product_id": productId,
+        "amount": amount,
+      };
+
+      AppLogger.log(
+        "📤 Paying for chama user $phoneNumber to product $productId "
+        "with deposit $amount",
+      );
+
+      // ✅ 4. Send request
+      final response = await _apiService.post(url, data: body);
+
+      // ✅ 5. Parse into model
+      final subscribeResponse = SubscribeChamaResponse.fromJson(response.data);
+
+      // ✅ 6. Handle backend errors
+      if (subscribeResponse.errors != null &&
+          subscribeResponse.errors!.isNotEmpty) {
+        AppLogger.log("⚠️ Backend errors: ${subscribeResponse.errors}");
+        throw Exception(subscribeResponse.errors!.first.toString());
+      }
+
+      // ✅ 7. Pretty-print for debugging
+      final prettyJson = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(subscribeResponse.toJson());
+      AppLogger.log("📦 Subscribe Chama Response:\n$prettyJson");
+
+      return subscribeResponse;
+    } catch (e) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in subscribeChama: $message");
+      throw Exception(message);
+    }
+  }
 }
