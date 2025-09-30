@@ -1,5 +1,6 @@
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/bookings/models/bookings_models.dart';
+import 'package:flexpay/features/bookings/models/cancel_booking_model/cancel_booking_model.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/services/error_handler.dart';
@@ -33,7 +34,7 @@ class BookingsRepository {
       final allBookingsResponse = AllBookingsResponse.fromJson(response.data);
 
       // If wrapper/data/pBooking is missing, return empty list
-     if (allBookingsResponse.data?.pBooking == null) {
+      if (allBookingsResponse.data?.pBooking == null) {
         AppLogger.log("❌ No bookings found in response.");
         return [];
       }
@@ -144,7 +145,6 @@ class BookingsRepository {
       final userModel = await SharedPreferencesHelper.getUserModel();
       final userId = userModel?.user.id;
       final phoneNumber = userModel?.user.phoneNumber;
-      
 
       AppLogger.log("📦 PhoneNumber: ${phoneNumber}}");
 
@@ -197,7 +197,7 @@ class BookingsRepository {
 
       final token = userModel?.token;
 
-      final url = "${ApiService.prodEndpointBookings}/complete/customer/$userId";
+      final url = "${ApiService.prodEndpointBookings}/cancel/$userId";
 
       final response = await _apiService.get(
         url,
@@ -226,4 +226,29 @@ class BookingsRepository {
       throw Exception(message);
     }
   }
+
+  Future<CancelBookingResponse> cancelBooking(String bookingReference) async {
+  try {
+    // Ensure bookingReference is not null
+    if (bookingReference.isEmpty) {
+      throw Exception("Booking reference cannot be empty");
+    }
+
+    final url = "${ApiService.prodEndpointBookings}/cancel/$bookingReference";
+
+    final response = await _apiService.post(url, requiresAuth: true);
+
+    final cancelResponse = CancelBookingResponse.fromJson(
+      response.data as Map<String, dynamic>,
+    );
+
+    AppLogger.log("📦 Cancel booking response: ${cancelResponse.toJson()}");
+
+    return cancelResponse;
+  } catch (e) {
+    final message = ErrorHandler.handleGenericError(e);
+    AppLogger.log("❌ Error in cancelBooking: $message");
+    throw Exception(message);
+  }
+}
 }

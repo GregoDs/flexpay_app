@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
+import 'package:flexpay/main.dart' show routeObserver;
 
 class BookingsPage extends StatefulWidget {
   const BookingsPage({Key? key}) : super(key: key);
@@ -17,7 +18,7 @@ class BookingsPage extends StatefulWidget {
   State<BookingsPage> createState() => _BookingsPageState();
 }
 
-class _BookingsPageState extends State<BookingsPage> {
+class _BookingsPageState extends State<BookingsPage> with RouteAware {
   String selectedTab = "active";
 
   @override
@@ -25,6 +26,26 @@ class _BookingsPageState extends State<BookingsPage> {
     super.initState();
     // fetch bookings immediately
     context.read<BookingsCubit>().fetchBookingsByType("active");
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Called when coming back to this page (e.g., after popping BookingDetailsPage)
+    context.read<BookingsCubit>().fetchBookingsByType(
+      selectedTab.toLowerCase(),
+    );
   }
 
   void _onTabSelected(String tab) {
@@ -41,8 +62,9 @@ class _BookingsPageState extends State<BookingsPage> {
     final Color iconColor = isDarkMode ? Colors.white : Colors.black;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value:
-          isDarkMode ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      value: isDarkMode
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: bgColor,
         body: SafeArea(
@@ -52,7 +74,11 @@ class _BookingsPageState extends State<BookingsPage> {
               // Top bar
               Padding(
                 padding: EdgeInsets.only(
-                    left: 12.w, right: 12.w, top: 22.h, bottom: 12),
+                  left: 12.w,
+                  right: 12.w,
+                  top: 22.h,
+                  bottom: 12,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -70,8 +96,11 @@ class _BookingsPageState extends State<BookingsPage> {
                         ),
                       ),
                     ),
-                    Icon(Icons.notifications_none,
-                        color: iconColor, size: 32.sp),
+                    Icon(
+                      Icons.notifications_none,
+                      color: iconColor,
+                      size: 32.sp,
+                    ),
                   ],
                 ),
               ),
@@ -112,8 +141,11 @@ class _BookingsPageState extends State<BookingsPage> {
                             ),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
-                          child: Icon(Icons.add,
-                              color: const Color(0xFFF7B53A), size: 20.sp),
+                          child: Icon(
+                            Icons.add,
+                            color: const Color(0xFFF7B53A),
+                            size: 20.sp,
+                          ),
                         ),
                       ],
                     ),
@@ -141,8 +173,11 @@ class _BookingsPageState extends State<BookingsPage> {
                             child: Row(
                               children: [
                                 SizedBox(width: 18.w),
-                                Icon(Icons.search,
-                                    size: 26.sp, color: Colors.black87),
+                                Icon(
+                                  Icons.search,
+                                  size: 26.sp,
+                                  color: Colors.black87,
+                                ),
                                 SizedBox(width: 10.w),
                                 Expanded(
                                   child: TextField(
@@ -172,8 +207,11 @@ class _BookingsPageState extends State<BookingsPage> {
                             color: Color(0xFFF7B53A),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.filter_list,
-                              color: Colors.white, size: 24.sp),
+                          child: Icon(
+                            Icons.filter_list,
+                            color: Colors.white,
+                            size: 24.sp,
+                          ),
                         ),
                       ],
                     ),
@@ -250,21 +288,21 @@ class _BookingsPageState extends State<BookingsPage> {
               Expanded(
                 child: BlocBuilder<BookingsCubit, BookingsState>(
                   builder: (context, state) {
-                      if (state is BookingsLoading) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Lottie.asset(
-                                'assets/images/LoadingPlane.json',
-                                width: 360.w,
-                                height: 360.w,
-                                fit: BoxFit.contain,
-                              ),
-                            ],
-                          ),
-                        );
-                      } else if (state is BookingsError) {
+                    if (state is BookingsLoading) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Lottie.asset(
+                              'assets/images/LoadingPlane.json',
+                              width: 360.w,
+                              height: 360.w,
+                              fit: BoxFit.contain,
+                            ),
+                          ],
+                        ),
+                      );
+                    } else if (state is BookingsError) {
                       // Show snack bar with real error message
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         CustomSnackBar.showError(
@@ -280,7 +318,7 @@ class _BookingsPageState extends State<BookingsPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Lottie.asset(
-                              'assets/images/chamatype.json', 
+                              'assets/images/chamatype.json',
                               width: 220.w,
                               height: 220.w,
                               fit: BoxFit.contain,
@@ -291,7 +329,9 @@ class _BookingsPageState extends State<BookingsPage> {
                               style: GoogleFonts.montserrat(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w600,
-                                color: Theme.of(context).brightness == Brightness.dark
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
                                     ? Colors.white70
                                     : Colors.black87,
                               ),
@@ -320,6 +360,7 @@ class _BookingsPageState extends State<BookingsPage> {
                             booking: booking,
                             cardColor: cardColor,
                             textColor: textColor,
+                            selectedTab: selectedTab,
                           );
                         },
                       );
@@ -341,23 +382,37 @@ class _BookingCard extends StatelessWidget {
   final Booking booking;
   final Color cardColor;
   final Color textColor;
+  final String selectedTab;
 
   const _BookingCard({
     Key? key,
     required this.booking,
     required this.cardColor,
     required this.textColor,
+    required this.selectedTab,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => BookingDetailsPage(booking: booking),
-        ),
-      ),
+      onTap: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BlocProvider.value(
+              value: context.read<BookingsCubit>(),
+              child: BookingDetailsPage(booking: booking, user: User()),
+            ),
+          ),
+        );
+
+        if (result == true && context.mounted) {
+          // 🔄 Re-fetch for the current tab
+          context.read<BookingsCubit>().fetchBookingsByType(
+            selectedTab.toLowerCase(),
+          );
+        }
+      },
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         child: Container(
@@ -378,34 +433,33 @@ class _BookingCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 booking.image != null
-                    ?  ClipRRect(
-          borderRadius: BorderRadius.circular(12.r),
-          child: Image.asset(
-            "assets/images/bookings_imgs/maldivesholiday.jpeg",
-            width: 46.w,
-            height: 46.w,
-            fit: BoxFit.cover,
-          ),
-        )
-      : Container(
-          width: 46.w,
-          height: 46.w,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: Icon(
-            Icons.image_not_supported,
-            color: Colors.grey[400],
-            size: 26.sp,
-          ),
-        ),
-              
-                    // : SizedBox(width: 46.w), // keep space consistent
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12.r),
+                        child: Image.asset(
+                          "assets/images/bookings_imgs/maldivesholiday.jpeg",
+                          width: 46.w,
+                          height: 46.w,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Container(
+                        width: 46.w,
+                        height: 46.w,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey[400],
+                          size: 26.sp,
+                        ),
+                      ),
 
+                // : SizedBox(width: 46.w), // keep space consistent
                 SizedBox(
-                    width: 12.w), // 👈 spacing between image and info column
-
+                  width: 12.w,
+                ), // 👈 spacing between image and info column
                 // Info column
                 Expanded(
                   child: Column(
@@ -426,7 +480,7 @@ class _BookingCard extends StatelessWidget {
                             : "Created on ${booking.createdAt}",
                         style: GoogleFonts.montserrat(
                           fontSize: 13.sp,
-                          color:  textColor,
+                          color: textColor,
                         ),
                       ),
                       SizedBox(height: 14.h),
@@ -462,8 +516,11 @@ class _BookingCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     if ((booking.progress ?? 0) >= 1.0)
-                      Icon(Icons.verified,
-                          color: const Color(0xFFF7B53A), size: 28.sp),
+                      Icon(
+                        Icons.verified,
+                        color: const Color(0xFFF7B53A),
+                        size: 28.sp,
+                      ),
                     SizedBox(height: 8.h),
                     Text(
                       "${(((booking.total ?? 0) / (booking.bookingPrice ?? 1)) * 100).round()}%",

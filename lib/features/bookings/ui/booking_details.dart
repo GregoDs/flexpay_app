@@ -1,37 +1,46 @@
+import 'package:flexpay/features/payments/ui/booking_payments.dart';
+import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flexpay/features/bookings/models/bookings_models.dart';
+import 'package:flexpay/features/bookings/cubit/bookings_cubit.dart';
+import 'package:flexpay/features/bookings/cubit/bookings_state.dart';
 import 'package:flexpay/gen/colors.gen.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 
 class BookingDetailsPage extends StatelessWidget {
   final Booking booking;
+  final User user;
 
-  const BookingDetailsPage({Key? key, required this.booking}) : super(key: key);
+  const BookingDetailsPage({
+    Key? key,
+    required this.booking,
+    required this.user,
+  }) : super(key: key);
 
-  
-
-String formatPaymentDate(String? dateStr) {
-  if (dateStr == null || dateStr.isEmpty) return "";
-  try {
-    final parsedDate = DateTime.parse(dateStr);
-    return DateFormat("dd-MM-yyyy").format(parsedDate); // 20-08-2025
-  } catch (e) {
-    return dateStr;
+  String formatPaymentDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return "";
+    try {
+      final parsedDate = DateTime.parse(dateStr);
+      return DateFormat("dd-MM-yyyy").format(parsedDate); // e.g. 20-08-2025
+    } catch (e) {
+      return dateStr;
+    }
   }
-}
 
-String formatMaturityDate(String? dateStr) {
-  if (dateStr == null || dateStr.isEmpty) return "No maturity set";
-  try {
-    final parsedDate = DateTime.parse(dateStr);
-    return DateFormat("d MMM yyyy").format(parsedDate); // 23 Nov 2025
-  } catch (e) {
-    return dateStr;
+  String formatMaturityDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return "No maturity set";
+    try {
+      final parsedDate = DateTime.parse(dateStr);
+      return DateFormat("d MMM yyyy").format(parsedDate); // e.g. 23 Nov 2025
+    } catch (e) {
+      return dateStr;
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +86,9 @@ String formatMaturityDate(String? dateStr) {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20.r),
                             image: DecorationImage(
-                              image: AssetImage("assets/images/appbarbackground.png"),
+                              image: const AssetImage(
+                                "assets/images/appbarbackground.png",
+                              ),
                               fit: BoxFit.cover,
                               colorFilter: ColorFilter.mode(
                                 Colors.black.withOpacity(0.6),
@@ -99,35 +110,43 @@ String formatMaturityDate(String? dateStr) {
                               ),
                               SizedBox(height: 28.h),
 
-                              // Product Cost & Balance in one row
+                              // Product Cost & Balance
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  _buildRowItem("Product Cost",
-                                      "Kshs ${booking.bookingPrice ?? 0}"),
-                                  _buildRowItem("Balance",
-                                      "Kshs ${(booking.bookingPrice ?? 0) - (booking.total ?? 0)}"),
+                                  _buildRowItem(
+                                    "Product Cost",
+                                    "Kshs ${booking.bookingPrice ?? 0}",
+                                  ),
+                                  _buildRowItem(
+                                    "Balance",
+                                    "Kshs ${(booking.bookingPrice ?? 0) - (booking.total ?? 0)}",
+                                  ),
                                 ],
                               ),
                               SizedBox(height: 14.h),
 
-                              // Paid & Maturity in next row
+                              // Paid & Maturity
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  _buildRowItem("Paid",
-                                      "Kshs ${booking.total ?? 0}"),
                                   _buildRowItem(
-                                      "Maturity",
-                                      formatMaturityDate(booking.deadlineDate),
-                                    ),
+                                    "Paid",
+                                    "Kshs ${booking.total ?? 0}",
+                                  ),
+                                  _buildRowItem(
+                                    "Maturity",
+                                    formatMaturityDate(booking.deadlineDate),
+                                  ),
                                 ],
                               ),
                               SizedBox(height: 20.h),
-                              Divider(thickness: 1, color: Colors.white30),
+                              const Divider(thickness: 1, color: Colors.white30),
                               SizedBox(height: 20.h),
 
-                              // Action Buttons
+                              // Complete Booking Button
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
@@ -136,10 +155,17 @@ String formatMaturityDate(String? dateStr) {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(14),
                                     ),
-                                    padding:
-                                        EdgeInsets.symmetric(vertical: 14.h),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 14.h,
+                                    ),
                                   ),
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    BookingPaymentModal.show(
+                                      context,
+                                      bookingName: booking.productName ?? "",
+                                      initialPhone: user.phoneNumber1 ?? "",
+                                    );
+                                  },
                                   child: Text(
                                     "Complete Booking",
                                     style: GoogleFonts.montserrat(
@@ -151,34 +177,78 @@ String formatMaturityDate(String? dateStr) {
                                 ),
                               ),
                               SizedBox(height: 12.h),
-                              SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(
-                                        color: Colors.redAccent, width: 2),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
+
+                              // Cancel Booking Button with BlocConsumer
+                              BlocConsumer<BookingsCubit, BookingsState>(
+                                listener: (context, state) {
+                                  if (state is BookingCancelSuccess) {
+                                    CustomSnackBar.showSuccess(
+                                      context,
+                                      title: "Success",
+                                      message: "Booking cancelled successfully",
+                                    );
+                                     if (context.mounted) {
+                                        Navigator.pop(context, true); // return true to parent
+                                      }
+                                  } else if (state is BookingCancelError) {
+                                    CustomSnackBar.showError(
+                                      context,
+                                      title: "Error",
+                                      message: state.message,
+                                    );
+                                  }
+                                },
+                                builder: (context, state) {
+                                  final isLoading =
+                                      state is BookingCancelLoading;
+
+                                  return SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton(
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(
+                                          color: Colors.redAccent,
+                                          width: 2,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(14),
+                                        ),
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 14.h,
+                                        ),
+                                      ),
+                                      onPressed: isLoading
+                                          ? null
+                                          : () {
+                                              context
+                                                  .read<BookingsCubit>()
+                                                  .cancelBooking(booking
+                                                          .bookingReference ??
+                                                      "");
+                                            },
+                                      child: isLoading
+                                          ? SpinKitWave(
+                                              color: Colors.redAccent,
+                                              size: 24.sp,
+                                            )
+                                          : Text(
+                                              "Cancel Booking",
+                                              style: GoogleFonts.montserrat(
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 16.sp,
+                                                color: Colors.redAccent,
+                                              ),
+                                            ),
                                     ),
-                                    padding:
-                                        EdgeInsets.symmetric(vertical: 14.h),
-                                  ),
-                                  onPressed: () {},
-                                  child: Text(
-                                    "Cancel Booking",
-                                    style: GoogleFonts.montserrat(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 16.sp,
-                                      color: Colors.redAccent,
-                                    ),
-                                  ),
-                                ),
+                                  );
+                                },
                               ),
                             ],
                           ),
                         ),
 
-                        // Booking Image (overlapping on top)
+                        // Booking Image (overlapping top)
                         Positioned(
                           top: -60.h,
                           left: 0,
@@ -228,7 +298,7 @@ String formatMaturityDate(String? dateStr) {
                       ),
                     ),
                     SizedBox(height: 14.h),
-                    
+
                     if (booking.payments != null &&
                         booking.payments!.isNotEmpty)
                       ...booking.payments!.map(
@@ -244,26 +314,25 @@ String formatMaturityDate(String? dateStr) {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                formatPaymentDate(p.createdAt) ?? "",
+                                formatPaymentDate(p.createdAt),
                                 style: GoogleFonts.montserrat(
                                   fontSize: 13.sp,
-                                  color: isDark? Colors.white70 : Colors.black,
+                                  color: isDark ? Colors.white70 : Colors.black,
                                 ),
                               ),
                               Text(
                                 "Mobile Money Transfer",
                                 style: GoogleFonts.montserrat(
                                   fontSize: 13.sp,
-                                  color: isDark? Colors.white70 : Colors.black,
+                                  color: isDark ? Colors.white70 : Colors.black,
                                 ),
                               ),
                               Text(
                                 "Kshs ${p.paymentAmount}",
-                                // "Kshs 1000000",
                                 style: GoogleFonts.montserrat(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.bold,
-                                  color: isDark? Colors.white70 : Colors.black,
+                                  color: isDark ? Colors.white70 : Colors.black,
                                 ),
                               ),
                             ],

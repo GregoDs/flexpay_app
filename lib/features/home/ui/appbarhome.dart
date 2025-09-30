@@ -1,7 +1,7 @@
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
-import 'package:flexpay/features/home/ui/topupscreen.dart';
-import 'package:flexpay/features/home/ui/withdrawpage.dart';
+import 'package:flexpay/features/payments/ui/topup_home_page.dart';
+import 'package:flexpay/features/payments/ui/withdraw_home.dart';
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -117,7 +117,7 @@ class _AppBarHomeState extends State<AppBarHome> {
                     ),
                     SizedBox(width: 10.w),
                     Text(
-                      widget.userName,
+                      "Hello  ${widget.userName}",
                       style: GoogleFonts.montserrat(
                         fontSize: 18.sp,
                         color: Colors.white,

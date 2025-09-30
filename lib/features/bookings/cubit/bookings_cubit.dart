@@ -29,4 +29,16 @@ class BookingsCubit extends Cubit<BookingsState> {
       emit(BookingsError('Failed to load $type bookings. ${e.toString()}'));
     }
   }
+
+
+    ///  → Cancel booking flow
+  Future<void> cancelBooking(String bookingReference) async {
+    emit(BookingCancelLoading());
+    try {
+      final response = await _repository.cancelBooking(bookingReference);
+      emit(BookingCancelSuccess(response));
+    } catch (e) {
+      emit(BookingCancelError('Failed to cancel booking. ${e.toString()}'));
+    }
+  }
 }

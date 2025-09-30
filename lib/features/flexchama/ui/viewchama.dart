@@ -68,14 +68,19 @@ class _ViewChamasState extends State<ViewChamas> {
   @override
   void initState() {
     super.initState();
-    _fetchOurChamas(refreshListOnly: false);
+    // First entry: force a fresh fetch to seed cache
+    _fetchOurChamas(refreshListOnly: false, forceRefresh: true);
   }
 
-  void _fetchOurChamas({bool refreshListOnly = false}) {
+  void _fetchOurChamas({
+    bool refreshListOnly = false,
+    bool forceRefresh = false,
+  }) {
     final type = isYearly ? "yearly" : "half_yearly";
     context.read<ChamaCubit>().fetchAllChamaDetails(
       type: type,
       refreshListOnly: refreshListOnly,
+      forceRefresh: forceRefresh,
     );
   }
 
@@ -179,7 +184,7 @@ class _ViewChamasState extends State<ViewChamas> {
 
             return RefreshIndicator(
               onRefresh: () async {
-                _fetchOurChamas(refreshListOnly: false);
+                _fetchOurChamas(refreshListOnly: false, forceRefresh: true);
               },
 
               child: SingleChildScrollView(
@@ -198,7 +203,15 @@ class _ViewChamasState extends State<ViewChamas> {
                             color: textColor,
                             size: 22.sp,
                           ),
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () async {
+                            // First refresh savings
+                            await context
+                                .read<ChamaCubit>()
+                                .fetchChamaUserSavings();
+
+                            // Then go back
+                            Navigator.pop(context);
+                          },
                         ),
                         Center(
                           child: ColorFiltered(
@@ -269,7 +282,8 @@ class _ViewChamasState extends State<ViewChamas> {
                                   selected: isYearly,
                                   onTap: () {
                                     setState(() => isYearly = true);
-                                    _fetchOurChamas();
+                                    // Use cache when switching tabs; no refresh
+                                    _fetchOurChamas(refreshListOnly: true);
                                   },
                                 ),
                                 SizedBox(width: 20.w),
@@ -278,7 +292,8 @@ class _ViewChamasState extends State<ViewChamas> {
                                   selected: !isYearly,
                                   onTap: () {
                                     setState(() => isYearly = false);
-                                    _fetchOurChamas();
+                                    // Use cache when switching tabs; no refresh
+                                    _fetchOurChamas(refreshListOnly: true);
                                   },
                                 ),
                               ],
@@ -499,7 +514,8 @@ class _ViewChamasState extends State<ViewChamas> {
           child: GestureDetector(
             onTap: () => setState(() {
               selectedChamaType = 1;
-              _fetchOurChamas();
+              // Use cached data when toggling between My/Our chamas
+              _fetchOurChamas(refreshListOnly: true);
             }),
             child: _buildSelectedChamaCard(
               FontAwesomeIcons.creditCard,
@@ -517,7 +533,8 @@ class _ViewChamasState extends State<ViewChamas> {
           child: GestureDetector(
             onTap: () => setState(() {
               selectedChamaType = 2;
-              _fetchOurChamas();
+              // Use cached data when toggling between My/Our chamas
+              _fetchOurChamas(refreshListOnly: true);
             }),
             child: _buildSelectedChamaCard(
               FontAwesomeIcons.handHoldingDollar,
@@ -791,8 +808,11 @@ void _showJoinOurChamaPaymentModal(
                 ),
                 child: Column(
                   children: [
-                    Icon(Icons.account_balance_wallet,
-                        size: 40.sp, color: Colors.white),
+                    Icon(
+                      Icons.account_balance_wallet,
+                      size: 40.sp,
+                      color: Colors.white,
+                    ),
                     SizedBox(height: 8.h),
                     Text(
                       "Join $chamaName",
@@ -838,12 +858,14 @@ void _showJoinOurChamaPaymentModal(
                       style: GoogleFonts.montserrat(
                         fontSize: 15.sp,
                         color: Colors.black,
-                        ),
+                      ),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: const Color(0xFFF3F4F6),
-                        prefixIcon: Icon(Icons.currency_exchange,
-                            color: Colors.blue[800]),
+                        prefixIcon: Icon(
+                          Icons.currency_exchange,
+                          color: Colors.blue[800],
+                        ),
                         hintText: "Enter amount",
                         hintStyle: GoogleFonts.montserrat(
                           color: Colors.grey[500],
@@ -869,15 +891,16 @@ void _showJoinOurChamaPaymentModal(
                           if (deposit == null || deposit <= 0) {
                             ScaffoldMessenger.of(modalContext).showSnackBar(
                               const SnackBar(
-                                  content: Text("Please enter a valid deposit")),
+                                content: Text("Please enter a valid deposit"),
+                              ),
                             );
                             return;
                           }
 
                           parentContext.read<ChamaCubit>().subscribeToChama(
-                                productId: productId,
-                                depositAmount: deposit,
-                              );
+                            productId: productId,
+                            depositAmount: deposit,
+                          );
                           Navigator.pop(modalContext);
                         },
                         style: ElevatedButton.styleFrom(
@@ -939,9 +962,6 @@ void _showJoinOurChamaPaymentModal(
   });
 }
 
-
-
-
 void _showSaveToMyChamaModal(
   BuildContext parentContext,
   int productId,
@@ -975,14 +995,19 @@ void _showSaveToMyChamaModal(
                   // === Header with gradient ===
                   Container(
                     width: double.infinity,
-                    padding: EdgeInsets.symmetric(vertical: 22.h, horizontal: 16.w),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 22.h,
+                      horizontal: 16.w,
+                    ),
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         colors: [Color(0xFF009AC1), Color(0xFF1D3C4E)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
                     ),
                     child: Column(
                       children: [
@@ -1026,22 +1051,26 @@ void _showSaveToMyChamaModal(
                         ),
                         SizedBox(height: 2.h),
                         Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              PaymentOptionCard(
-                                imagePath: "assets/images/payment_platform/mpesa_img.png",
-                                label: "M-Pesa",
-                                isSelected: selectedSource == "M-Pesa",
-                                onTap: () => setState(() => selectedSource = "M-Pesa"),
-                              ),
-                              PaymentOptionCard(
-                                imagePath: "assets/images/payment_platform/wallet_img.webp",
-                                label: "Wallet",
-                                isSelected: selectedSource == "Wallet",
-                                onTap: () => setState(() => selectedSource = "Wallet"),
-                              ),
-                            ],
-                          ),
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            PaymentOptionCard(
+                              imagePath:
+                                  "assets/images/payment_platform/mpesa_img.png",
+                              label: "M-Pesa",
+                              isSelected: selectedSource == "M-Pesa",
+                              onTap: () =>
+                                  setState(() => selectedSource = "M-Pesa"),
+                            ),
+                            PaymentOptionCard(
+                              imagePath:
+                                  "assets/images/payment_platform/wallet_img.webp",
+                              label: "Wallet",
+                              isSelected: selectedSource == "Wallet",
+                              onTap: () =>
+                                  setState(() => selectedSource = "Wallet"),
+                            ),
+                          ],
+                        ),
                         SizedBox(height: 16.h),
 
                         // Phone number field
@@ -1059,12 +1088,15 @@ void _showSaveToMyChamaModal(
                           style: GoogleFonts.montserrat(
                             fontSize: 15.sp,
                             color: Colors.black,
-                            ),
+                          ),
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: const Color(0xFFF3F4F6),
-                            prefixIcon: Icon(Icons.phone, color: Colors.blue[800]),
+                            prefixIcon: Icon(
+                              Icons.phone,
+                              color: Colors.blue[800],
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.r),
                               borderSide: BorderSide.none,
@@ -1088,13 +1120,15 @@ void _showSaveToMyChamaModal(
                           style: GoogleFonts.montserrat(
                             fontSize: 15.sp,
                             color: Colors.black,
-                            ),
+                          ),
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: const Color(0xFFF3F4F6),
-                            prefixIcon: Icon(Icons.currency_exchange,
-                                color: Colors.blue[800]),
+                            prefixIcon: Icon(
+                              Icons.currency_exchange,
+                              color: Colors.blue[800],
+                            ),
                             hintText: "Enter amount",
                             hintStyle: GoogleFonts.montserrat(
                               color: Colors.grey[500],
@@ -1114,32 +1148,44 @@ void _showSaveToMyChamaModal(
                           height: 52.h,
                           child: ElevatedButton(
                             onPressed: () {
-                              final amount = double.tryParse(amountController.text.trim());
+                              final amount = double.tryParse(
+                                amountController.text.trim(),
+                              );
                               final phoneNumber = phoneController.text.trim();
 
                               if (amount == null || amount <= 0) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Enter valid amount")),
+                                  const SnackBar(
+                                    content: Text("Enter valid amount"),
+                                  ),
                                 );
                                 return;
                               }
                               if (phoneNumber.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Enter phone number")),
+                                  const SnackBar(
+                                    content: Text("Enter phone number"),
+                                  ),
                                 );
                                 return;
                               }
 
                               if (selectedSource == "M-Pesa") {
                                 // 👉 Call Mpesa-specific Cubit
-                                parentContext.read<ChamaCubit>().saveToChamaMpesa(
+                                parentContext
+                                    .read<ChamaCubit>()
+                                    .saveToChamaMpesa(
                                       productId: productId,
                                       amount: amount,
                                     );
                               } else if (selectedSource == "Wallet") {
                                 // 👉 Placeholder: later we’ll connect Wallet repo method
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Wallet integration coming soon")),
+                                  const SnackBar(
+                                    content: Text(
+                                      "Wallet integration coming soon",
+                                    ),
+                                  ),
                                 );
                               }
 
@@ -1168,8 +1214,11 @@ void _showSaveToMyChamaModal(
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.lock,
-                                size: 16.sp, color: Colors.grey[600]),
+                            Icon(
+                              Icons.lock,
+                              size: 16.sp,
+                              color: Colors.grey[600],
+                            ),
                             SizedBox(width: 6.w),
                             Text(
                               "Transactions are encrypted",
@@ -1458,4 +1507,3 @@ class _ChamaListItem extends StatelessWidget {
     );
   }
 }
-

@@ -1,9 +1,13 @@
 import 'package:flexpay/features/auth/ui/splash_screen.dart';
 import 'package:flutter/services.dart';
 import 'exports.dart';
+import 'package:flutter/widgets.dart';
+
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 void main() async {
-  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
 
   // Lock orientation to portrait only
   await SystemChrome.setPreferredOrientations([
@@ -48,7 +52,8 @@ class MyApp extends StatelessWidget {
 
             final overlayStyle = isDark
                 ? SystemUiOverlayStyle.light.copyWith(
-                    statusBarColor: Colors.transparent, // transparent looks modern
+                    statusBarColor:
+                        Colors.transparent, // transparent looks modern
                     statusBarIconBrightness: Brightness.light,
                     systemNavigationBarColor: Colors.black,
                     systemNavigationBarIconBrightness: Brightness.light,
@@ -66,6 +71,7 @@ class MyApp extends StatelessWidget {
             );
           },
 
+          navigatorObservers: [routeObserver],
           routes: AppRoutes.routes,
           home: const SplashScreen(),
         );

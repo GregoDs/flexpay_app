@@ -1,10 +1,14 @@
 import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/home/ui/appbarhome.dart';
-import 'package:flexpay/features/home/ui/transactiondetails.dart';
+import 'package:flexpay/features/home/ui/transactions_home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flexpay/features/home/cubits/home_cubit.dart';
+import 'package:flexpay/features/home/cubits/home_states.dart';
+import 'package:flexpay/features/home/models/home_transactions_model/transactions_model.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool isDarkModeOn;
@@ -14,7 +18,7 @@ class HomeScreen extends StatefulWidget {
     super.key,
     required this.isDarkModeOn,
     required this.userModel,
-    });
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -23,10 +27,26 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> outlets = [];
   bool isLoading = true;
+  double _walletBalance = 0.0;
+  List<TransactionData> _transactions = [];
+  bool _txLoading = false;
+  String? _txError;
 
   @override
   void initState() {
     super.initState();
+    // Fetch wallet when arriving on HomeScreen regardless of navigation path
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final cubit = context.read<HomeCubit>();
+        cubit.fetchUserWallet();
+        setState(() {
+          _txLoading = true;
+          _txError = null;
+        });
+        cubit.fetchLatestTransactions();
+      }
+    });
   }
 
   @override
@@ -35,12 +55,49 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, constraints) {
         return Scaffold(
           appBar: PreferredSize(
-            preferredSize:
-                Size.fromHeight(MediaQuery.of(context).size.height * 0.60),
-            child: AppBarHome(
-              context,
-              userName: "${widget.userModel.user.username}",
-              balance: 1234.56, userModel: widget.userModel,
+            preferredSize: Size.fromHeight(
+              MediaQuery.of(context).size.height * 0.60,
+            ),
+            child: BlocListener<HomeCubit, HomeState>(
+              listener: (context, state) {
+                if (state is HomeWalletFetched) {
+                  final wallet =
+                      state.walletResponse.data?.walletAccount.walletBalance;
+                  if (wallet != null) {
+                    setState(() {
+                      _walletBalance = wallet.balance.toDouble();
+                    });
+                  }
+                } else if (state is HomeWalletFailure) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(state.message)));
+                } else if (state is HomeTransactionsLoading) {
+                  setState(() {
+                    _txLoading = true;
+                    _txError = null;
+                  });
+                } else if (state is HomeTransactionsFetched) {
+                  setState(() {
+                    _transactions = state.transactionsResponse.data;
+                    _txLoading = false;
+                  });
+                } else if (state is HomeTransactionsFailure) {
+                  setState(() {
+                    _txLoading = false;
+                    _txError = state.message;
+                  });
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(state.message)));
+                }
+              },
+              child: AppBarHome(
+                context,
+                userName: "${widget.userModel.user.firstName}",
+                balance: _walletBalance,
+                userModel: widget.userModel,
+              ),
             ),
           ),
           body: SingleChildScrollView(
@@ -109,8 +166,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showCampaignModal(BuildContext context) {
-    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -143,11 +198,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.emoji_people,
-                          color: Colors.orange, size: 30.sp),
+                      Icon(
+                        Icons.emoji_people,
+                        color: Colors.orange,
+                        size: 30.sp,
+                      ),
                       SizedBox(width: 12.w),
-                      Icon(Icons.card_giftcard,
-                          color: Colors.blue, size: 30.sp),
+                      Icon(
+                        Icons.card_giftcard,
+                        color: Colors.blue,
+                        size: 30.sp,
+                      ),
                       SizedBox(width: 12.w),
                       Icon(Icons.star, color: Colors.amber, size: 30.sp),
                     ],
@@ -344,16 +405,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMerchantCard(BuildContext context, String imagePath,
-      double width, String merchantName) {
+  Widget _buildMerchantCard(
+    BuildContext context,
+    String imagePath,
+    double width,
+    String merchantName,
+  ) {
     return GestureDetector(
       onTap: () => _showMerchantVoucherModal(context, merchantName),
       child: Container(
         width: width,
         height: 60.h,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12.r)),
         child: imagePath.endsWith('.svg')
             ? SvgPicture.asset(imagePath, fit: BoxFit.contain)
             : Image.asset(imagePath, fit: BoxFit.contain),
@@ -368,126 +431,158 @@ class _HomeScreenState extends State<HomeScreen> {
         Text(
           "Transactions",
           style: GoogleFonts.montserrat(
-              fontSize: 16.sp, fontWeight: FontWeight.bold),
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         SizedBox(height: 10.h),
-        _buildTransactionTile(
-            "03 Feb 2025 21:35", "Booking", "Ksh 1", true, context),
-            // Second booking (Boxer Motor Booking)
-      _buildTransactionTile(
-        "Feb 19, 2025",
-        "Boxer Motor Booking",
-        "+Ksh 2,000.00",
-        true,
-        context,
-      ),
-
-      // Third booking (another Booking)
-      _buildTransactionTile(
-        "03 Feb 2025 21:35",
-        "Booking",
-        "Ksh 1",
-        false,
-        context,
-      ),
+        if (_txLoading)
+          const Center(child: CircularProgressIndicator())
+        else if (_transactions.isEmpty)
+          Text(
+            _txError ?? "No transactions yet",
+            style: GoogleFonts.montserrat(fontSize: 14.sp),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _transactions.length.clamp(0, 5),
+            itemBuilder: (context, index) {
+              final tx = _transactions[index];
+              final isIncome = tx.paymentAmount >= 0;
+              final amountText = _formatAmount(
+                tx.paymentAmount,
+                prefix: 'Ksh ',
+              );
+              return _buildTransactionTile(
+                tx.date,
+                tx.productName,
+                amountText,
+                isIncome,
+                context,
+              );
+            },
+          ),
       ],
     );
   }
 
-  Widget _buildTransactionTile(String dateTime, String description,
-      String amount, bool isIncome, BuildContext context) {
+  Widget _buildTransactionTile(
+    String dateTime,
+    String description,
+    String amount,
+    bool isIncome,
+    BuildContext context,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 6.h),
       child: GestureDetector(
         onTap: () {
-          Navigator.of(context).push(_createSlideUpRoute());
+          Navigator.of(context).push(
+            _createSlideUpRoute(_transactions),
+          );
         },
-        child: Container(
-          padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+       // ... existing code ...
+child: Container(
+  padding: EdgeInsets.all(12.w),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(12.r),
+    border: Border.all(color: Colors.grey.shade200),
+  ),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      // LEFT SIDE: icon + text
+      Expanded(
+        child: Row(
+          children: [
+            Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Icon(
+                isIncome ? Icons.north_east : Icons.south_west,
+                color: isIncome ? Colors.green : Colors.red,
+                size: 22.sp,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            // Only the Column should be flexible
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 40.w,
-                    height: 40.w,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Icon(
-                      isIncome ? Icons.north_east : Icons.south_west,
-                      color: isIncome ? Colors.green : Colors.red,
-                      size: 22.sp,
+                  Text(
+                    dateTime,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 13.sp,
+                      color: Colors.black.withOpacity(0.6),
                     ),
                   ),
-                  SizedBox(width: 12.w),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        dateTime,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 13.sp,
-                          color: Colors.black.withOpacity(0.6),
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        description,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 15.sp,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
+                  SizedBox(height: 4.h),
+                  Text(
+                    description,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 15.sp,
+                      color: Colors.black,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ],
               ),
-              Text(
-                amount,
-                style: GoogleFonts.montserrat(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                  color: isIncome ? Colors.green : Colors.red,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
-
-  Route _createSlideUpRoute() {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 400),
-      pageBuilder: (context, animation, secondaryAnimation) =>
-          TransactionDetailsPage(
-        transactionId: '',
+      // RIGHT SIDE: amount
+      Text(
+        amount,
+        style: GoogleFonts.montserrat(
+          fontSize: 16.sp,
+          fontWeight: FontWeight.bold,
+          color: isIncome ? Colors.green : Colors.red,
+        ),
       ),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        var begin = Offset(0.0, 1.0);
-        var end = Offset.zero;
-        var curve = Curves.easeInOut;
+    ],
+  ),
+),
+      ),
 
-        var tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        return SlideTransition(position: animation.drive(tween), child: child);
-      },
     );
   }
+
+  String _formatAmount(double value, {String prefix = ''}) {
+    final isNegative = value < 0;
+    final abs = value.abs();
+    final hasCents = abs.truncateToDouble() != abs;
+    final text = hasCents ? abs.toStringAsFixed(2) : abs.toStringAsFixed(0);
+    final signed = isNegative ? '-$prefix$text' : '+$prefix$text';
+    return signed;
+  }
+
+  Route _createSlideUpRoute(List<TransactionData> transactions) {
+  return PageRouteBuilder(
+    transitionDuration: const Duration(milliseconds: 400),
+    pageBuilder: (context, animation, secondaryAnimation) =>
+        TransactionDetailsPage(transactions: transactions),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      var begin = const Offset(0.0, 1.0);
+      var end = Offset.zero;
+      var curve = Curves.easeInOut;
+
+      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      return SlideTransition(position: animation.drive(tween), child: child);
+    },
+  );
+}
 
   void _showMerchantVoucherModal(BuildContext context, String merchantName) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
-
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -509,7 +604,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   "Save for voucher",
                   style: GoogleFonts.montserrat(
-                      fontSize: 25.sp, fontWeight: FontWeight.bold),
+                    fontSize: 25.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 SizedBox(height: 15.h),
                 Wrap(
@@ -545,7 +642,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   "Once created, the voucher can only be redeemed for any $merchantName products at any $merchantName outlet countrywide.",
                   style: GoogleFonts.montserrat(
-                      color: Colors.red, fontSize: 14.sp),
+                    color: Colors.red,
+                    fontSize: 14.sp,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 20.h),

@@ -5,12 +5,18 @@ import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
 import 'package:flexpay/utils/services/logger.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'chama_state.dart';
+import 'package:flexpay/features/flexchama/models/products_model/chama_products_model.dart';
 
 class ChamaCubit extends Cubit<ChamaState> {
   final ChamaRepo _repo;
 
   // Store last fetched profile
   ChamaProfile? _currentProfile;
+
+  // In-memory cache for snappy UI
+  ChamaSavingsResponse? _cachedSavings;
+  UserChamasResponse? _cachedUserChamas;
+  final Map<String, ChamaProductsResponse> _cachedProductsByType = {};
 
   ChamaCubit(this._repo) : super(ChamaInitial());
 
@@ -124,7 +130,6 @@ class ChamaCubit extends Cubit<ChamaState> {
     try {
       final response = await _repo.getAllChamaProducts(type: type);
       emit(ChamaAllProductsFetched(response));
-      
     } catch (e) {
       emit(ChamaAllProductsFailure(e.toString()));
     }
@@ -142,45 +147,100 @@ class ChamaCubit extends Cubit<ChamaState> {
     }
   }
 
+  /// ---------------- Fetch All Products At Once (with cache) ----------------
+  Future<void> fetchAllChamaDetails({
+    String type = "yearly",
+    bool refreshListOnly = false,
+    bool forceRefresh = false,
+  }) async {
+    final hasSavings = _cachedSavings != null;
+    final hasUserChamas = _cachedUserChamas != null;
+    final hasProductsForType = _cachedProductsByType.containsKey(type);
 
+    // Serve from cache when available and not forcing refresh
+    if (!forceRefresh && hasSavings && hasUserChamas && hasProductsForType) {
+      final current = ChamaViewState(
+        isWalletLoading: false,
+        isListLoading: false,
+        savings: _cachedSavings,
+        userChamas: _cachedUserChamas,
+        allProducts: _cachedProductsByType[type],
+      );
 
-   /// ---------------- Fetch All Products At Once ----------------
-  Future<void> fetchAllChamaDetails({String type = "yearly", bool refreshListOnly = false}) async {
-    // 👉 if refreshListOnly = true → only shimmer the list, not wallet
+      // If only the list is meant to show loading (tab switch), keep wallet intact
+      if (refreshListOnly) {
+        emit(
+          ChamaViewState(
+            isWalletLoading: false,
+            isListLoading: false,
+            savings: current.savings,
+            userChamas: current.userChamas,
+            allProducts: current.allProducts,
+          ),
+        );
+      } else {
+        emit(current);
+      }
+      return;
+    }
+
+    // Determine loading states
     if (refreshListOnly) {
       emit(
         ChamaViewState(
           isListLoading: true,
           isWalletLoading: false,
-          savings: state is ChamaViewState ? (state as ChamaViewState).savings : null,
-          userChamas: state is ChamaViewState ? (state as ChamaViewState).userChamas : null,
-          allProducts: state is ChamaViewState ? (state as ChamaViewState).allProducts : null,
+          savings: state is ChamaViewState
+              ? (state as ChamaViewState).savings
+              : _cachedSavings,
+          userChamas: state is ChamaViewState
+              ? (state as ChamaViewState).userChamas
+              : _cachedUserChamas,
+          allProducts: state is ChamaViewState
+              ? (state as ChamaViewState).allProducts
+              : _cachedProductsByType[type],
         ),
       );
     } else {
-      // 👉 full page loading (first time)
       emit(const ChamaViewState(isWalletLoading: true, isListLoading: true));
     }
 
     try {
-      final savings = await _repo.fetchUserChamaSavings();
-      final userChamas = await _repo.getUserChamas();
-      final products = await _repo.getAllChamaProducts(type: type);
+      // Fetch only what is missing or when forcing refresh
+      final futures = <Future>[];
+      if (forceRefresh || !hasSavings)
+        futures.add(_repo.fetchUserChamaSavings());
+      if (forceRefresh || !hasUserChamas) futures.add(_repo.getUserChamas());
+      if (forceRefresh || !hasProductsForType)
+        futures.add(_repo.getAllChamaProducts(type: type));
+
+      final results = await Future.wait(futures);
+
+      int idx = 0;
+      if (forceRefresh || !hasSavings) {
+        _cachedSavings = results[idx++] as ChamaSavingsResponse;
+      }
+      if (forceRefresh || !hasUserChamas) {
+        _cachedUserChamas = results[idx++] as UserChamasResponse;
+      }
+      if (forceRefresh || !hasProductsForType) {
+        _cachedProductsByType[type] = results[idx++] as ChamaProductsResponse;
+      }
+      // updated cache timestamp if needed later
 
       emit(
         ChamaViewState(
           isWalletLoading: false,
           isListLoading: false,
-          savings: savings,
-          userChamas: userChamas,
-          allProducts: products,
+          savings: _cachedSavings,
+          userChamas: _cachedUserChamas,
+          allProducts: _cachedProductsByType[type],
         ),
       );
     } catch (e) {
       emit(ChamaError(e.toString()));
     }
   }
-
 
   /// ---------------- Subscribe to Chama ----------------
   Future<void> subscribeToChama({
@@ -194,27 +254,31 @@ class ChamaCubit extends Cubit<ChamaState> {
         depositAmount: depositAmount,
       );
       emit(SubscribeChamaSuccess(response));
+      // Invalidate caches and refresh next view
+      _cachedSavings = null;
+      _cachedUserChamas = null;
+      // Keep products cache; product catalog rarely changes here
     } catch (e) {
       emit(SubscribeChamaFailure(e.toString()));
     }
   }
 
- 
-/// ---------------- Save to Chama (Mpesa) ----------------
-Future<void> saveToChamaMpesa({
-  required int productId,
-  required double amount,
-}) async {
-  emit(SaveToChamaLoading());
-  try {
-    final response = await _repo.saveToChama(
-      productId: productId,
-      amount: amount,
-    );
-    emit(SaveToChamaSuccess(response));
-  } catch (e) {
-    emit(SaveToChamaFailure(e.toString()));
+  /// ---------------- Save to Chama (Mpesa) ----------------
+  Future<void> saveToChamaMpesa({
+    required int productId,
+    required double amount,
+  }) async {
+    emit(SaveToChamaLoading());
+    try {
+      final response = await _repo.saveToChama(
+        productId: productId,
+        amount: amount,
+      );
+      emit(SaveToChamaSuccess(response));
+      // Invalidate caches and refresh next view
+      _cachedSavings = null;
+    } catch (e) {
+      emit(SaveToChamaFailure(e.toString()));
+    }
   }
 }
-}
-

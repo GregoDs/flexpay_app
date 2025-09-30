@@ -19,12 +19,16 @@ import 'package:flexpay/features/merchants/cubits/merchant_cubit.dart';
 import 'package:flexpay/features/merchants/repo/merchants_repo.dart';
 import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
+import 'package:flexpay/features/home/cubits/home_cubit.dart';
+import 'package:flexpay/features/home/repo/home_repo.dart';
+import 'package:flexpay/utils/services/api_service.dart';
 
 // Create global Cubit instances
 final authCubit = AuthCubit(AuthRepo());
 final chamaCubit = ChamaCubit(ChamaRepo());
 final bookingsCubit = BookingsCubit(BookingsRepository());
 final merchantsCubit = MerchantsCubit(MerchantsRepository());
+final homeCubit = HomeCubit(HomeRepo(ApiService()));
 
 class AppRoutes {
   static final routes = {
@@ -45,21 +49,20 @@ class AppRoutes {
     //       isDarkModeOn: Theme.of(context).brightness == Brightness.dark,
     //     ),
     Routes.home: (context) {
-  final userModel = ModalRoute.of(context)!.settings.arguments as UserModel;
-  return BlocProvider.value(
-    value: chamaCubit, // using your global instance
-    child: NavigationWrapper(initialIndex: 0, userModel: userModel),
-  );
-},
+      final userModel = ModalRoute.of(context)!.settings.arguments as UserModel;
+      return MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: chamaCubit),
+          BlocProvider.value(value: homeCubit),
+        ],
+        child: NavigationWrapper(initialIndex: 0, userModel: userModel),
+      );
+    },
 
     Routes.goals: (context) => GoalsPage(),
 
-    Routes.registerChama: (context) => 
-    BlocProvider.value(
-      value: chamaCubit,
-      child: ChamaRegistrationPage(),
-    ),
-    
+    Routes.registerChama: (context) =>
+        BlocProvider.value(value: chamaCubit, child: ChamaRegistrationPage()),
 
     Routes.viewChamas: (context) =>
         BlocProvider.value(value: chamaCubit, child: const ViewChamas()),

@@ -17,6 +17,9 @@ class ApiService {
   static String prodEndpointAuth = dotenv.env["PROD_ENDPOINT_AUTH"]!;
   static String prodEndpointBookings = dotenv.env['PROD_ENDPOINT_BOOKINGS']!;
   static String prodEndpointChama = dotenv.env['PROD_ENDPOINT_CHAMA']!;
+  static String prodEndpointWallet = dotenv.env['PROD_ENDPOINT_WALLET']!;
+  static String prodEndpointBookingsTransactions = dotenv.env['PROD_ENDPOINT_BOOKINGS_TRANSACTIONS']!;
+
 
   // Generic GET request
   Future<Response> get(String url,

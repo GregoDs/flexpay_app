@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flexpay/features/bookings/models/bookings_models.dart';
+import 'package:flexpay/features/bookings/models/cancel_booking_model/cancel_booking_model.dart';
 
 
 abstract class BookingsState extends Equatable {
@@ -30,6 +31,28 @@ class BookingsError extends BookingsState {
   final String message;
 
   const BookingsError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+  
+}
+
+// Cancel states //
+class BookingCancelLoading extends BookingsState {}
+
+class BookingCancelSuccess extends BookingsState {
+  final CancelBookingResponse response;
+
+  const BookingCancelSuccess(this.response);
+
+  @override
+  List<Object?> get props => [response];
+}
+
+class BookingCancelError extends BookingsState {
+  final String message;
+
+  const BookingCancelError(this.message);
 
   @override
   List<Object?> get props => [message];

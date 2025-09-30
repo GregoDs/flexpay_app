@@ -1,8 +1,8 @@
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
 import 'package:flexpay/features/flexchama/ui/statements_chama.dart';
-import 'package:flexpay/features/home/ui/topupscreen.dart';
-import 'package:flexpay/features/home/ui/withdrawpage.dart';
+import 'package:flexpay/features/payments/ui/topup_home_page.dart';
+import 'package:flexpay/features/payments/ui/withdraw_home.dart';
 import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_state.dart';
