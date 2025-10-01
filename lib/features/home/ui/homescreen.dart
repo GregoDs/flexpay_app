@@ -49,6 +49,22 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _refreshData() async {
+    final cubit = context.read<HomeCubit>();
+
+    // Re-fetch wallet
+    cubit.fetchUserWallet();
+
+    // Reset transactions loading/error state
+    setState(() {
+      _txLoading = true;
+      _txError = null;
+    });
+
+    // Re-fetch transactions
+    cubit.fetchLatestTransactions();
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -100,20 +116,24 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          body: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 36.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildCampaignCard(context),
-                  SizedBox(height: 40.h),
-                  _buildVoucherSection(context),
-                  SizedBox(height: 15.h),
-                  _buildMerchantImages(context),
-                  SizedBox(height: 25.h),
-                  _buildTransactionsSection(context),
-                ],
+          body: RefreshIndicator(
+            onRefresh: _refreshData,
+            color: const Color(0xFF337687),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 36.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildCampaignCard(context),
+                    SizedBox(height: 40.h),
+                    _buildVoucherSection(context),
+                    SizedBox(height: 15.h),
+                    _buildMerchantImages(context),
+                    SizedBox(height: 25.h),
+                    _buildTransactionsSection(context),
+                  ],
+                ),
               ),
             ),
           ),
@@ -479,81 +499,78 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 6.h),
       child: GestureDetector(
         onTap: () {
-          Navigator.of(context).push(
-            _createSlideUpRoute(_transactions),
-          );
+          Navigator.of(context).push(_createSlideUpRoute(_transactions));
         },
-       // ... existing code ...
-child: Container(
-  padding: EdgeInsets.all(12.w),
-  decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(12.r),
-    border: Border.all(color: Colors.grey.shade200),
-  ),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      // LEFT SIDE: icon + text
-      Expanded(
-        child: Row(
-          children: [
-            Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Icon(
-                isIncome ? Icons.north_east : Icons.south_west,
-                color: isIncome ? Colors.green : Colors.red,
-                size: 22.sp,
-              ),
-            ),
-            SizedBox(width: 12.w),
-            // Only the Column should be flexible
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    dateTime,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 13.sp,
-                      color: Colors.black.withOpacity(0.6),
+        // ... existing code ...
+        child: Container(
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // LEFT SIDE: icon + text
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40.w,
+                      height: 40.w,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        isIncome ? Icons.north_east : Icons.south_west,
+                        color: isIncome ? Colors.green : Colors.red,
+                        size: 22.sp,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    description,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 15.sp,
-                      color: Colors.black,
+                    SizedBox(width: 12.w),
+                    // Only the Column should be flexible
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            dateTime,
+                            style: GoogleFonts.montserrat(
+                              fontSize: 13.sp,
+                              color: Colors.black.withOpacity(0.6),
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            description,
+                            style: GoogleFonts.montserrat(
+                              fontSize: 15.sp,
+                              color: Colors.black,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ],
+                      ),
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              // RIGHT SIDE: amount
+              Text(
+                amount,
+                style: GoogleFonts.montserrat(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: isIncome ? Colors.green : Colors.red,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      // RIGHT SIDE: amount
-      Text(
-        amount,
-        style: GoogleFonts.montserrat(
-          fontSize: 16.sp,
-          fontWeight: FontWeight.bold,
-          color: isIncome ? Colors.green : Colors.red,
-        ),
-      ),
-    ],
-  ),
-),
-      ),
-
     );
   }
 
@@ -567,20 +584,23 @@ child: Container(
   }
 
   Route _createSlideUpRoute(List<TransactionData> transactions) {
-  return PageRouteBuilder(
-    transitionDuration: const Duration(milliseconds: 400),
-    pageBuilder: (context, animation, secondaryAnimation) =>
-        TransactionDetailsPage(transactions: transactions),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      var begin = const Offset(0.0, 1.0);
-      var end = Offset.zero;
-      var curve = Curves.easeInOut;
+    return PageRouteBuilder(
+      transitionDuration: const Duration(milliseconds: 400),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          TransactionDetailsPage(transactions: transactions),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        var begin = const Offset(0.0, 1.0);
+        var end = Offset.zero;
+        var curve = Curves.easeInOut;
 
-      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-      return SlideTransition(position: animation.drive(tween), child: child);
-    },
-  );
-}
+        var tween = Tween(
+          begin: begin,
+          end: end,
+        ).chain(CurveTween(curve: curve));
+        return SlideTransition(position: animation.drive(tween), child: child);
+      },
+    );
+  }
 
   void _showMerchantVoucherModal(BuildContext context, String merchantName) {
     showModalBottomSheet(

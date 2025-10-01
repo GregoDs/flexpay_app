@@ -11,16 +11,84 @@ import 'package:flexpay/features/bookings/cubit/bookings_state.dart';
 import 'package:flexpay/gen/colors.gen.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
+import 'package:flexpay/main.dart' show routeObserver;
 
-class BookingDetailsPage extends StatelessWidget {
+class BookingDetailsPage extends StatefulWidget {
   final Booking booking;
   final User user;
+  final String selectedTab;
 
   const BookingDetailsPage({
     Key? key,
     required this.booking,
     required this.user,
+    required this.selectedTab,
   }) : super(key: key);
+
+  @override
+  State<BookingDetailsPage> createState() => _BookingDetailsPageState();
+}
+
+class _BookingDetailsPageState extends State<BookingDetailsPage>
+    with RouteAware {
+  late Booking _booking;
+  bool _isRefreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _booking = widget.booking;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Subscribe to route observer
+    final ModalRoute? route = ModalRoute.of(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Called when coming back to this page (e.g., after popping payment modal)
+    _fetchLatestBooking();
+  }
+
+  Future<void> _fetchLatestBooking() async {
+    setState(() => _isRefreshing = true);
+    try {
+      await context.read<BookingsCubit>().fetchBookingByReference(
+        _booking.bookingReference ?? "",
+      );
+    } finally {
+      setState(() => _isRefreshing = false);
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    await _fetchLatestBooking();
+  }
+
+  Future<void> _handlePayment() async {
+    final result = await BookingPaymentModal.show(
+      context,
+      bookingName: _booking.productName ?? "",
+      initialPhone: widget.user.phoneNumber1 ?? "",
+      bookingReference: _booking.bookingReference ?? "",
+    );
+    if (result == true) {
+      // Payment was successful, fetch latest booking
+      await _fetchLatestBooking();
+    }
+  }
 
   String formatPaymentDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return "";
@@ -68,287 +136,343 @@ class BookingDetailsPage extends StatelessWidget {
             ),
           ),
         ),
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            return SafeArea(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 86.h),
-                child: Column(
-                  children: [
-                    // Card with booking image overlapping
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        // Card background
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.fromLTRB(20.w, 70.h, 20.w, 20.h),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20.r),
-                            image: DecorationImage(
-                              image: const AssetImage(
-                                "assets/images/appbarbackground.png",
-                              ),
-                              fit: BoxFit.cover,
-                              colorFilter: ColorFilter.mode(
-                                Colors.black.withOpacity(0.6),
-                                BlendMode.darken,
-                              ),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
+        body: BlocConsumer<BookingsCubit, BookingsState>(
+          listener: (context, state) {
+            if (state is BookingsFetched && state.bookings.isNotEmpty) {
+              setState(() {
+                _booking = state.bookings.first;
+              });
+            }
+          },
+          builder: (context, state) {
+            final isLoading = state is BookingsLoading || _isRefreshing;
+            return RefreshIndicator(
+              onRefresh: _onRefresh,
+              color: ColorName.primaryColor,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (isLoading) {
+                    return Center(
+                      child: SpinKitWave(
+                        color: ColorName.primaryColor,
+                        size: 32.sp,
+                      ),
+                    );
+                  }
+                  return SafeArea(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 86.h,
+                      ),
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        children: [
+                          // Card with booking image overlapping
+                          Stack(
+                            clipBehavior: Clip.none,
                             children: [
-                              // Title
-                              Text(
-                                booking.productName ?? "No Booking Name",
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 22.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(height: 28.h),
-
-                              // Product Cost & Balance
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  _buildRowItem(
-                                    "Product Cost",
-                                    "Kshs ${booking.bookingPrice ?? 0}",
-                                  ),
-                                  _buildRowItem(
-                                    "Balance",
-                                    "Kshs ${(booking.bookingPrice ?? 0) - (booking.total ?? 0)}",
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 14.h),
-
-                              // Paid & Maturity
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  _buildRowItem(
-                                    "Paid",
-                                    "Kshs ${booking.total ?? 0}",
-                                  ),
-                                  _buildRowItem(
-                                    "Maturity",
-                                    formatMaturityDate(booking.deadlineDate),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 20.h),
-                              const Divider(thickness: 1, color: Colors.white30),
-                              SizedBox(height: 20.h),
-
-                              // Complete Booking Button
-                              SizedBox(
+                              // Card background
+                              Container(
                                 width: double.infinity,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: ColorName.primaryColor,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
+                                padding: EdgeInsets.fromLTRB(
+                                  20.w,
+                                  70.h,
+                                  20.w,
+                                  20.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20.r),
+                                  image: DecorationImage(
+                                    image: const AssetImage(
+                                      "assets/images/appbarbackground.png",
                                     ),
-                                    padding: EdgeInsets.symmetric(
-                                      vertical: 14.h,
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    BookingPaymentModal.show(
-                                      context,
-                                      bookingName: booking.productName ?? "",
-                                      initialPhone: user.phoneNumber1 ?? "",
-                                    );
-                                  },
-                                  child: Text(
-                                    "Complete Booking",
-                                    style: GoogleFonts.montserrat(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 16.sp,
-                                      color: Colors.white,
+                                    fit: BoxFit.cover,
+                                    colorFilter: ColorFilter.mode(
+                                      Colors.black.withOpacity(0.6),
+                                      BlendMode.darken,
                                     ),
                                   ),
                                 ),
-                              ),
-                              SizedBox(height: 12.h),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    // Title
+                                    Text(
+                                      _booking.productName ?? "No Booking Name",
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 22.sp,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(height: 28.h),
 
-                              // Cancel Booking Button with BlocConsumer
-                              BlocConsumer<BookingsCubit, BookingsState>(
-                                listener: (context, state) {
-                                  if (state is BookingCancelSuccess) {
-                                    CustomSnackBar.showSuccess(
-                                      context,
-                                      title: "Success",
-                                      message: "Booking cancelled successfully",
-                                    );
-                                     if (context.mounted) {
-                                        Navigator.pop(context, true); // return true to parent
-                                      }
-                                  } else if (state is BookingCancelError) {
-                                    CustomSnackBar.showError(
-                                      context,
-                                      title: "Error",
-                                      message: state.message,
-                                    );
-                                  }
-                                },
-                                builder: (context, state) {
-                                  final isLoading =
-                                      state is BookingCancelLoading;
+                                    // Product Cost & Balance
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        _buildRowItem(
+                                          "Product Cost",
+                                          "Kshs ${_booking.bookingPrice ?? 0}",
+                                        ),
+                                        _buildRowItem(
+                                          "Balance",
+                                          "Kshs ${(_booking.bookingPrice ?? 0) - (_booking.total ?? 0)}",
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 14.h),
 
-                                  return SizedBox(
-                                    width: double.infinity,
-                                    child: OutlinedButton(
-                                      style: OutlinedButton.styleFrom(
-                                        side: const BorderSide(
-                                          color: Colors.redAccent,
-                                          width: 2,
+                                    // Paid & Maturity
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        _buildRowItem(
+                                          "Paid",
+                                          "Kshs ${_booking.total ?? 0}",
                                         ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(14),
+                                        _buildRowItem(
+                                          "Maturity",
+                                          formatMaturityDate(
+                                            _booking.deadlineDate,
+                                          ),
                                         ),
-                                        padding: EdgeInsets.symmetric(
-                                          vertical: 14.h,
+                                      ],
+                                    ),
+                                    SizedBox(height: 20.h),
+                                    const Divider(
+                                      thickness: 1,
+                                      color: Colors.white30,
+                                    ),
+                                    SizedBox(height: 20.h),
+
+                                    // Complete Booking Button
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              ColorName.primaryColor,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                          ),
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: 14.h,
+                                          ),
+                                        ),
+                                        onPressed: () async {
+                                          await _handlePayment();
+                                        },
+                                        child: Text(
+                                          "Complete Booking",
+                                          style: GoogleFonts.montserrat(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 16.sp,
+                                            color: Colors.white,
+                                          ),
                                         ),
                                       ),
-                                      onPressed: isLoading
-                                          ? null
-                                          : () {
-                                              context
-                                                  .read<BookingsCubit>()
-                                                  .cancelBooking(booking
-                                                          .bookingReference ??
-                                                      "");
-                                            },
-                                      child: isLoading
-                                          ? SpinKitWave(
-                                              color: Colors.redAccent,
-                                              size: 24.sp,
-                                            )
-                                          : Text(
-                                              "Cancel Booking",
-                                              style: GoogleFonts.montserrat(
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 16.sp,
+                                    ),
+                                    SizedBox(height: 12.h),
+
+                                    // Cancel Booking Button with BlocConsumer
+                                    BlocConsumer<BookingsCubit, BookingsState>(
+                                      listener: (context, state) {
+                                        if (state is BookingCancelSuccess) {
+                                          CustomSnackBar.showSuccess(
+                                            context,
+                                            title: "Success",
+                                            message:
+                                                "Booking cancelled successfully",
+                                          );
+                                          if (context.mounted) {
+                                            Navigator.pop(
+                                              context,
+                                              true,
+                                            ); // return true to parent
+                                          }
+                                        } else if (state
+                                            is BookingCancelError) {
+                                          CustomSnackBar.showError(
+                                            context,
+                                            title: "Error",
+                                            message: state.message,
+                                          );
+                                        }
+                                      },
+                                      builder: (context, state) {
+                                        final isLoading =
+                                            state is BookingCancelLoading;
+
+                                        return SizedBox(
+                                          width: double.infinity,
+                                          child: OutlinedButton(
+                                            style: OutlinedButton.styleFrom(
+                                              side: const BorderSide(
                                                 color: Colors.redAccent,
+                                                width: 2,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
+                                              ),
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: 14.h,
                                               ),
                                             ),
+                                            onPressed: isLoading
+                                                ? null
+                                                : () {
+                                                    context
+                                                        .read<BookingsCubit>()
+                                                        .cancelBooking(
+                                                          _booking.bookingReference ??
+                                                              "",
+                                                        );
+                                                  },
+                                            child: isLoading
+                                                ? SpinKitWave(
+                                                    color: Colors.redAccent,
+                                                    size: 24.sp,
+                                                  )
+                                                : Text(
+                                                    "Cancel Booking",
+                                                    style:
+                                                        GoogleFonts.montserrat(
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          fontSize: 16.sp,
+                                                          color:
+                                                              Colors.redAccent,
+                                                        ),
+                                                  ),
+                                          ),
+                                        );
+                                      },
                                     ),
-                                  );
-                                },
+                                  ],
+                                ),
+                              ),
+
+                              // Booking Image (overlapping top)
+                              Positioned(
+                                top: -60.h,
+                                left: 0,
+                                right: 0,
+                                child: Center(
+                                  child: Container(
+                                    width: 120.w,
+                                    height: 120.w,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 4,
+                                      ),
+                                      color: Colors.grey[300],
+                                    ),
+                                    child: ClipOval(
+                                      child:
+                                          _booking.image != null &&
+                                              _booking.image!.isNotEmpty
+                                          ? Image.network(
+                                              _booking.image!,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Image.asset(
+                                              "assets/images/bookings_imgs/maldivesholiday.jpeg",
+                                              fit: BoxFit.cover,
+                                            ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                        ),
 
-                        // Booking Image (overlapping top)
-                        Positioned(
-                          top: -60.h,
-                          left: 0,
-                          right: 0,
-                          child: Center(
-                            child: Container(
-                              width: 120.w,
-                              height: 120.w,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 4,
-                                ),
-                                color: Colors.grey[300],
-                              ),
-                              child: ClipOval(
-                                child: booking.image != null &&
-                                        booking.image!.isNotEmpty
-                                    ? Image.network(
-                                        booking.image!,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Image.asset(
-                                        "assets/images/bookings_imgs/maldivesholiday.jpeg",
-                                        fit: BoxFit.cover,
-                                      ),
+                          SizedBox(height: 32.h),
+
+                          // Payments Section
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Payments",
+                              style: GoogleFonts.montserrat(
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.w500,
+                                color: ColorName.primaryColor,
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                          SizedBox(height: 14.h),
 
-                    SizedBox(height: 32.h),
-
-                    // Payments Section
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Payments",
-                        style: GoogleFonts.montserrat(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w500,
-                          color: ColorName.primaryColor,
-                        ),
+                          if (_booking.payments != null &&
+                              _booking.payments!.isNotEmpty)
+                            ..._booking.payments!.map(
+                              (p) => Container(
+                                margin: EdgeInsets.only(bottom: 10.h),
+                                padding: EdgeInsets.all(14.w),
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.grey[850]
+                                      : Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      formatPaymentDate(p.createdAt),
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 13.sp,
+                                        color: isDark
+                                            ? Colors.white70
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Mobile Money Transfer",
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 13.sp,
+                                        color: isDark
+                                            ? Colors.white70
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Kshs ${p.paymentAmount}",
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark
+                                            ? Colors.white70
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            Text(
+                              "No payments yet",
+                              style: GoogleFonts.montserrat(
+                                fontSize: 14.sp,
+                                color: textColor,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 14.h),
-
-                    if (booking.payments != null &&
-                        booking.payments!.isNotEmpty)
-                      ...booking.payments!.map(
-                        (p) => Container(
-                          margin: EdgeInsets.only(bottom: 10.h),
-                          padding: EdgeInsets.all(14.w),
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.grey[850] : Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                formatPaymentDate(p.createdAt),
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 13.sp,
-                                  color: isDark ? Colors.white70 : Colors.black,
-                                ),
-                              ),
-                              Text(
-                                "Mobile Money Transfer",
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 13.sp,
-                                  color: isDark ? Colors.white70 : Colors.black,
-                                ),
-                              ),
-                              Text(
-                                "Kshs ${p.paymentAmount}",
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white70 : Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      Text(
-                        "No payments yet",
-                        style: GoogleFonts.montserrat(
-                          fontSize: 14.sp,
-                          color: textColor,
-                        ),
-                      ),
-                  ],
-                ),
+                  );
+                },
               ),
             );
           },

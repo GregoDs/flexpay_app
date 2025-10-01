@@ -43,18 +43,31 @@ class BookingData {
 
   BookingData({this.pBooking});
 
-  factory BookingData.fromJson(Map<String, dynamic> json) {
+  factory BookingData.fromJson(dynamic json) {
+  // Handle case: data is [] (empty array)
+  if (json is List) {
+    return BookingData(pBooking: []);
+  }
+
+  // Otherwise expect a Map with pBooking
+  if (json is Map<String, dynamic>) {
     final pBookingJson = json['pBooking'];
+
     List<dynamic> bookingsList = [];
     if (pBookingJson is List) {
       bookingsList = pBookingJson;
     } else if (pBookingJson is Map && pBookingJson['data'] is List) {
       bookingsList = pBookingJson['data'];
     }
+
     return BookingData(
       pBooking: bookingsList.map((e) => Booking.fromJson(e)).toList(),
     );
   }
+
+  // Fallback: return empty
+  return BookingData(pBooking: []);
+}
 
   Map<String, dynamic> toJson() {
     return {
@@ -102,10 +115,14 @@ class Booking {
   final String? deletedAt;
   final String? productName;
   final String? productCode;
+  final String? productCategoryName;   // ✅ new
+  final String? productTypeName;       // ✅ new
   final String? outletName;
   final String? merchantName;
   final num? total;
+  final num? balance;                  // ✅ new
   final User? user;
+  final Promoter? promoter;            // ✅ new
   final List<dynamic>? bookingInterest;
   final num? interestAmount;
   final String? maturityDate;
@@ -150,10 +167,14 @@ class Booking {
     this.deletedAt,
     this.productName,
     this.productCode,
+    this.productCategoryName,
+    this.productTypeName,
     this.outletName,
     this.merchantName,
     this.total,
+    this.balance,
     this.user,
+    this.promoter,
     this.bookingInterest,
     this.interestAmount,
     this.maturityDate,
@@ -167,11 +188,11 @@ class Booking {
 
   factory Booking.fromJson(Map<String, dynamic> json) {
     return Booking(
-      id: json['id'],
+      id: json['id'] ?? json['booking_id'],
       countryId: json['country_id'],
       productId: json['product_id'],
       bookingSource: json['booking_source'],
-      userId: json['user_id'],
+      userId: json['user_id'] ?? json['booking_user_id'],
       merchantId: json['merchant_id'],
       promoterId: json['promoter_id'],
       outletId: json['outlet_id'],
@@ -200,10 +221,14 @@ class Booking {
       deletedAt: json['deleted_at'],
       productName: json['product_name'],
       productCode: json['product_code'],
+      productCategoryName: json['product_category_name'], // ✅ safe
+      productTypeName: json['product_type_name'],         // ✅ safe
       outletName: json['outlet_name'],
       merchantName: json['merchant_name'],
       total: json['total'],
+      balance: json['balance'],                           // ✅ safe
       user: json['user'] != null ? User.fromJson(json['user']) : null,
+      promoter: json['promoter'] != null ? Promoter.fromJson(json['promoter']) : null,
       bookingInterest: json['booking_interest'] ?? [],
       interestAmount: json['interest_amount'],
       maturityDate: json['maturity_date'],
@@ -211,9 +236,9 @@ class Booking {
       chamaDescription: json['chama_description'],
       image: json['image'],
       progress: json['progress'],
-          payments: (json['payment'] as List<dynamic>?)
-        ?.map((e) => Payment.fromJson(e))
-        .toList(),
+      payments: (json['payment'] as List? ?? json['payments'] as List? ?? [])
+          .map((e) => Payment.fromJson(e))
+          .toList(),
       receipt: json['receipt'] != null ? Receipt.fromJson(json['receipt']) : null,
     );
   }
@@ -253,10 +278,14 @@ class Booking {
       'deleted_at': deletedAt,
       'product_name': productName,
       'product_code': productCode,
+      'product_category_name': productCategoryName,
+      'product_type_name': productTypeName,
       'outlet_name': outletName,
       'merchant_name': merchantName,
       'total': total,
+      'balance': balance,
       'user': user?.toJson(),
+      'promoter': promoter?.toJson(),
       'booking_interest': bookingInterest,
       'interest_amount': interestAmount,
       'maturity_date': maturityDate,
@@ -264,11 +293,13 @@ class Booking {
       'chama_description': chamaDescription,
       'image': image,
       'progress': progress,
-      'payment': payments?.map((e) => e.toJson()).toList(),
+      'payments': payments?.map((e) => e.toJson()).toList(),
       'receipt': receipt?.toJson(),
     };
   }
 }
+
+
 
 /// -------------------
 /// USER
@@ -392,6 +423,38 @@ class Payment {
       'deleted_at': deletedAt,
       'created_at': createdAt,
       'updated_at': updatedAt,
+    };
+  }
+}
+
+
+/// -------------------
+/// PROMOTER
+/// -------------------
+class Promoter {
+  final String? firstName;
+  final String? lastName;
+  final String? phoneNumber;
+
+  Promoter({
+    this.firstName,
+    this.lastName,
+    this.phoneNumber,
+  });
+
+  factory Promoter.fromJson(Map<String, dynamic> json) {
+    return Promoter(
+      firstName: json['first_name'],
+      lastName: json['last_name'],
+      phoneNumber: json['phone_number']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'first_name': firstName,
+      'last_name': lastName,
+      'phone_number': phoneNumber,
     };
   }
 }

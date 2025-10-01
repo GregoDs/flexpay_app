@@ -20,6 +20,7 @@ class BookingsPage extends StatefulWidget {
 
 class _BookingsPageState extends State<BookingsPage> with RouteAware {
   String selectedTab = "active";
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -36,6 +37,7 @@ class _BookingsPageState extends State<BookingsPage> with RouteAware {
 
   @override
   void dispose() {
+    _searchController.dispose();
     routeObserver.unsubscribe(this);
     super.dispose();
   }
@@ -52,6 +54,12 @@ class _BookingsPageState extends State<BookingsPage> with RouteAware {
     setState(() => selectedTab = tab);
     context.read<BookingsCubit>().fetchBookingsByType(tab.toLowerCase());
   }
+
+  Future<void> _refreshBookings() async {
+  context.read<BookingsCubit>().fetchBookingsByType(
+    selectedTab.toLowerCase(),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -163,42 +171,53 @@ class _BookingsPageState extends State<BookingsPage> with RouteAware {
                     // Search bar
                     Row(
                       children: [
-                        Expanded(
-                          child: Container(
-                            height: 56.h,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF6F7F9),
-                              borderRadius: BorderRadius.circular(28.r),
-                            ),
-                            child: Row(
-                              children: [
-                                SizedBox(width: 18.w),
-                                Icon(
-                                  Icons.search,
-                                  size: 26.sp,
-                                  color: Colors.black87,
-                                ),
-                                SizedBox(width: 10.w),
-                                Expanded(
-                                  child: TextField(
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      hintText: "Search",
-                                      hintStyle: GoogleFonts.montserrat(
-                                        fontSize: 16.sp,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                    style: GoogleFonts.montserrat(
+                       Expanded(
+                        child: Container(
+                          height: 56.h,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF6F7F9),
+                            borderRadius: BorderRadius.circular(28.r),
+                          ),
+                          child: Row(
+                            children: [
+                              SizedBox(width: 18.w),
+                              Icon(Icons.search, size: 26.sp, color: Colors.black87),
+                              SizedBox(width: 10.w),
+                              Expanded(
+                                child: TextField(
+                                  controller: _searchController,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "Search by booking reference",
+                                    hintStyle: GoogleFonts.montserrat(
                                       fontSize: 16.sp,
-                                      color: Colors.black,
+                                      color: Colors.black54,
                                     ),
                                   ),
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 16.sp,
+                                    color: Colors.black,
+                                  ),
+                                  textInputAction: TextInputAction.search,
+                                  onSubmitted: (value) {
+                                    if (value.trim().isNotEmpty) {
+                                      context.read<BookingsCubit>().fetchBookingByReference(value.trim());
+                                    }
+                                  },
                                 ),
-                              ],
-                            ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.clear, size: 22.sp, color: Colors.black54),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  // Restore the list for current tab
+                                  context.read<BookingsCubit>().fetchBookingsByType(selectedTab.toLowerCase());
+                                },
+                              )
+                            ],
                           ),
                         ),
+                      ),
                         SizedBox(width: 18.w),
                         Container(
                           width: 38.w,
@@ -286,88 +305,94 @@ class _BookingsPageState extends State<BookingsPage> with RouteAware {
 
               // Bookings List
               Expanded(
-                child: BlocBuilder<BookingsCubit, BookingsState>(
-                  builder: (context, state) {
-                    if (state is BookingsLoading) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Lottie.asset(
-                              'assets/images/LoadingPlane.json',
-                              width: 360.w,
-                              height: 360.w,
-                              fit: BoxFit.contain,
-                            ),
-                          ],
-                        ),
-                      );
-                    } else if (state is BookingsError) {
-                      // Show snack bar with real error message
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        CustomSnackBar.showError(
-                          context,
-                          title: "Error",
-                          message: state.message,
-                        );
-                      });
-
-                      // Show friendly error UI
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Lottie.asset(
-                              'assets/images/chamatype.json',
-                              width: 220.w,
-                              height: 220.w,
-                              fit: BoxFit.contain,
-                            ),
-                            SizedBox(height: 16.h),
-                            Text(
-                              "An error occurred",
-                              style: GoogleFonts.montserrat(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white70
-                                    : Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else if (state is BookingsFetched) {
-                      final bookings = state.bookings;
-
-                      if (bookings.isEmpty) {
+                child: RefreshIndicator(
+                onRefresh: _refreshBookings,
+                color: const Color(0xFF337687),
+                  child: BlocBuilder<BookingsCubit, BookingsState>(
+                    builder: (context, state) {
+                      if (state is BookingsLoading) {
                         return Center(
-                          child: Text(
-                            "No ${state.bookingType} bookings yet",
-                            style: GoogleFonts.montserrat(),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Lottie.asset(
+                                'assets/images/LoadingPlane.json',
+                                width: 360.w,
+                                height: 360.w,
+                                fit: BoxFit.contain,
+                              ),
+                            ],
                           ),
                         );
-                      }
-
-                      return ListView.builder(
-                        padding: EdgeInsets.only(top: 12.h, bottom: 24.h),
-                        itemCount: bookings.length,
-                        itemBuilder: (context, index) {
-                          final booking = bookings[index];
-                          return _BookingCard(
-                            booking: booking,
-                            cardColor: cardColor,
-                            textColor: textColor,
-                            selectedTab: selectedTab,
+                      } else if (state is BookingsError) {
+                        // Show snack bar with real error message
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          CustomSnackBar.showError(
+                            context,
+                            title: "Error",
+                            message: state.message,
                           );
-                        },
-                      );
-                    }
-
-                    return const SizedBox();
-                  },
+                          // restore current list
+                          context.read<BookingsCubit>().fetchBookingsByType(selectedTab.toLowerCase());
+                        });
+                  
+                        // Show friendly error UI
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Lottie.asset(
+                                'assets/images/chamatype.json',
+                                width: 220.w,
+                                height: 220.w,
+                                fit: BoxFit.contain,
+                              ),
+                              SizedBox(height: 16.h),
+                              Text(
+                                "An error occurred",
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white70
+                                      : Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else if (state is BookingsFetched) {
+                        final bookings = state.bookings;
+                  
+                        if (bookings.isEmpty) {
+                          return Center(
+                            child: Text(
+                              "No ${state.bookingType} bookings yet",
+                              style: GoogleFonts.montserrat(),
+                            ),
+                          );
+                        }
+                  
+                        return ListView.builder(
+                          padding: EdgeInsets.only(top: 12.h, bottom: 24.h),
+                          itemCount: bookings.length,
+                          itemBuilder: (context, index) {
+                            final booking = bookings[index];
+                            return _BookingCard(
+                              booking: booking,
+                              cardColor: cardColor,
+                              textColor: textColor,
+                              selectedTab: selectedTab,
+                            );
+                          },
+                        );
+                      }
+                  
+                      return const SizedBox();
+                    },
+                  ),
                 ),
               ),
             ],
@@ -401,7 +426,11 @@ class _BookingCard extends StatelessWidget {
           MaterialPageRoute(
             builder: (_) => BlocProvider.value(
               value: context.read<BookingsCubit>(),
-              child: BookingDetailsPage(booking: booking, user: User()),
+              child: BookingDetailsPage(
+                booking: booking,
+                 user: User(),
+                 selectedTab: selectedTab,
+                 ),
             ),
           ),
         );

@@ -3,7 +3,6 @@ import 'package:flexpay/features/bookings/models/bookings_models.dart';
 import 'package:flexpay/features/bookings/repo/bookings_repo.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-
 class BookingsCubit extends Cubit<BookingsState> {
   final BookingsRepository _repository;
 
@@ -15,14 +14,12 @@ class BookingsCubit extends Cubit<BookingsState> {
     try {
       final bookings = switch (type.toLowerCase()) {
         // 'all'       => await _repository.fetchAllBookings(),
-        'active'    => await _repository.fetchActiveBookings(),
-        'overdue'   => await _repository.fetchOverdueBookings(),
-        'unserviced'    => await _repository.fetchUnservicedBookings(),
+        'active' => await _repository.fetchActiveBookings(),
+        'overdue' => await _repository.fetchOverdueBookings(),
+        'unserviced' => await _repository.fetchUnservicedBookings(),
         'complete' => await _repository.fetchCompletedBookings(),
-        _           => <Booking>[],
+        _ => <Booking>[],
       };
-
-      
 
       emit(BookingsFetched(bookings: bookings, bookingType: type));
     } catch (e) {
@@ -30,8 +27,23 @@ class BookingsCubit extends Cubit<BookingsState> {
     }
   }
 
+  /// Fetch a single booking by reference
+  Future<void> fetchBookingByReference(String bookingReference) async {
+    emit(BookingsLoading());
+    try {
+      final booking = await _repository.fetchBookingByReference(bookingReference);
+      if (booking != null) {
+        emit(BookingsFetched(bookings: [booking], bookingType: 'single'));
+      } else {
+        emit(BookingsError('Booking not found.'));
+      }
+    } catch (e) {
+      emit(BookingsError('Failed to load booking. ${e.toString()}'));
+    }
+  }
 
-    ///  → Cancel booking flow
+
+  ///  → Cancel booking flow
   Future<void> cancelBooking(String bookingReference) async {
     emit(BookingCancelLoading());
     try {
@@ -39,6 +51,27 @@ class BookingsCubit extends Cubit<BookingsState> {
       emit(BookingCancelSuccess(response));
     } catch (e) {
       emit(BookingCancelError('Failed to cancel booking. ${e.toString()}'));
+    }
+  }
+
+  /// Wallet payment flow
+  Future<void> payBookingFromWallet(
+    String bookingReference,
+    double debitAmount,
+  ) async {
+    emit(BookingWalletPaymentLoading());
+    try {
+      final response = await _repository.payBookingFromWallet(
+        bookingReference,
+        debitAmount,
+      );
+      emit(BookingWalletPaymentSuccess(response));
+    } catch (e) {
+      emit(
+        BookingWalletPaymentError(
+          'Failed to pay booking from wallet. ${e.toString()}',
+        ),
+      );
     }
   }
 }
