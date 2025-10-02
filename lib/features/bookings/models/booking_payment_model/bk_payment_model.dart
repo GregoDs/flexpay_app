@@ -45,3 +45,46 @@ class BkWalletPaymentResponse {
     };
   }
 }
+
+@JsonSerializable()
+class BkMpesaPaymentResponse {
+  final String phone;
+  final num amount; // can be int or double, safer than String
+  final String reference;
+  final String description;
+
+  @JsonKey(name: 'CheckoutRequestID')
+  final String checkoutRequestId;
+
+  @JsonKey(name: 'MerchantRequestID')
+  final String merchantRequestId;
+
+  @JsonKey(name: 'user_id')
+  final int userId; // backend gives int
+
+  @JsonKey(name: 'updated_at')
+  final String updatedAt;
+
+  @JsonKey(name: 'created_at')
+  final String createdAt;
+
+  final int id;
+
+  BkMpesaPaymentResponse({
+    required this.phone,
+    required this.amount,
+    required this.reference,
+    required this.description,
+    required this.checkoutRequestId,
+    required this.merchantRequestId,
+    required this.userId,
+    required this.updatedAt,
+    required this.createdAt,
+    required this.id,
+  });
+
+  factory BkMpesaPaymentResponse.fromJson(Map<String, dynamic> json) =>
+      _$BkMpesaPaymentResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$BkMpesaPaymentResponseToJson(this);
+}

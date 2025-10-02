@@ -12,6 +12,9 @@ SubscribeChamaResponse _$SubscribeChamaResponseFromJson(
   data: json['data'] == null
       ? null
       : SubscribeChamaData.fromJson(json['data'] as Map<String, dynamic>),
+  messages: (json['messages'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
   errors: (json['errors'] as List<dynamic>?)?.map((e) => e as String).toList(),
   success: json['success'] as bool,
   statusCode: (json['status_code'] as num).toInt(),
@@ -21,6 +24,7 @@ Map<String, dynamic> _$SubscribeChamaResponseToJson(
   SubscribeChamaResponse instance,
 ) => <String, dynamic>{
   'data': instance.data?.toJson(),
+  'messages': instance.messages,
   'errors': instance.errors,
   'success': instance.success,
   'status_code': instance.statusCode,

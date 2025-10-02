@@ -8,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 
 class ViewChamas extends StatefulWidget {
   const ViewChamas({super.key});
@@ -102,19 +103,52 @@ class _ViewChamasState extends State<ViewChamas> {
                 );
               }
             }
-            if (state is SubscribeChamaLoading || state is SaveToChamaLoading) {
+            if (state is SubscribeChamaLoading ||
+                state is SaveToChamaLoading ||
+                state is PayChamaWalletLoading) {
               _showLoadingDialog();
             }
+            //Mpesa success state
             if (state is SaveToChamaSuccess) {
+              final response = state.response;
+              final mpesaMsg =
+                  (response.messages != null && response.messages!.isNotEmpty)
+                  ? response.messages!.first
+                  : null;
               CustomSnackBar.showSuccess(
                 context,
                 title: "Success",
-                message: "Your savings have been updated!",
+                message: mpesaMsg ?? "Your savings have been updated!",
               );
               _hideLoadingAndPopSheet();
+                // 🔄 Trigger refetch via cubit
+              context.read<ChamaCubit>().getUserChamas();
               _fetchOurChamas(
                 refreshListOnly: false,
               ); // 🔄 refresh after saving
+            }
+
+            //wallet success
+            if (state is PayChamaWalletSuccess) {
+              final response = state.response;
+              // Check for errors in the response, even in success state
+              if (response.errors?.isNotEmpty == true) {
+                CustomSnackBar.showError(
+                  context,
+                  title: "Error",
+                  message: response.errors!.first,
+                );
+              } else {
+                CustomSnackBar.showSuccess(
+                  context,
+                  title: "Success",
+                  message: "Your savings has been updated and amount deducted from Wallet!",
+                );
+              }
+              _hideLoadingAndPopSheet();
+                // 🔄 Trigger refetch via cubit
+              context.read<ChamaCubit>().getUserChamas();
+              _fetchOurChamas(refreshListOnly: false); // 🔄 refresh after saving
             }
 
             if (state is SubscribeChamaSuccess) {
@@ -140,6 +174,14 @@ class _ViewChamasState extends State<ViewChamas> {
             }
 
             if (state is SaveToChamaFailure) {
+              CustomSnackBar.showError(
+                context,
+                title: "Error",
+                message: state.message,
+              );
+              _hideLoadingAndPopSheet();
+            }
+            if (state is PayChamaWalletFailure) {
               CustomSnackBar.showError(
                 context,
                 title: "Error",
@@ -339,12 +381,10 @@ class _ViewChamasState extends State<ViewChamas> {
                                     savings: "KES ${chama.totalSavings}",
                                     productId: chama.id,
                                     onSave: () {
-                                      final userPhone = "254706622071";
                                       _showSaveToMyChamaModal(
                                         context,
                                         chama.id,
                                         chama.name,
-                                        userPhone,
                                         onSheetVisibility: (v) {
                                           setState(
                                             () => _isBottomSheetOpen = v,
@@ -962,16 +1002,19 @@ void _showJoinOurChamaPaymentModal(
   });
 }
 
-void _showSaveToMyChamaModal(
+Future<void> _showSaveToMyChamaModal(
   BuildContext parentContext,
   int productId,
-  String chamaName,
-  String initialPhone, {
+  String chamaName, {
   ValueChanged<bool>? onSheetVisibility,
-}) {
+}) async {
   final amountController = TextEditingController();
-  final phoneController = TextEditingController(text: initialPhone);
   String selectedSource = "M-Pesa";
+
+  // Fetch phone number from backend (SharedPreferences)
+  final userModel = await SharedPreferencesHelper.getUserModel();
+  final backendPhone = userModel?.user.phoneNumber ?? "";
+  final phoneController = TextEditingController(text: backendPhone);
 
   onSheetVisibility?.call(true);
   showModalBottomSheet(
@@ -1073,7 +1116,7 @@ void _showSaveToMyChamaModal(
                         ),
                         SizedBox(height: 16.h),
 
-                        // Phone number field
+                        // Phone number field (read-only)
                         Text(
                           "Phone Number",
                           style: GoogleFonts.montserrat(
@@ -1090,6 +1133,7 @@ void _showSaveToMyChamaModal(
                             color: Colors.black,
                           ),
                           keyboardType: TextInputType.phone,
+                          enabled: false, // Make field non-editable
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: const Color(0xFFF3F4F6),
@@ -1151,7 +1195,8 @@ void _showSaveToMyChamaModal(
                               final amount = double.tryParse(
                                 amountController.text.trim(),
                               );
-                              final phoneNumber = phoneController.text.trim();
+                              // Always use backendPhone for the request
+                              final phoneNumber = backendPhone;
 
                               if (amount == null || amount <= 0) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1164,7 +1209,7 @@ void _showSaveToMyChamaModal(
                               if (phoneNumber.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text("Enter phone number"),
+                                    content: Text("Phone number not found"),
                                   ),
                                 );
                                 return;
@@ -1179,14 +1224,12 @@ void _showSaveToMyChamaModal(
                                       amount: amount,
                                     );
                               } else if (selectedSource == "Wallet") {
-                                // 👉 Placeholder: later we’ll connect Wallet repo method
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Wallet integration coming soon",
-                                    ),
-                                  ),
-                                );
+                                parentContext
+                                    .read<ChamaCubit>()
+                                    .payChamaViaWallet(
+                                      productId: productId,
+                                      amount: amount,
+                                    );
                               }
 
                               Navigator.pop(context);
@@ -1272,48 +1315,53 @@ class PaymentOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 10.w),
-        padding: EdgeInsets.all(12.w),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16.r),
-          // border: isSelected
-          //     ? Border.all(
-          //         color: Colors.amber,
-          //         width: 2,
-          //       )
-          //     : null, // ❌ no border if not selected
-          // boxShadow: isSelected
-          //     ? [
-          //         BoxShadow(
-          //           color: Colors.amber.withOpacity(0.4),
-          //           blurRadius: 10,
-          //           spreadRadius: 1,
-          //         ),
-          //       ]
-          //     : [],
-          color: Colors.white,
-        ),
-        child: Column(
-          children: [
-            Image.asset(
-              imagePath,
-              height: 120.h,
-              width: 120.h,
-              fit: BoxFit.contain,
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          margin: EdgeInsets.symmetric(horizontal: 8.w),
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+
+            // ✅ Only add border if selected
+            border: isSelected
+                ? Border.all(color: Colors.amber, width: 2.5)
+                : null,
+
+            // ✅ Only add shadow if selected
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.amber.withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : [],
+          ),
+          child: AnimatedScale(
+            scale: isSelected ? 1.05 : 1.0,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            child: Column(
+              children: [
+                Image.asset(imagePath, width: 75.w, height: 85.w),
+                SizedBox(height: 6.h),
+                Text(
+                  label,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.amber[800] : Colors.black87,
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 2.h),
-            Text(
-              label,
-              style: GoogleFonts.montserrat(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.amber[800] : Colors.grey[800],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

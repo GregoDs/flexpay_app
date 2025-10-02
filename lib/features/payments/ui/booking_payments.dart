@@ -23,7 +23,7 @@ class BookingPaymentModal {
 
     final phoneController = TextEditingController(text: prefilledPhone);
 
-    String selectedSource = "Wallet"; // default
+    String selectedSource = "M-Pesa"; // default
 
     final fieldColor = const Color(0xFFF3F4F6);
     final textColor = Colors.black87;
@@ -56,10 +56,25 @@ class BookingPaymentModal {
                       title: "Payment Failed",
                       message: state.message,
                     );
+                  } else if (state is BookingMpesaPaymentSuccess) {
+                    CustomSnackBar.showSuccess(
+                      context,
+                      title: "M-Pesa Payment Initiated",
+                      message: "Check your phone to complete the payment.",
+                    );
+                    Navigator.pop(context, true); // close modal and return true
+                  } else if (state is BookingMpesaPaymentError) {
+                    CustomSnackBar.showError(
+                      context,
+                      title: "M-Pesa Payment Failed",
+                      message: state.message,
+                    );
                   }
                 },
                 builder: (context, state) {
-                  final isLoading = state is BookingWalletPaymentLoading;
+                  final isLoading =
+                      state is BookingWalletPaymentLoading ||
+                      state is BookingMpesaPaymentLoading;
 
                   return Padding(
                     padding: EdgeInsets.only(
@@ -151,49 +166,47 @@ class BookingPaymentModal {
                                 ),
                                 SizedBox(height: 20.h),
 
-                                // Phone field (only if M-Pesa)
-                                if (selectedSource == "M-Pesa")
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Phone Number",
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: textColor,
+                                // Phone field
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Phone Number",
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 15.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8.h),
+                                    TextField(
+                                      controller: phoneController,
+                                      keyboardType: TextInputType.phone,
+                                      style: GoogleFonts.montserrat(
+                                        color: textColor,
+                                      ),
+                                      decoration: InputDecoration(
+                                        filled: true,
+                                        fillColor: fieldColor,
+                                        prefixIcon: Icon(
+                                          Icons.phone,
+                                          color: Colors.blue[800],
+                                        ),
+                                        hintText: "Enter phone number",
+                                        hintStyle: GoogleFonts.montserrat(
+                                          color: Colors.grey,
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12.r,
+                                          ),
+                                          borderSide: BorderSide.none,
                                         ),
                                       ),
-                                      SizedBox(height: 8.h),
-                                      TextField(
-                                        controller: phoneController,
-                                        keyboardType: TextInputType.phone,
-                                        style: GoogleFonts.montserrat(
-                                          color: textColor,
-                                        ),
-                                        decoration: InputDecoration(
-                                          filled: true,
-                                          fillColor: fieldColor,
-                                          prefixIcon: Icon(
-                                            Icons.phone,
-                                            color: Colors.blue[800],
-                                          ),
-                                          hintText: "Enter phone number",
-                                          hintStyle: GoogleFonts.montserrat(
-                                            color: Colors.grey,
-                                          ),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12.r,
-                                            ),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 16.h),
-                                    ],
-                                  ),
+                                    ),
+                                    SizedBox(height: 16.h),
+                                  ],
+                                ),
 
                                 // Amount
                                 Text(
@@ -270,8 +283,15 @@ class BookingPaymentModal {
                                                     bookingReference,
                                                     amount,
                                                   );
-                                            } else {
-                                              // 🔹 TODO: integrate M-Pesa flow
+                                            } else if (selectedSource ==
+                                                "M-Pesa") {
+                                              context
+                                                  .read<BookingsCubit>()
+                                                  .payBookingViaMpesa(
+                                                    bookingReference,
+                                                    amount,
+                                                    phone,
+                                                  );
                                             }
                                           },
                                     style: ElevatedButton.styleFrom(

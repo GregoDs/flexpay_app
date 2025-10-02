@@ -74,4 +74,28 @@ class BookingsCubit extends Cubit<BookingsState> {
       );
     }
   }
+
+  /// Mpesa payment flow
+Future<void> payBookingViaMpesa(
+  String bookingReference,
+  double amount,
+  String phoneNumber,
+) async {
+  emit(BookingMpesaPaymentLoading());
+  try {
+    final response = await _repository.payBookingViaMpesa(
+      bookingReference,
+      amount,
+      phoneNumber,
+    );
+    emit(BookingMpesaPaymentSuccess(response));
+  } catch (e) {
+    emit(
+      BookingMpesaPaymentError(
+        'Failed to pay booking via Mpesa. ${e.toString()}',
+      ),
+    );
+  }
+}
+
 }

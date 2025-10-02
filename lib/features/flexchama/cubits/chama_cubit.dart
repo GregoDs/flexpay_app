@@ -277,8 +277,30 @@ class ChamaCubit extends Cubit<ChamaState> {
       emit(SaveToChamaSuccess(response));
       // Invalidate caches and refresh next view
       _cachedSavings = null;
+      //Immediatey refresh userChamas
+      await getUserChamas();
     } catch (e) {
       emit(SaveToChamaFailure(e.toString()));
+    }
+  }
+
+  /// ---------------- Save to Chama (Wallet) ----------------
+  Future<void> payChamaViaWallet({
+    required int productId,
+    required double amount,
+  }) async {
+    emit(PayChamaWalletLoading());
+    try {
+      final response = await _repo.payChamaViaWallet(
+        productId: productId,
+        amount: amount,
+      );
+      emit(PayChamaWalletSuccess(response));
+      // Invalidate caches and refresh next view
+      _cachedSavings = null;
+      await getUserChamas();
+    } catch (e) {
+      emit(PayChamaWalletFailure(e.toString()));
     }
   }
 }

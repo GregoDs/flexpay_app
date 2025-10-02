@@ -44,30 +44,30 @@ class BookingData {
   BookingData({this.pBooking});
 
   factory BookingData.fromJson(dynamic json) {
-  // Handle case: data is [] (empty array)
-  if (json is List) {
-    return BookingData(pBooking: []);
-  }
-
-  // Otherwise expect a Map with pBooking
-  if (json is Map<String, dynamic>) {
-    final pBookingJson = json['pBooking'];
-
-    List<dynamic> bookingsList = [];
-    if (pBookingJson is List) {
-      bookingsList = pBookingJson;
-    } else if (pBookingJson is Map && pBookingJson['data'] is List) {
-      bookingsList = pBookingJson['data'];
+    // Handle case: data is [] (empty array)
+    if (json is List) {
+      return BookingData(pBooking: []);
     }
 
-    return BookingData(
-      pBooking: bookingsList.map((e) => Booking.fromJson(e)).toList(),
-    );
-  }
+    // Otherwise expect a Map with pBooking
+    if (json is Map<String, dynamic>) {
+      final pBookingJson = json['pBooking'];
 
-  // Fallback: return empty
-  return BookingData(pBooking: []);
-}
+      List<dynamic> bookingsList = [];
+      if (pBookingJson is List) {
+        bookingsList = pBookingJson;
+      } else if (pBookingJson is Map && pBookingJson['data'] is List) {
+        bookingsList = pBookingJson['data'];
+      }
+
+      return BookingData(
+        pBooking: bookingsList.map((e) => Booking.fromJson(e)).toList(),
+      );
+    }
+
+    // Fallback: return empty
+    return BookingData(pBooking: []);
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -79,7 +79,7 @@ class BookingData {
 }
 
 /// -------------------
-/// BOOKING MODEL (exact backend order)
+/// BOOKING MODEL (tolerant version)
 /// -------------------
 class Booking {
   final int? id;
@@ -115,14 +115,14 @@ class Booking {
   final String? deletedAt;
   final String? productName;
   final String? productCode;
-  final String? productCategoryName;   // ✅ new
-  final String? productTypeName;       // ✅ new
+  final String? productCategoryName;
+  final String? productTypeName;
   final String? outletName;
   final String? merchantName;
   final num? total;
-  final num? balance;                  // ✅ new
+  final num? balance;
   final User? user;
-  final Promoter? promoter;            // ✅ new
+  final Promoter? promoter;
   final List<dynamic>? bookingInterest;
   final num? interestAmount;
   final String? maturityDate;
@@ -191,50 +191,50 @@ class Booking {
       id: json['id'] ?? json['booking_id'],
       countryId: json['country_id'],
       productId: json['product_id'],
-      bookingSource: json['booking_source'],
+      bookingSource: json['booking_source']?.toString(),
       userId: json['user_id'] ?? json['booking_user_id'],
       merchantId: json['merchant_id'],
       promoterId: json['promoter_id'],
       outletId: json['outlet_id'],
-      bookingReference: json['booking_reference'],
-      referralCoupon: json['referral_coupon'],
+      bookingReference: json['booking_reference']?.toString(),
+      referralCoupon: json['referral_coupon']?.toString(),
       bookingPrice: json['booking_price'],
       validationPrice: json['validation_price'],
       bookingOfferPrice: json['booking_offer_price'],
       initialDeposit: json['initial_deposit'],
-      hasFixedDeadline: json['has_fixed_deadline'],
-      bookingStatus: json['booking_status'],
+      hasFixedDeadline: json['has_fixed_deadline']?.toString(),
+      bookingStatus: json['booking_status']?.toString(),
       isPromotional: json['is_promotional'],
       promotionalAmount: json['promotional_amount'],
-      endDate: json['end_date'],
-      deadlineDate: json['deadline_date'],
+      endDate: json['end_date']?.toString(),
+      deadlineDate: json['deadline_date']?.toString(),
       bookingOnCredit: json['booking_on_credit'],
-      accountName: json['account_name'],
-      accountNo: json['account_no'],
-      reference: json['reference'],
-      phoneNumber: json['phone_number'],
-      checkoutStatus: json['checkout_status'],
-      frequency: json['frequency'],
-      frequencyContribution: json['frequency_contribution'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
-      deletedAt: json['deleted_at'],
-      productName: json['product_name'],
-      productCode: json['product_code'],
-      productCategoryName: json['product_category_name'], // ✅ safe
-      productTypeName: json['product_type_name'],         // ✅ safe
-      outletName: json['outlet_name'],
-      merchantName: json['merchant_name'],
+      accountName: json['account_name']?.toString(),
+      accountNo: json['account_no']?.toString(),
+      reference: json['reference']?.toString(),
+      phoneNumber: json['phone_number']?.toString(),
+      checkoutStatus: json['checkout_status']?.toString(),
+      frequency: json['frequency']?.toString(),
+      frequencyContribution: json['frequency_contribution']?.toString(),
+      createdAt: json['created_at']?.toString(),
+      updatedAt: json['updated_at']?.toString(),
+      deletedAt: json['deleted_at']?.toString(),
+      productName: json['product_name']?.toString(),
+      productCode: json['product_code']?.toString(),
+      productCategoryName: json['product_category_name']?.toString(),
+      productTypeName: json['product_type_name']?.toString(),
+      outletName: json['outlet_name']?.toString(),
+      merchantName: json['merchant_name']?.toString(),
       total: json['total'],
-      balance: json['balance'],                           // ✅ safe
+      balance: json['balance'],
       user: json['user'] != null ? User.fromJson(json['user']) : null,
       promoter: json['promoter'] != null ? Promoter.fromJson(json['promoter']) : null,
       bookingInterest: json['booking_interest'] ?? [],
       interestAmount: json['interest_amount'],
-      maturityDate: json['maturity_date'],
+      maturityDate: json['maturity_date']?.toString(),
       targetSaving: json['target_saving'],
-      chamaDescription: json['chama_description'],
-      image: json['image'],
+      chamaDescription: json['chama_description']?.toString(),
+      image: json['image']?.toString(),
       progress: json['progress'],
       payments: (json['payment'] as List? ?? json['payments'] as List? ?? [])
           .map((e) => Payment.fromJson(e))
@@ -299,10 +299,8 @@ class Booking {
   }
 }
 
-
-
 /// -------------------
-/// USER
+/// USER (tolerant)
 /// -------------------
 class User {
   final int? id;
@@ -334,13 +332,13 @@ class User {
       id: json['id'],
       userId: json['user_id'],
       referralId: json['referral_id'],
-      firstName: json['first_name'],
-      lastName: json['last_name'],
-      phoneNumber1: json['phone_number_1'],
-      idNumber: json['id_number'],
-      passportNumber: json['passport_number'],
-      dob: json['dob'],
-      country: json['country'],
+      firstName: json['first_name']?.toString(),
+      lastName: json['last_name']?.toString(),
+      phoneNumber1: json['phone_number_1']?.toString(),
+      idNumber: json['id_number']?.toString(),
+      passportNumber: json['passport_number']?.toString(),
+      dob: json['dob']?.toString(),
+      country: json['country']?.toString(),
     );
   }
 
@@ -399,13 +397,13 @@ class Payment {
       bookingId: json['booking_id'],
       walletId: json['wallet_id'],
       paymentAmount: json['payment_amount'],
-      destination: json['destination'],
-      destinationAccountNo: json['destination_account_no'],
-      destinationPhoneNo: json['destination_phone_no'],
-      destinationTransactionReference: json['destination_transaction_reference'],
-      deletedAt: json['deleted_at'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
+      destination: json['destination']?.toString(),
+      destinationAccountNo: json['destination_account_no']?.toString(),
+      destinationPhoneNo: json['destination_phone_no']?.toString(),
+      destinationTransactionReference: json['destination_transaction_reference']?.toString(),
+      deletedAt: json['deleted_at']?.toString(),
+      createdAt: json['created_at']?.toString(),
+      updatedAt: json['updated_at']?.toString(),
     );
   }
 
@@ -427,7 +425,6 @@ class Payment {
   }
 }
 
-
 /// -------------------
 /// PROMOTER
 /// -------------------
@@ -444,8 +441,8 @@ class Promoter {
 
   factory Promoter.fromJson(Map<String, dynamic> json) {
     return Promoter(
-      firstName: json['first_name'],
-      lastName: json['last_name'],
+      firstName: json['first_name']?.toString(),
+      lastName: json['last_name']?.toString(),
       phoneNumber: json['phone_number']?.toString(),
     );
   }
@@ -503,17 +500,17 @@ class Receipt {
       userId: json['user_id'],
       merchantId: json['merchant_id'],
       bookingId: json['booking_id'],
-      paymentRef: json['payment_ref'],
-      receiptNo: json['receipt_no'],
+      paymentRef: json['payment_ref']?.toString(),
+      receiptNo: json['receipt_no']?.toString(),
       expectedAmount: json['expected_amount'],
       paidAmount: json['paid_amount'],
-      receiptStatus: json['receipt_status'],
+      receiptStatus: json['receipt_status']?.toString(),
       closedBy: json['closed_by'],
       revokedBy: json['revoked_by'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
-      deletedAt: json['deleted_at'],
-      validatedAt: json['validated_at'],
+      createdAt: json['created_at']?.toString(),
+      updatedAt: json['updated_at']?.toString(),
+      deletedAt: json['deleted_at']?.toString(),
+      validatedAt: json['validated_at']?.toString(),
     );
   }
 

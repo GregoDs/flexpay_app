@@ -121,7 +121,7 @@ class Payments {
   final List<PaymentData> data;
   @JsonKey(name: 'first_page_url')
   final String firstPageUrl;
-  final int from;
+  final int? from;   // <-- nullable
   @JsonKey(name: 'last_page')
   final int lastPage;
   @JsonKey(name: 'last_page_url')
@@ -134,14 +134,14 @@ class Payments {
   final int perPage;
   @JsonKey(name: 'prev_page_url')
   final String? prevPageUrl;
-  final int to;
+  final int? to;     // <-- nullable
   final int total;
 
   Payments({
     required this.currentPage,
     required this.data,
     required this.firstPageUrl,
-    required this.from,
+    this.from,          // nullable
     required this.lastPage,
     required this.lastPageUrl,
     required this.links,
@@ -149,7 +149,7 @@ class Payments {
     required this.path,
     required this.perPage,
     this.prevPageUrl,
-    required this.to,
+    this.to,            // nullable
     required this.total,
   });
 

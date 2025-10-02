@@ -1,4 +1,4 @@
-import 'dart:convert';
+
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/error_handler.dart';
@@ -19,6 +19,7 @@ class ApiService {
   static String prodEndpointChama = dotenv.env['PROD_ENDPOINT_CHAMA']!;
   static String prodEndpointWallet = dotenv.env['PROD_ENDPOINT_WALLET']!;
   static String prodEndpointBookingsTransactions = dotenv.env['PROD_ENDPOINT_BOOKINGS_TRANSACTIONS']!;
+  static String prodEndpointPayments = dotenv.env['PROD_ENDPOINT_PAYMENTS']!;
 
 
   // Generic GET request

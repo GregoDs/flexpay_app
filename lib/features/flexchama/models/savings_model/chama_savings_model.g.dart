@@ -69,7 +69,7 @@ Payments _$PaymentsFromJson(Map<String, dynamic> json) => Payments(
       .map((e) => PaymentData.fromJson(e as Map<String, dynamic>))
       .toList(),
   firstPageUrl: json['first_page_url'] as String,
-  from: (json['from'] as num).toInt(),
+  from: (json['from'] as num?)?.toInt(),
   lastPage: (json['last_page'] as num).toInt(),
   lastPageUrl: json['last_page_url'] as String,
   links: (json['links'] as List<dynamic>)
@@ -79,7 +79,7 @@ Payments _$PaymentsFromJson(Map<String, dynamic> json) => Payments(
   path: json['path'] as String,
   perPage: (json['per_page'] as num).toInt(),
   prevPageUrl: json['prev_page_url'] as String?,
-  to: (json['to'] as num).toInt(),
+  to: (json['to'] as num?)?.toInt(),
   total: (json['total'] as num).toInt(),
 );
 

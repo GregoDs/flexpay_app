@@ -263,7 +263,7 @@ class BookingsRepository {
 
 
 
-
+//Cancel a booking
   Future<CancelBookingResponse> cancelBooking(String bookingReference) async {
     try {
       // Ensure bookingReference is not null
@@ -289,6 +289,12 @@ class BookingsRepository {
     }
   }
 
+
+
+
+
+
+ // Pay a booking from wallet
   Future<BkWalletPaymentResponse> payBookingFromWallet(
     String bookingReference,
     double debitAmount,
@@ -334,6 +340,60 @@ class BookingsRepository {
     } catch (e) {
       final message = ErrorHandler.handleGenericError(e);
       AppLogger.log("❌ Error in making wallet payment: $message");
+      throw Exception(message);
+    }
+  }
+
+
+//PAY FOR BOOKING VIA MPESA
+Future<BkMpesaPaymentResponse> payBookingViaMpesa(
+    String bookingReference,
+    double amount,
+    String phoneNumber,
+  ) async {
+    try {
+      final userModel = await SharedPreferencesHelper.getUserModel();
+      final userId = userModel?.user.id;
+
+      if (bookingReference.isEmpty) {
+        throw Exception("Booking reference cannot be empty");
+      }
+
+      if (userId == null) {
+        throw Exception("User ID not found in SharedPreferences");
+      }
+
+      final url = "${ApiService.prodEndpointPayments}/stk_request";
+
+      final body = {
+        "user_id": userId,
+        "reference": bookingReference,
+        "amount": amount,
+        "phone": phoneNumber,
+        "description": "Booking payment",
+        };
+
+      // ✅ Make the POST request with the body
+      final response = await _apiService.post(
+        url,
+        requiresAuth: true,
+        data: body,
+      );
+
+      // ✅ Parse response into model
+      final bkMpesaPaymentResponse = BkMpesaPaymentResponse.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+
+      AppLogger.log(
+        "📦 Mpesa payment response: ${bkMpesaPaymentResponse.toJson()}",
+      );
+
+      // ✅ Return parsed response
+      return bkMpesaPaymentResponse;
+    } catch (e) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in making mpesa payment: $message");
       throw Exception(message);
     }
   }

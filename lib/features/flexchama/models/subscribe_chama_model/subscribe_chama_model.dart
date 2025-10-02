@@ -6,6 +6,7 @@ part 'subscribe_chama_model.g.dart';
 @JsonSerializable(explicitToJson: true)
 class SubscribeChamaResponse {
   final SubscribeChamaData? data;
+  final List<String>? messages;
   final List<String>? errors;
   final bool success;
   @JsonKey(name: 'status_code')
@@ -13,17 +14,34 @@ class SubscribeChamaResponse {
 
   SubscribeChamaResponse({
     this.data,
+    this.messages,
     this.errors,
     required this.success,
     required this.statusCode,
   });
 
-  /// Factory constructor for creating a new object from JSON map
-  factory SubscribeChamaResponse.fromJson(Map<String, dynamic> json) =>
-      _$SubscribeChamaResponseFromJson(json);
+  factory SubscribeChamaResponse.fromJson(Map<String, dynamic> json) {
+    final rawData = json['data'];
 
-  /// Method to convert object to JSON
-  Map<String, dynamic> toJson() => _$SubscribeChamaResponseToJson(this);
+    return SubscribeChamaResponse(
+      data: rawData is Map<String, dynamic>
+          ? SubscribeChamaData.fromJson(rawData)
+          : null,
+      messages: rawData is List
+          ? rawData.map((e) => e.toString()).toList()
+          : null,
+      errors: (json['errors'] as List?)?.map((e) => e.toString()).toList(),
+      success: json['success'] as bool,
+      statusCode: json['status_code'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'data': data?.toJson() ?? messages,
+        'errors': errors,
+        'success': success,
+        'status_code': statusCode,
+      };
 }
 
 /// Data object inside response
@@ -89,4 +107,49 @@ class SubscribeChamaData {
       _$SubscribeChamaDataFromJson(json);
 
   Map<String, dynamic> toJson() => _$SubscribeChamaDataToJson(this);
+}
+
+/// -------------------
+/// SAVE CHAMA WALLET RESPONSE
+/// -------------------
+class SaveChamaWalletResponse {
+  final dynamic data;          // can be {} or [] depending on backend
+  final List<String>? errors;
+  final bool? success;
+  final int? statusCode;
+
+  SaveChamaWalletResponse({
+    this.data,
+    this.errors,
+    this.success,
+    this.statusCode,
+  });
+
+  factory SaveChamaWalletResponse.fromJson(Map<String, dynamic> json) {
+    // Handle flexible `data` field (can be object or list)
+    dynamic parsedData;
+    if (json['data'] is Map<String, dynamic>) {
+      parsedData = json['data'];
+    } else if (json['data'] is List) {
+      parsedData = (json['data'] as List).map((e) => e ?? {}).toList();
+    } else {
+      parsedData = {};
+    }
+
+    return SaveChamaWalletResponse(
+      data: parsedData,
+      errors: (json['errors'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      success: json['success'],
+      statusCode: json['status_code'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data,
+      'errors': errors,
+      'success': success,
+      'status_code': statusCode,
+    };
+  }
 }

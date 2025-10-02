@@ -239,3 +239,24 @@ class SaveToChamaFailure extends ChamaState {
   @override
   List<Object?> get props => [message];
 }
+
+/// ---------------- Save to Chama (Wallet) states ----------------
+class PayChamaWalletLoading extends ChamaState {}
+
+class PayChamaWalletSuccess extends ChamaState {
+  final SaveChamaWalletResponse response;
+
+  const PayChamaWalletSuccess(this.response);
+
+  @override
+  List<Object?> get props => [response];
+}
+
+class PayChamaWalletFailure extends ChamaState {
+  final String message;
+
+  const PayChamaWalletFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

@@ -77,3 +77,24 @@ class BookingWalletPaymentError extends BookingsState {
   @override
   List<Object?> get props => [message];
 }
+
+// Mpesa Payment states //
+class BookingMpesaPaymentLoading extends BookingsState {}
+
+class BookingMpesaPaymentSuccess extends BookingsState {
+  final BkMpesaPaymentResponse response;
+
+  const BookingMpesaPaymentSuccess(this.response);
+
+  @override
+  List<Object?> get props => [response];
+}
+
+class BookingMpesaPaymentError extends BookingsState {
+  final String message;
+
+  const BookingMpesaPaymentError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
