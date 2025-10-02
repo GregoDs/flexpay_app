@@ -146,11 +146,11 @@ class _AppBarChamaState extends State<AppBarChama> {
                   children: [
                     Expanded(
                         child: _buildActionButton(Icons.account_balance_wallet,
-                            'Withdraw', WithdrawPage(), context, screenWidth)),
+                            'Withdraw',  context, screenWidth)),
                     SizedBox(width: screenWidth * 0.02),
                     Expanded(
                         child: _buildActionButton(Icons.arrow_downward, 'Top up',
-                            TopUpPage(), context, screenWidth)),
+                            context, screenWidth)),
                     SizedBox(width: screenWidth * 0.02),
                     Expanded(
                         child: _buildNavigationActionButton(
@@ -181,11 +181,11 @@ class _AppBarChamaState extends State<AppBarChama> {
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label, Widget page,
+  Widget _buildActionButton(IconData icon, String label,
       BuildContext context, double screenWidth) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+        
       },
       child: Column(
         children: [

@@ -1,184 +1,291 @@
+import 'package:flexpay/features/home/cubits/home_cubit.dart';
+import 'package:flexpay/features/home/cubits/home_states.dart';
+import 'package:flexpay/features/payments/cubits/payments_cubit.dart';
+import 'package:flexpay/features/payments/cubits/payments_state.dart';
+import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flexpay/gen/colors.gen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class TopUpPage extends StatelessWidget {
+class TopUpHomePage extends StatefulWidget {
+
+  const TopUpHomePage({
+    super.key,
+  });
+
+  @override
+  State<TopUpHomePage> createState() => _TopUpHomePageState();
+}
+
+class _TopUpHomePageState extends State<TopUpHomePage> {
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController amountController = TextEditingController();
+
+  String? phoneError;
+  String? amountError;
+
+  void _validateFields() {
+    setState(() {
+      phoneError = phoneController.text.trim().isEmpty
+          ? "Phone number is required"
+          : null;
+
+      amountError = amountController.text.trim().isEmpty
+          ? "Enter an amount"
+          : null;
+    });
+  }
+
+  void _submit(BuildContext context) {
+  _validateFields();
+  if (phoneError == null && amountError == null) {
+    final amount = double.tryParse(amountController.text.trim()) ?? 0;
+    final phone = phoneController.text.trim();
+
+    context.read<PaymentsCubit>().topUpWalletViaMpesa(
+          amount: amount,
+          phoneNumber: phone,
+        );
+  }
+}
+
   @override
   Widget build(BuildContext context) {
-    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final fieldColor = isDark ? Colors.grey[850]! : Colors.grey[200]!;
 
-    Color backgroundColor = isDarkMode ? Colors.black : Colors.white;
-    Color textColor = isDarkMode ? Colors.white : Colors.black;
-    Color cardColor = isDarkMode ? Colors.grey[850]! : Colors.grey[200]!;
-    Color buttonColor = isDarkMode ? Colors.blue[400]! : Colors.blue[700]!;
+    final textTheme = GoogleFonts.montserratTextTheme(
+      Theme.of(context).textTheme,
+    );
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: isDark ? Colors.black : Colors.white,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
         elevation: 0,
+        backgroundColor: isDark ? Colors.black : Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: textColor),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
+        centerTitle: true,
         title: Text(
           "Top Up",
-          style: GoogleFonts.montserrat(
-            fontSize: screenWidth * 0.05,
-            fontWeight: FontWeight.w600,
+          style: textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
             color: textColor,
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: screenHeight * 0.02),
-              Row(
-                children: [
-                  Icon(Icons.star, color: Colors.amber, size: screenWidth * 0.05),
-                  SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      "Make a Top-up to your wallet to facilitate easy purchases on the\nFlexpay eco-system",
-                      style: GoogleFonts.montserrat(
-                        fontSize: screenWidth * 0.04,
-                        color: textColor.withOpacity(0.8),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: screenHeight * 0.02),
-              Divider(color: Colors.blue, thickness: 2, endIndent: screenWidth * 0.75),
-              SizedBox(height: screenHeight * 0.03),
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<PaymentsCubit, PaymentsState>(
+            listener: (context, state) {
+              if (state is WalletTopUpSuccess) {
+                CustomSnackBar.showSuccess(
+                  context,
+                  title: "Success",
+                  message: "Wait for Mpesa confirmation to top up",
+                );
 
-              // **Select Top Up Method**
-              Text(
-                "Select Top Up Method",
-                style: GoogleFonts.montserrat(
-                  fontSize: screenWidth * 0.045,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.03),
-
-              // **M-Pesa Box**
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      width: screenWidth * 0.2,
-                      height: screenWidth * 0.2,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.blue),
-                        borderRadius: BorderRadius.circular(12),
-                        color: isDarkMode ? Colors.grey[800] : Colors.transparent,
-                      ),
-                      child: Icon(Icons.phone_android, color: Colors.blue, size: screenWidth * 0.1),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      "M-Pesa",
-                      style: GoogleFonts.montserrat(
-                        fontSize: screenWidth * 0.04,
-                        fontWeight: FontWeight.w500,
-                        color: textColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.03),
-
-              // **Phone Number Field**
-              Text(
-                "Phone Number",
-                style: GoogleFonts.montserrat(fontSize: screenWidth * 0.04, fontWeight: FontWeight.w500, color: textColor),
-              ),
-              SizedBox(height: 8),
-              Container(
-                height: screenHeight * 0.07,
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 13, vertical: 8.0),
-                child: TextField(
-                  style: GoogleFonts.montserrat(fontSize: screenWidth * 0.045, color: textColor),
-                  decoration: InputDecoration(
-                    hintText: "Enter Phone Number",
-                    border: InputBorder.none,
-                    hintStyle: GoogleFonts.montserrat(color: textColor.withOpacity(0.6), fontSize: screenWidth * 0.04),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.05),
-
-              // **Enter Amount Field**
-              Text(
-                "Enter Amount (KES)",
-                style: GoogleFonts.montserrat(fontSize: screenWidth * 0.04, fontWeight: FontWeight.w500, color: textColor),
-              ),
-              SizedBox(height: 8),
-              Container(
-                height: screenHeight * 0.07,
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8.0),
-                child: TextField(
-                  style: GoogleFonts.montserrat(fontSize: screenWidth * 0.045, color: textColor),
-                  decoration: InputDecoration(
-                    hintText: "Enter Amount (KES)",
-                    border: InputBorder.none,
-                    hintStyle: GoogleFonts.montserrat(color: textColor.withOpacity(0.6), fontSize: screenWidth * 0.04),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.05),
-
-              // **Top Up Button**
-              Center(
-                child: SizedBox(
-                  width: double.infinity,
-                  height: screenHeight * 0.07,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: buttonColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: Text(
-                      "Top Up",
-                      style: GoogleFonts.montserrat(
-                        fontSize: screenWidth * 0.045,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.03),
-            ],
+                // 🔄 Refresh wallet balance after refund
+                context.read<HomeCubit>().fetchUserWallet();
+              } else if (state is WalletTopUpFailure) {
+                CustomSnackBar.showError(
+                  context,
+                  title: "Error",
+                  message: state.message,
+                );
+              }
+            },
           ),
+        ],
+        child: BlocBuilder<HomeCubit, HomeState>(
+          builder: (context, homeState) {
+
+            final isLoading = context.watch<PaymentsCubit>().state is WalletTopUpLoading;
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      /// Info text
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline,
+                              color: ColorName.primaryColor, size: 22),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              "Top Up to your wallet via M-Pesa to facilitate easy purchases on the Flexpay ecosystem.",
+                              style: GoogleFonts.montserrat(
+                                color: isDark ? Colors.white70 : Colors.black87,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 20.h),
+
+                      /// Mpesa target
+                      Column(
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: fieldColor,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              Icons.phone_android,
+                              color: ColorName.primaryColor,
+                              size: 60,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            "M-Pesa",
+                            style: GoogleFonts.montserrat(
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 28.h),
+
+                      /// Phone Number
+                      _buildTextField(
+                        controller: phoneController,
+                        label: "Phone Number",
+                        hint: "Enter phone number",
+                        icon: Icons.phone_outlined,
+                        fieldColor: fieldColor,
+                        textColor: textColor,
+                        errorText: phoneError,
+                        keyboardType: TextInputType.phone,
+                        onChanged: (_) => _validateFields(),
+                      ),
+                      SizedBox(height: 16.h),
+
+                      /// Amount
+                      _buildTextField(
+                        controller: amountController,
+                        label: "Enter Amount (KES)",
+                        hint: "e.g. 500",
+                        icon: Icons.payments_outlined,
+                        fieldColor: fieldColor,
+                        textColor: textColor,
+                        errorText: amountError,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => _validateFields(),
+                      ),
+                      SizedBox(height: 28.h),
+
+                      /// Top up button
+                      SizedBox(
+                        width: double.infinity,
+                        child: isLoading
+                            ? Center(
+                                child: SpinKitWave(
+                                  color: ColorName.primaryColor,
+                                  size: 30,
+                                ),
+                              )
+                            : ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: ColorName.primaryColor,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                ),
+                                onPressed: () => _submit(context),
+                                child: Text(
+                                  "Top Up",
+                                  style: textTheme.titleMedium?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    required Color fieldColor,
+    required Color textColor,
+    String? errorText,
+    TextInputType keyboardType = TextInputType.text,
+    ValueChanged<String>? onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          style: GoogleFonts.montserrat(color: textColor),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: fieldColor,
+            prefixIcon: Icon(icon, color: ColorName.primaryColor),
+            hintText: hint,
+            hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          onChanged: onChanged,
+        ),
+        if (errorText != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                errorText!,
+                style: GoogleFonts.montserrat(
+                  color: Colors.red,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }

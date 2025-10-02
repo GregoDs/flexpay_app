@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> outlets = [];
   bool isLoading = true;
   double _walletBalance = 0.0;
+  double _refundableBalance = 0.0;
   List<TransactionData> _transactions = [];
   bool _txLoading = false;
   String? _txError;
@@ -78,10 +79,18 @@ class _HomeScreenState extends State<HomeScreen> {
               listener: (context, state) {
                 if (state is HomeWalletFetched) {
                   final wallet =
-                      state.walletResponse.data?.walletAccount.walletBalance;
+                      state.walletResponse.data?.walletAccount?.walletBalance;
+                  final refundableWalletBalance =
+                      state
+                          .walletResponse
+                          .data
+                          ?.walletAccount
+                          ?.walletRefundBalance ??
+                      0;
                   if (wallet != null) {
                     setState(() {
                       _walletBalance = wallet.balance.toDouble();
+                      _refundableBalance = refundableWalletBalance.toDouble();
                     });
                   }
                 } else if (state is HomeWalletFailure) {
@@ -112,6 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 userName: "${widget.userModel.user.firstName}",
                 balance: _walletBalance,
+                refundableBalance: _refundableBalance,
                 userModel: widget.userModel,
               ),
             ),

@@ -67,6 +67,9 @@ class ErrorHandler {
   }
 
   static String handleGenericError(dynamic error) {
-    return error.toString().replaceFirst('Error: ', '');
-  }
+  final raw = error.toString();
+  return raw
+      .replaceFirst('Exception: ', '')
+      .trim();
+}
 }

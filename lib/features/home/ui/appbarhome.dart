@@ -1,22 +1,28 @@
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
+import 'package:flexpay/features/home/cubits/home_cubit.dart';
+import 'package:flexpay/features/payments/cubits/payments_cubit.dart';
+import 'package:flexpay/features/payments/repo/payments_repo.dart';
 import 'package:flexpay/features/payments/ui/topup_home_page.dart';
 import 'package:flexpay/features/payments/ui/withdraw_home.dart';
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
+import 'package:flexpay/utils/services/api_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppBarHome extends StatefulWidget {
   final String userName;
   final double balance;
   final UserModel userModel;
+  final double refundableBalance;
 
   const AppBarHome(
     BuildContext context, {
     super.key,
     required this.userName,
-    required this.balance, 
+    required this.balance,
     required this.userModel,
+    required this.refundableBalance
   });
 
   @override
@@ -38,7 +44,7 @@ class _AppBarHomeState extends State<AppBarHome> {
     double screenHeight = MediaQuery.of(context).size.height;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 54.h),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 48.h),
       decoration: BoxDecoration(
         image: const DecorationImage(
           image: AssetImage('assets/images/appbarbackground.png'),
@@ -93,7 +99,7 @@ class _AppBarHomeState extends State<AppBarHome> {
             ),
 
             SizedBox(height: screenHeight * 0.02),
-            
+
             //Username
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -103,16 +109,18 @@ class _AppBarHomeState extends State<AppBarHome> {
                     GestureDetector(
                       onTap: () async {
                         await SharedPreferencesHelper.logout();
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          '/login',
-                          (route) => false,
-                        );
+                        Navigator.of(
+                          context,
+                        ).pushNamedAndRemoveUntil('/login', (route) => false);
                       },
                       child: CircleAvatar(
                         radius: 20.r,
                         backgroundColor: Colors.white,
-                        child:
-                            Icon(Icons.person, size: 24.sp, color: Colors.blue),
+                        child: Icon(
+                          Icons.person,
+                          size: 24.sp,
+                          color: Colors.blue,
+                        ),
                       ),
                     ),
                     SizedBox(width: 10.w),
@@ -167,44 +175,105 @@ class _AppBarHomeState extends State<AppBarHome> {
                 ),
               ],
             ),
-            SizedBox(height: 40.h),
+
+          SizedBox(height: 6.h),
+          /// Balance Label
+            Text(
+              'Withdrawable balance',
+              style: GoogleFonts.montserrat(
+                fontSize: 14.sp,
+                color: Colors.white70,
+              ),
+            ),
+            SizedBox(height: 4.h),
+            /// Balance Value + Visibility Toggle
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    isBalanceVisible
+                        ? 'Ksh ${widget.refundableBalance.toStringAsFixed(2)}'
+                        : '••••••',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 20.h),
 
             /// Action Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildActionButton(
-                    Icons.shopping_cart,
-                    "Shop",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NavigationWrapper(
+                  Icons.shopping_cart,
+                  "Shop",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NavigationWrapper(
                           initialIndex: 4, // Merchants tab index
                           userModel: widget.userModel,
-                          ),
                         ),
-                      );
-                    },
+                      ),
+                    );
+                  },
+                ),
+                _buildActionButton(
+                  Icons.arrow_downward,
+                  "Top up",
+                   onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MultiBlocProvider(
+                        providers: [
+                          BlocProvider.value(value: homeCubit),
+                          BlocProvider(create: (_) => PaymentsCubit(PaymentsRepo(ApiService()))), 
+                        ],
+                        child: TopUpHomePage()
+                      ),
+                    ),
                   ),
-                  _buildActionButton(Icons.arrow_downward, "Top up",
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => TopUpPage()))),
-                _buildActionButton(Icons.account_balance_wallet, "Withdraw",
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => WithdrawPage()))),
+                ),
+                _buildActionButton(
+                  Icons.account_balance_wallet,
+                  "Withdraw",
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MultiBlocProvider(
+                        providers: [
+                          BlocProvider.value(value: homeCubit),
+                          BlocProvider(create: (_) => PaymentsCubit(PaymentsRepo(ApiService()))), 
+                        ],
+                        child: WithdrawPage(
+                          refundableBalance: widget.refundableBalance, 
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 _buildActionButton(Icons.sync_alt, "Transfer"),
               ],
-            ),
+            ),       
           ],
         ),
       ),
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label,
-      {VoidCallback? onTap}) {
+  Widget _buildActionButton(
+    IconData icon,
+    String label, {
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -217,10 +286,7 @@ class _AppBarHomeState extends State<AppBarHome> {
           SizedBox(height: 6.h),
           Text(
             label,
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontSize: 13.sp,
-            ),
+            style: GoogleFonts.montserrat(color: Colors.white, fontSize: 13.sp),
             textAlign: TextAlign.center,
           ),
         ],
