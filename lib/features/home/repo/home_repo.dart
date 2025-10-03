@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:developer' as AppLogger; 
 import 'package:flexpay/features/home/models/home_transactions_model/transactions_model.dart';
 import 'package:flexpay/features/home/models/home_wallet_model/wallet_model.dart';
+import 'package:flexpay/features/home/models/referral_model/referral_model.dart';
+import 'package:flexpay/features/payments/models/voucher_model/voucher_model.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/services/error_handler.dart';
@@ -44,7 +46,7 @@ class HomeRepo {
     } catch (e, stack) {
       final message = ErrorHandler.handleGenericError(e);
       AppLogger.log("❌ Error in getUserWallet: $message\n$stack");
-      throw Exception(message);
+      throw (message);
     }
   }
 
@@ -83,7 +85,43 @@ class HomeRepo {
     } catch (e, stack) {
       final message = ErrorHandler.handleGenericError(e);
       AppLogger.log("❌ Error in getLatestTransactions: $message\n$stack");
-      throw Exception(message);
+      throw (message);
+    }
+  }
+
+
+  /// --- MAKE REFERRAL --- ///
+  Future<ReferralResponse> makeReferral(String phoneNumber) async {
+    try {
+      AppLogger.log("📤 Making referral for phone number: $phoneNumber");
+
+      final url = "${ApiService.prodEndpointChama}/refer";
+
+      final body = {
+        "phone_number": phoneNumber,
+      };
+
+      final response = await _apiService.post(url, data: body);
+
+      // Parse backend response into ReferralResponse
+      final referralResponse = ReferralResponse.fromJson(response.data);
+
+      // Handle backend errors if they exist
+      if (referralResponse.errors != null && referralResponse.errors!.isNotEmpty) {
+        AppLogger.log("⚠️ Backend errors: ${referralResponse.errors}");
+        throw Exception(referralResponse.errors!.first.toString());
+      }
+
+      // Pretty print JSON for debugging
+      final prettyJson =
+          const JsonEncoder.withIndent('  ').convert(referralResponse.toJson());
+      AppLogger.log("📦 Referral Response:\n$prettyJson");
+
+      return referralResponse;
+    } catch (e, stack) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in makeReferral: $message\n$stack");
+      throw (message);
     }
   }
 }

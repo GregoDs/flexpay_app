@@ -16,7 +16,7 @@ class MerchantsCubit extends Cubit<MerchantsState> {
       if (merchants.isEmpty) {
         emit(MerchantsError("No $type merchants found."));
       } else {
-        emit(MerchantsFetched(Merchants: merchants));
+        emit(MerchantsFetched(merchants: merchants));
       }
     } catch (e) {
       emit(MerchantsError("Failed to load $type merchants. ${e.toString()}"));

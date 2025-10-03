@@ -8,7 +8,7 @@ import 'chama_state.dart';
 import 'package:flexpay/features/flexchama/models/products_model/chama_products_model.dart';
 
 class ChamaCubit extends Cubit<ChamaState> {
-  final ChamaRepo _repo;
+  final ChamaRepo _chamaRepo;
 
   // Store last fetched profile
   ChamaProfile? _currentProfile;
@@ -18,13 +18,13 @@ class ChamaCubit extends Cubit<ChamaState> {
   UserChamasResponse? _cachedUserChamas;
   final Map<String, ChamaProductsResponse> _cachedProductsByType = {};
 
-  ChamaCubit(this._repo) : super(ChamaInitial());
+  ChamaCubit(this._chamaRepo) : super(ChamaInitial());
 
   /// ---------------- Fetch Profile ----------------
   Future<void> fetchChamaUserProfile() async {
     emit(ChamaProfileLoading());
     try {
-      final profile = await _repo.fetchChamaUserProfile();
+      final profile = await _chamaRepo.fetchChamaUserProfile();
 
       if (profile == null) {
         emit(
@@ -62,7 +62,7 @@ class ChamaCubit extends Cubit<ChamaState> {
   Future<void> fetchChamaUserSavings() async {
     emit(ChamaSavingsLoading(previousProfile: _currentProfile));
 
-    final savingsResponse = await _repo.fetchUserChamaSavings();
+    final savingsResponse = await _chamaRepo.fetchUserChamaSavings();
 
     // ✅ Always emit Fetched so FlexChama page renders
     emit(ChamaSavingsFetched(savingsResponse));
@@ -93,7 +93,7 @@ class ChamaCubit extends Cubit<ChamaState> {
     emit(ChamaRegistrationLoading());
 
     try {
-      final response = await _repo.registerChamaUser(
+      final response = await _chamaRepo.registerChamaUser(
         firstName: firstName,
         lastName: lastName,
         idNumber: idNumber,
@@ -128,7 +128,7 @@ class ChamaCubit extends Cubit<ChamaState> {
     emit(ChamaAllProductsLoading());
 
     try {
-      final response = await _repo.getAllChamaProducts(type: type);
+      final response = await _chamaRepo.getAllChamaProducts(type: type);
       emit(ChamaAllProductsFetched(response));
     } catch (e) {
       emit(ChamaAllProductsFailure(e.toString()));
@@ -140,7 +140,7 @@ class ChamaCubit extends Cubit<ChamaState> {
     emit(UserChamasLoading());
 
     try {
-      final response = await _repo.getUserChamas();
+      final response = await _chamaRepo.getUserChamas();
       emit(UserChamasFetched(response));
     } catch (e) {
       emit(UserChamasFailure(e.toString()));
@@ -209,10 +209,10 @@ class ChamaCubit extends Cubit<ChamaState> {
       // Fetch only what is missing or when forcing refresh
       final futures = <Future>[];
       if (forceRefresh || !hasSavings)
-        futures.add(_repo.fetchUserChamaSavings());
-      if (forceRefresh || !hasUserChamas) futures.add(_repo.getUserChamas());
+        futures.add(_chamaRepo.fetchUserChamaSavings());
+      if (forceRefresh || !hasUserChamas) futures.add(_chamaRepo.getUserChamas());
       if (forceRefresh || !hasProductsForType)
-        futures.add(_repo.getAllChamaProducts(type: type));
+        futures.add(_chamaRepo.getAllChamaProducts(type: type));
 
       final results = await Future.wait(futures);
 
@@ -249,7 +249,7 @@ class ChamaCubit extends Cubit<ChamaState> {
   }) async {
     emit(SubscribeChamaLoading());
     try {
-      final response = await _repo.subscribeChama(
+      final response = await _chamaRepo.subscribeChama(
         productId: productId,
         depositAmount: depositAmount,
       );
@@ -270,7 +270,7 @@ class ChamaCubit extends Cubit<ChamaState> {
   }) async {
     emit(SaveToChamaLoading());
     try {
-      final response = await _repo.saveToChama(
+      final response = await _chamaRepo.saveToChama(
         productId: productId,
         amount: amount,
       );
@@ -291,7 +291,7 @@ class ChamaCubit extends Cubit<ChamaState> {
   }) async {
     emit(PayChamaWalletLoading());
     try {
-      final response = await _repo.payChamaViaWallet(
+      final response = await _chamaRepo.payChamaViaWallet(
         productId: productId,
         amount: amount,
       );
@@ -301,6 +301,17 @@ class ChamaCubit extends Cubit<ChamaState> {
       await getUserChamas();
     } catch (e) {
       emit(PayChamaWalletFailure(e.toString()));
+    }
+  }
+
+  /// Make referral in chama page
+  Future<void> makeReferral(String phoneNumber) async {
+    emit(ChamaReferralLoading());
+    try {
+      final referralResponse = await _chamaRepo.makeReferral(phoneNumber);
+      emit(ChamaReferralSuccess(referralResponse));
+    } catch (e) {
+      emit(ChamaReferralFailure(e.toString()));
     }
   }
 }

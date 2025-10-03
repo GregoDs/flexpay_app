@@ -176,36 +176,36 @@ class _AppBarHomeState extends State<AppBarHome> {
               ],
             ),
 
-          SizedBox(height: 6.h),
-          /// Balance Label
-            Text(
-              'Withdrawable balance',
-              style: GoogleFonts.montserrat(
-                fontSize: 14.sp,
-                color: Colors.white70,
-              ),
-            ),
-            SizedBox(height: 4.h),
-            /// Balance Value + Visibility Toggle
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    isBalanceVisible
-                        ? 'Ksh ${widget.refundableBalance.toStringAsFixed(2)}'
-                        : '••••••',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
+          SizedBox(height: 20.h),
+          // /// Balance Label
+          //   Text(
+          //     'Withdrawable balance',
+          //     style: GoogleFonts.montserrat(
+          //       fontSize: 14.sp,
+          //       color: Colors.white70,
+          //     ),
+          //   ),
+          //   SizedBox(height: 4.h),
+          //   /// Balance Value + Visibility Toggle
+          //   Row(
+          //     children: [
+          //       Expanded(
+          //         child: Text(
+          //           isBalanceVisible
+          //               ? 'Ksh ${widget.refundableBalance.toStringAsFixed(2)}'
+          //               : '••••••',
+          //           style: GoogleFonts.montserrat(
+          //             fontSize: 12.sp,
+          //             fontWeight: FontWeight.w500,
+          //             color: Colors.white,
+          //           ),
+          //           overflow: TextOverflow.ellipsis,
+          //         ),
+          //       ),
+          //     ],
+          //   ),
 
-            SizedBox(height: 20.h),
+          //   SizedBox(height: 20.h),
 
             /// Action Buttons
             Row(

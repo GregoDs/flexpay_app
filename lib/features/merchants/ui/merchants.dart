@@ -184,7 +184,7 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
                           ),
                         );
                       } else if (state is MerchantsFetched) {
-                        final merchants = state.Merchants;
+                        final merchants = state.merchants;
 
                         return GridView.builder(
                           physics: const NeverScrollableScrollPhysics(),

@@ -14,14 +14,14 @@ class MerchantsInitial extends MerchantsState {}
 class MerchantsLoading extends MerchantsState {}
 
 class MerchantsFetched extends MerchantsState {
-  final List<Merchant> Merchants;
+  final List<Merchant> merchants;
 
   const MerchantsFetched({
-    required this.Merchants,
+    required this.merchants,
   });
 
   @override
-  List<Object?> get props => [Merchants];
+  List<Object?> get props => [merchants];
 }
 
 class MerchantsError extends MerchantsState {

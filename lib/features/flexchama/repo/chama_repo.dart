@@ -4,6 +4,7 @@ import 'package:flexpay/features/flexchama/models/profile_model/chama_profile_mo
 import 'package:flexpay/features/flexchama/models/registration_model/chama_reg_model.dart';
 import 'package:flexpay/features/flexchama/models/savings_model/chama_savings_model.dart';
 import 'package:flexpay/features/flexchama/models/subscribe_chama_model/subscribe_chama_model.dart';
+import 'package:flexpay/features/home/models/referral_model/referral_model.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/services/error_handler.dart';
@@ -421,5 +422,40 @@ Future<SaveChamaWalletResponse> payChamaViaWallet({
     throw Exception(message);
   }
 }
+
+ /// --- MAKE REFERRAL --- ///
+  Future<ReferralResponse> makeReferral(String phoneNumber) async {
+    try {
+      AppLogger.log("📤 Making referral for phone number: $phoneNumber");
+
+      final url = "${ApiService.prodEndpointChama}/refer";
+
+      final body = {
+        "phone_number": phoneNumber,
+      };
+
+      final response = await _apiService.post(url, data: body);
+
+      // Parse backend response into ReferralResponse
+      final referralResponse = ReferralResponse.fromJson(response.data);
+
+      // Handle backend errors if they exist
+      if (referralResponse.errors != null && referralResponse.errors!.isNotEmpty) {
+        AppLogger.log("⚠️ Backend errors: ${referralResponse.errors}");
+        throw Exception(referralResponse.errors!.first.toString());
+      }
+
+      // Pretty print JSON for debugging
+      final prettyJson =
+          const JsonEncoder.withIndent('  ').convert(referralResponse.toJson());
+      AppLogger.log("📦 Referral Response:\n$prettyJson");
+
+      return referralResponse;
+    } catch (e, stack) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in makeReferral: $message\n$stack");
+      throw (message);
+    }
+  }
 
 }

@@ -133,8 +133,11 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     bool hideNavBar = _currentIndex == 2 && showOnBoard;
 
     // PROVIDE ChamaCubit once here for all children
-    return BlocProvider.value(
-      value: chamaCubit,
+    return MultiBlocProvider(
+  providers: [
+    BlocProvider.value(value: chamaCubit),
+    BlocProvider.value(value: homeCubit),
+  ],
       child: WillPopScope(
         onWillPop: () async {
           if (_currentIndex != 0) {

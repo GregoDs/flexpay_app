@@ -39,4 +39,23 @@ class PaymentsCubit extends Cubit<PaymentsState> {
       emit(WalletTopUpFailure(e.toString()));
     }
   }
+
+  /// --- GENERATE VOUCHER --- ///
+  Future<void> generateVoucher({
+    required int merchantId,
+    required String voucherAmount,
+  }) async {
+    emit(VoucherLoading());
+
+    try {
+      final response = await _paymentsRepo.generateVoucher(
+        merchantId: merchantId,
+        voucherAmount: voucherAmount,
+      );
+
+      emit(VoucherSuccess(response));
+    } catch (e) {
+      emit(VoucherFailure(e.toString()));
+    }
+  }
 }

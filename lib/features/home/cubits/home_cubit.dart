@@ -28,4 +28,15 @@ class HomeCubit extends Cubit<HomeState> {
       emit(HomeTransactionsFailure(e.toString()));
     }
   }
+
+  /// Make referral
+  Future<void> makeReferral(String phoneNumber) async {
+    emit(HomeReferralLoading());
+    try {
+      final referralResponse = await _homeRepo.makeReferral(phoneNumber);
+      emit(HomeReferralSuccess(referralResponse));
+    } catch (e) {
+      emit(HomeReferralFailure(e.toString()));
+    }
+  }
 }

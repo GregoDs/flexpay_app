@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer' as AppLogger;
 import 'package:flexpay/features/payments/models/refunds_model/refunds_model.dart';
 import 'package:flexpay/features/payments/models/top_up_wallet_model/topup_wallet_model.dart';
+import 'package:flexpay/features/payments/models/voucher_model/voucher_model.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/services/error_handler.dart';
@@ -138,4 +139,61 @@ Future<TopUpWalletHomeResponse> topUpWalletViaMpesa(
       throw (message);
     }
   }
-}
+  
+
+
+
+    // ------------------- VOUCHER ------------------- //
+  Future<VoucherResponse> generateVoucher({
+    required int merchantId,
+    required String voucherAmount,
+  }) async {
+    try {
+      AppLogger.log("📤 Generating Voucher...");
+
+      final userModel = await SharedPreferencesHelper.getUserModel();
+      final userId = userModel?.user.id;
+     
+      if (userId == null) {
+        throw Exception("User ID not found in SharedPreferences");
+      }
+     
+      final url = "${ApiService.prodEndpointChama}/generate-voucher";
+
+      final payload = {
+        "merchant_id": merchantId,
+        "user_id": userId.toString(),
+        "amount": voucherAmount,
+       
+      };
+
+      AppLogger.log("📦 Voucher Payload: $payload");
+
+      final response = await _apiService.post(
+        url,
+        requiresAuth: true,
+        data: payload,
+      );
+
+      final voucherResponse =
+          VoucherResponse.fromJson(response.data as Map<String, dynamic>);
+
+      if (voucherResponse.errors != null &&
+          voucherResponse.errors!.isNotEmpty) {
+        AppLogger.log("⚠️ Backend errors: ${voucherResponse.errors}");
+        throw Exception(voucherResponse.errors!.first.toString());
+      }
+
+      final prettyJson =
+          const JsonEncoder.withIndent('  ').convert(voucherResponse.toJson());
+      AppLogger.log("✅ Voucher Response:\n$prettyJson");
+
+      return voucherResponse;
+    } catch (e, stack) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in generateVoucher: $message\n$stack");
+      throw (message);
+    }
+  }
+}  
+

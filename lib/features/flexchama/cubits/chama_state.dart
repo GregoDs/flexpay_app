@@ -4,6 +4,7 @@ import 'package:flexpay/features/flexchama/models/profile_model/chama_profile_mo
 import 'package:flexpay/features/flexchama/models/registration_model/chama_reg_model.dart';
 import 'package:flexpay/features/flexchama/models/savings_model/chama_savings_model.dart';
 import 'package:flexpay/features/flexchama/models/subscribe_chama_model/subscribe_chama_model.dart';
+import 'package:flexpay/features/home/models/referral_model/referral_model.dart';
 
 abstract class ChamaState extends Equatable {
   const ChamaState();
@@ -256,6 +257,29 @@ class PayChamaWalletFailure extends ChamaState {
   final String message;
 
   const PayChamaWalletFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+/// ---------------- Referral States ----------------
+class ChamaReferralInitial extends ChamaState {}
+
+class ChamaReferralLoading extends ChamaState {}
+
+class ChamaReferralSuccess extends ChamaState {
+  final ReferralResponse referralResponse;
+
+  const ChamaReferralSuccess(this.referralResponse);
+
+  @override
+  List<Object?> get props => [referralResponse];
+}
+
+class ChamaReferralFailure extends ChamaState {
+  final String message;
+
+  const ChamaReferralFailure(this.message);
 
   @override
   List<Object?> get props => [message];

@@ -21,6 +21,8 @@ import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
 import 'package:flexpay/features/home/cubits/home_cubit.dart';
 import 'package:flexpay/features/home/repo/home_repo.dart';
+import 'package:flexpay/features/payments/cubits/payments_cubit.dart';
+import 'package:flexpay/features/payments/repo/payments_repo.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 
 // Create global Cubit instances
@@ -29,6 +31,7 @@ final chamaCubit = ChamaCubit(ChamaRepo());
 final bookingsCubit = BookingsCubit(BookingsRepository());
 final merchantsCubit = MerchantsCubit(MerchantsRepository());
 final homeCubit = HomeCubit(HomeRepo(ApiService()));
+final paymentsCubit = PaymentsCubit(PaymentsRepo(ApiService()));
 
 class AppRoutes {
   static final routes = {
@@ -54,6 +57,8 @@ class AppRoutes {
         providers: [
           BlocProvider.value(value: chamaCubit),
           BlocProvider.value(value: homeCubit),
+          BlocProvider.value(value: paymentsCubit),
+          BlocProvider.value(value: merchantsCubit),
         ],
         child: NavigationWrapper(initialIndex: 0, userModel: userModel),
       );

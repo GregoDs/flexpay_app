@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flexpay/features/home/models/home_wallet_model/wallet_model.dart';
 import 'package:flexpay/features/home/models/home_transactions_model/transactions_model.dart';
+import 'package:flexpay/features/home/models/referral_model/referral_model.dart';
 
 abstract class HomeState extends Equatable {
   const HomeState();
@@ -50,6 +51,29 @@ class HomeTransactionsFailure extends HomeState {
   final String message;
 
   const HomeTransactionsFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+/// ---------------- Referral States ----------------
+class HomeReferralInitial extends HomeState {}
+
+class HomeReferralLoading extends HomeState {}
+
+class HomeReferralSuccess extends HomeState {
+  final ReferralResponse referralResponse;
+
+  const HomeReferralSuccess(this.referralResponse);
+
+  @override
+  List<Object?> get props => [referralResponse];
+}
+
+class HomeReferralFailure extends HomeState {
+  final String message;
+
+  const HomeReferralFailure(this.message);
 
   @override
   List<Object?> get props => [message];
