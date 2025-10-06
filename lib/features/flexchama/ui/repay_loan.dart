@@ -1,0 +1,218 @@
+import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
+import 'package:flexpay/features/flexchama/cubits/chama_state.dart';
+import 'package:flexpay/gen/colors.gen.dart';
+import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+void showPayLoanModalSheet(BuildContext context) {
+  final TextEditingController amountController = TextEditingController();
+  final chamaCubit = context.read<ChamaCubit>();
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) {
+      return BlocProvider.value(
+        value: chamaCubit,
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20.w,
+            right: 20.w,
+            top: 20.h,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20.h,
+          ),
+          child: BlocConsumer<ChamaCubit, ChamaState>(
+            listener: (context, state) {
+              if (state is RepayChamaLoanSuccess) {
+                Navigator.pop(context);
+                CustomSnackBar.showSuccess(
+                  context,
+                  title: "Loan Payment Successful",
+                  message: "✅ ${state.response ?? 'Your loan has been repaid successfully.'}",
+                );
+              } else if (state is RepayChamaLoanFailure) {
+                Navigator.pop(context);
+                CustomSnackBar.showError(
+                  context,
+                  title: "Loan Payment Failed",
+                  message: "⚠️ ${state.message}",
+                );
+              }
+            },
+            builder: (context, state) {
+              final isLoading = state is RepayChamaLoanLoading;
+
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // --- Header indicator
+                    Center(
+                      child: Container(
+                        width: 50.w,
+                        height: 5.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[400],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20.h),
+
+                    // --- Title
+                    Text(
+                      "Pay Off Your Loan",
+                      style: GoogleFonts.montserrat(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+
+                    // --- Description
+                    Text(
+                      "Enter the amount you wish to repay. The payment will be processed via your registered M-PESA number.",
+                      style: GoogleFonts.montserrat(
+                        fontSize: 13.sp,
+                        color: Colors.grey[700],
+                        height: 1.4,
+                      ),
+                    ),
+                    SizedBox(height: 20.h),
+
+                    // --- Quick Amounts
+                    Text(
+                      "Quick Amounts",
+                      style: GoogleFonts.montserrat(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+                    Wrap(
+                      spacing: 12.w,
+                      runSpacing: 12.h,
+                      children: [
+                        for (final amt in ["500", "1000", "5000", "10000", "20000"])
+                          _amountChip(amt, () {
+                            amountController.text = amt;
+                          }),
+                      ],
+                    ),
+                    SizedBox(height: 20.h),
+
+                    // --- Input Field
+                    TextField(
+                      controller: amountController,
+                      keyboardType: TextInputType.number,
+                      style: GoogleFonts.montserrat(),
+                      decoration: InputDecoration(
+                        hintText: "Enter amount to repay",
+                        filled: true,
+                        fillColor: Colors.grey[200],
+                        prefixIcon: const Icon(
+                          Icons.payments_outlined,
+                          color: ColorName.primaryColor,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 25.h),
+
+                    // --- Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ColorName.primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                        ),
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                final amount = amountController.text.trim();
+                                if (amount.isEmpty) {
+                                  CustomSnackBar.showError(
+                                    context,
+                                    title: "Missing Amount",
+                                    message: "Please enter the repayment amount.",
+                                  );
+                                  return;
+                                }
+
+                                final parsedAmount = double.tryParse(amount);
+                                if (parsedAmount == null || parsedAmount <= 0) {
+                                  CustomSnackBar.showError(
+                                    context,
+                                    title: "Invalid Amount",
+                                    message: "Please enter a valid repayment amount.",
+                                  );
+                                  return;
+                                }
+
+                                context.read<ChamaCubit>().repayChamaLoan(parsedAmount);
+                              },
+                        child: isLoading
+                            ? const SpinKitWave(
+                                color: Colors.white,
+                                size: 22.0,
+                              )
+                            : Text(
+                                "Repay Loan",
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                    SizedBox(height: 20.h),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    },
+  );
+}
+
+Widget _amountChip(String label, VoidCallback onTap) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: ColorName.primaryColor, width: 1),
+      ),
+      child: Text(
+        "Ksh $label",
+        style: GoogleFonts.montserrat(
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w600,
+          color: ColorName.primaryColor,
+        ),
+      ),
+    ),
+  );
+}

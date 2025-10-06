@@ -1,9 +1,12 @@
 import 'package:equatable/equatable.dart';
+import 'package:flexpay/features/flexchama/models/loan_request_model/loan_request_model.dart';
+import 'package:flexpay/features/flexchama/models/pay_loan_model/pay_loan_model.dart';
 import 'package:flexpay/features/flexchama/models/products_model/chama_products_model.dart';
 import 'package:flexpay/features/flexchama/models/profile_model/chama_profile_model.dart';
 import 'package:flexpay/features/flexchama/models/registration_model/chama_reg_model.dart';
 import 'package:flexpay/features/flexchama/models/savings_model/chama_savings_model.dart';
 import 'package:flexpay/features/flexchama/models/subscribe_chama_model/subscribe_chama_model.dart';
+import 'package:flexpay/features/flexchama/models/withdraw_chama_savings/withdraw_savings_model.dart';
 import 'package:flexpay/features/home/models/referral_model/referral_model.dart';
 
 abstract class ChamaState extends Equatable {
@@ -280,6 +283,73 @@ class ChamaReferralFailure extends ChamaState {
   final String message;
 
   const ChamaReferralFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+
+/// ---------------- Withdraw Chama Savings States ----------------
+class WithdrawChamaSavingsLoading extends ChamaState {}
+
+class WithdrawChamaSavingsSuccess extends ChamaState {
+  final WithdrawChamaSavingsResponse response;
+
+  const WithdrawChamaSavingsSuccess(this.response);
+
+  @override
+  List<Object?> get props => [response];
+}
+
+class WithdrawChamaSavingsFailure extends ChamaState {
+  final String message;
+
+  const WithdrawChamaSavingsFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+
+
+
+/// ---------------- Request Chama Loan States ----------------
+class RequestChamaLoanLoading extends ChamaState {}
+
+class RequestChamaLoanSuccess extends ChamaState {
+  final ChamaLoanRequestResponse response;
+
+  const RequestChamaLoanSuccess(this.response);
+
+  @override
+  List<Object?> get props => [response];
+}
+
+class RequestChamaLoanFailure extends ChamaState {
+  final String message;
+
+  const RequestChamaLoanFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+/// ---------------- Repay Chama Loan States ----------------
+class RepayChamaLoanLoading extends ChamaState {}
+
+class RepayChamaLoanSuccess extends ChamaState {
+  final PayLoanResponse response;
+
+  const RepayChamaLoanSuccess(this.response);
+
+  @override
+  List<Object?> get props => [response];
+}
+
+class RepayChamaLoanFailure extends ChamaState {
+  final String message;
+
+  const RepayChamaLoanFailure(this.message);
 
   @override
   List<Object?> get props => [message];

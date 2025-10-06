@@ -5,6 +5,7 @@ import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_state.dart';
 import 'package:flexpay/features/flexchama/ui/chama_home.dart';
 import 'package:flexpay/features/flexchama/ui/opt_chama_screen.dart';
+import 'package:flexpay/features/flexchama/ui/shimmer_chama_products.dart';
 import 'package:flexpay/features/goals/ui/goals.dart';
 import 'package:flexpay/features/home/ui/homescreen.dart';
 import 'package:flexpay/features/merchants/ui/merchants.dart';
@@ -55,7 +56,13 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   }
 
   List<Widget> get _pages => [
-    HomeScreen(isDarkModeOn: false, userModel: widget.userModel),
+    
+    BlocProvider.value(
+          value: paymentsCubit,
+          child: HomeScreen(isDarkModeOn: false, userModel: widget.userModel),
+        ),
+
+
     GoalsPage(),
 
     /// FlexChama Tab
@@ -83,19 +90,17 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
             );
           }
 
-          // Also show FlexChama when we are in ChamaViewState (used by ViewChamas),
-          // so navigating back does not show a loader.
-          if (state is ChamaProfileFetched ||
-              state is ChamaSavingsFetched ||
-              state is ChamaSavingsLoading ||
-              state is ChamaViewState) {
+          // Show FlexChama for all states except initial/profile loading/not member
+          if (state is! ChamaInitial &&
+              state is! ChamaProfileLoading &&
+              state is! ChamaNotMember) {
             final profile = (state is ChamaProfileFetched)
                 ? state.profile
                 : (state is ChamaSavingsFetched)
                 ? state.savingsResponse.data?.chamaDetails
                 : (state is ChamaSavingsLoading)
                 ? state.previousProfile
-                : null; // ChamaViewState has no profile; keep UI stable
+                : null; // ChamaViewState and others have no profile; keep UI stable
 
             if (showOnBoard) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -108,11 +113,8 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
             return FlexChama(profile: profile);
           }
 
-          if (state is ChamaInitial || state is ChamaProfileLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          return const Center(child: CircularProgressIndicator());
+          // Only show spinner for initial/profile loading
+          return const Center(child: FlexChamaShimmer());
         },
       ),
     ),
@@ -134,10 +136,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
 
     // PROVIDE ChamaCubit once here for all children
     return MultiBlocProvider(
-  providers: [
-    BlocProvider.value(value: chamaCubit),
-    BlocProvider.value(value: homeCubit),
-  ],
+      providers: [
+        BlocProvider.value(value: chamaCubit),
+        BlocProvider.value(value: homeCubit),
+      ],
       child: WillPopScope(
         onWillPop: () async {
           if (_currentIndex != 0) {

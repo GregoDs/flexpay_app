@@ -56,16 +56,17 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
       emailError = emailController.text.trim().isEmpty
           ? "Email is required"
-          : (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                  .hasMatch(emailController.text.trim())
-              ? "Enter a valid email address"
-              : null);
+          : (!RegExp(
+                  r'^[^@]+@[^@]+\.[^@]+',
+                ).hasMatch(emailController.text.trim())
+                ? "Enter a valid email address"
+                : null);
 
       phoneError = phoneController.text.trim().isEmpty
           ? "Phone number is required"
           : (!RegExp(r'^\d{10,13}$').hasMatch(phoneController.text.trim())
-              ? "Enter a valid phone number"
-              : null);
+                ? "Enter a valid phone number"
+                : null);
 
       // DOB is optional
       dobError = null;
@@ -75,13 +76,13 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       passwordError = passwordController.text.length < 8
           ? "Password must be at least 8 characters"
           : (!RegExp(r'[0-9]').hasMatch(passwordController.text)
-              ? "Password must contain at least one number"
-              : null);
+                ? "Password must contain at least one number"
+                : null);
 
       confirmPasswordError =
           confirmPasswordController.text != passwordController.text
-              ? "Passwords do not match"
-              : null;
+          ? "Passwords do not match"
+          : null;
     });
   }
 
@@ -97,16 +98,16 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         agreedToTerms) {
       // Send data to backend via AuthCubit
       context.read<AuthCubit>().createAccount(
-            emailController.text.trim(),
-            passwordController.text,
-            confirmPasswordController.text,
-            firstNameController.text.trim(),
-            lastNameController.text.trim(),
-            phoneController.text.trim(),
-            "1", // userType
-            gender ?? "",
-            dobController.text.trim(), // can be empty
-          );
+        emailController.text.trim(),
+        passwordController.text,
+        confirmPasswordController.text,
+        firstNameController.text.trim(),
+        lastNameController.text.trim(),
+        phoneController.text.trim(),
+        "1", // userType
+        gender ?? "",
+        dobController.text.trim(), // can be empty
+      );
     }
   }
 
@@ -115,8 +116,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
 
-    final textTheme =
-        GoogleFonts.montserratTextTheme(Theme.of(context).textTheme);
+    final textTheme = GoogleFonts.montserratTextTheme(
+      Theme.of(context).textTheme,
+    );
 
     final fieldColor = isDark ? Colors.grey[850]! : Colors.grey[200]!;
     final textColor = isDark ? Colors.white : Colors.black87;
@@ -148,7 +150,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               title: "Success",
               message: "Registration successful!",
             );
-            Navigator.pushReplacementNamed(context, Routes.home);
+            Navigator.pushReplacementNamed(
+              context,
+              Routes.home,
+              arguments: state.userModel,
+            );
           } else if (state is AuthError) {
             CustomSnackBar.showError(
               context,
@@ -169,8 +175,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             builder: (context, constraints) {
               return SafeArea(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 22,
+                  ),
                   child: SingleChildScrollView(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -185,14 +193,15 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                                   child: _buildTextField(
                                     controller: firstNameController,
                                     label: "First Name",
-                                    hint: "George",
+                                    hint: "John",
                                     icon: Icons.person_outline,
                                     fieldColor: fieldColor,
                                     textColor: textColor,
                                     errorText: firstNameError,
                                     onChanged: (_) => _validateFields(),
-                                    inputFormatters: [CapitalizeFirstLetterFormatter()],
-
+                                    inputFormatters: [
+                                      CapitalizeFirstLetterFormatter(),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -200,13 +209,15 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                                   child: _buildTextField(
                                     controller: lastNameController,
                                     label: "Last Name",
-                                    hint: "Kiplagat",
+                                    hint: "Doe",
                                     icon: Icons.person_outline,
                                     fieldColor: fieldColor,
                                     textColor: textColor,
                                     errorText: lastNameError,
                                     onChanged: (_) => _validateFields(),
-                                    inputFormatters: [CapitalizeFirstLetterFormatter()],
+                                    inputFormatters: [
+                                      CapitalizeFirstLetterFormatter(),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -223,7 +234,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                               textColor: textColor,
                               errorText: emailError,
                               onChanged: (_) => _validateFields(),
-                              inputFormatters: [CapitalizeFirstLetterFormatter()],
+                              inputFormatters: [
+                                CapitalizeFirstLetterFormatter(),
+                              ],
                             ),
                             SizedBox(height: 12.h),
 
@@ -237,7 +250,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                               textColor: textColor,
                               errorText: phoneError,
                               onChanged: (_) => _validateFields(),
-                              inputFormatters: [CapitalizeFirstLetterFormatter()],
+                              inputFormatters: [
+                                CapitalizeFirstLetterFormatter(),
+                              ],
                             ),
                             SizedBox(height: 12.h),
 
@@ -249,17 +264,19 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                               textColor: textColor,
                               errorText: dobError,
                               onChanged: (_) => _validateFields(),
-                              
                             ),
                             SizedBox(height: 12.h),
 
                             // Gender
                             Align(
                               alignment: Alignment.centerLeft,
-                              child: Text("Gender",
-                                  style: GoogleFonts.montserrat(
-                                      fontWeight: FontWeight.w600,
-                                      color: textColor)),
+                              child: Text(
+                                "Gender",
+                                style: GoogleFonts.montserrat(
+                                  fontWeight: FontWeight.w600,
+                                  color: textColor,
+                                ),
+                              ),
                             ),
                             SizedBox(height: 6.h),
                             Row(
@@ -294,8 +311,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                                     label: "Password",
                                     hint: "Enter password",
                                     visible: passwordVisible,
-                                    toggleVisibility: () => setState(() =>
-                                        passwordVisible = !passwordVisible),
+                                    toggleVisibility: () => setState(
+                                      () => passwordVisible = !passwordVisible,
+                                    ),
                                     fieldColor: fieldColor,
                                     textColor: textColor,
                                     errorText: passwordError,
@@ -309,9 +327,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                                     label: "Confirm Password",
                                     hint: "Re-enter password",
                                     visible: confirmPasswordVisible,
-                                    toggleVisibility: () => setState(() =>
-                                        confirmPasswordVisible =
-                                            !confirmPasswordVisible),
+                                    toggleVisibility: () => setState(
+                                      () => confirmPasswordVisible =
+                                          !confirmPasswordVisible,
+                                    ),
                                     fieldColor: fieldColor,
                                     textColor: textColor,
                                     errorText: confirmPasswordError,
@@ -329,14 +348,18 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                                   value: agreedToTerms,
                                   activeColor: ColorName.primaryColor,
                                   onChanged: (val) => setState(
-                                      () => agreedToTerms = val ?? false),
+                                    () => agreedToTerms = val ?? false,
+                                  ),
                                 ),
                                 Expanded(
                                   child: Wrap(
                                     children: [
-                                      Text("I agree to the ",
-                                          style: textTheme.bodySmall
-                                              ?.copyWith(color: textColor)),
+                                      Text(
+                                        "I agree to the ",
+                                        style: textTheme.bodySmall?.copyWith(
+                                          color: textColor,
+                                        ),
+                                      ),
                                       GestureDetector(
                                         onTap: () {},
                                         child: Text(
@@ -349,9 +372,12 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                                           ),
                                         ),
                                       ),
-                                      Text(" and Privacy Policy",
-                                          style: textTheme.bodySmall
-                                              ?.copyWith(color: textColor)),
+                                      Text(
+                                        " and Privacy Policy",
+                                        style: textTheme.bodySmall?.copyWith(
+                                          color: textColor,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -376,11 +402,13 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: ColorName.primaryColor,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(24),
+                                          borderRadius: BorderRadius.circular(
+                                            24,
+                                          ),
                                         ),
                                         padding: const EdgeInsets.symmetric(
-                                            vertical: 14),
+                                          vertical: 14,
+                                        ),
                                       ),
                                       onPressed: _submit,
                                       child: Text(
@@ -396,13 +424,17 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text("Already have an account? ",
-                                    style: textTheme.bodyMedium?.copyWith(
-                                      color: textColor,
-                                    )),
+                                Text(
+                                  "Already have an account? ",
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: textColor,
+                                  ),
+                                ),
                                 GestureDetector(
                                   onTap: () => Navigator.pushReplacementNamed(
-                                      context, Routes.login),
+                                    context,
+                                    Routes.login,
+                                  ),
                                   child: Text(
                                     "Sign In",
                                     style: textTheme.bodyMedium?.copyWith(
@@ -438,9 +470,13 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w600, color: textColor)),
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
         const SizedBox(height: 6),
         GestureDetector(
           onTap: () async {
@@ -449,8 +485,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               context: context,
               builder: (_) {
                 return DefaultTextStyle(
-                  style:
-                      GoogleFonts.montserrat(fontSize: 18, color: Colors.black),
+                  style: GoogleFonts.montserrat(
+                    fontSize: 18,
+                    color: Colors.black,
+                  ),
                   child: SizedBox(
                     height: 250,
                     child: CupertinoDatePicker(
@@ -477,8 +515,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: fieldColor,
-                prefixIcon: Icon(Icons.calendar_today_outlined,
-                    color: Colors.blue[800]),
+                prefixIcon: Icon(
+                  Icons.calendar_today_outlined,
+                  color: Colors.blue[800],
+                ),
                 hintText: "yyyy-MM-dd",
                 hintStyle: GoogleFonts.montserrat(color: Colors.grey),
                 border: OutlineInputBorder(
@@ -497,10 +537,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               alignment: Alignment.centerLeft,
               child: Text(
                 errorText,
-                style: GoogleFonts.montserrat(
-                  color: Colors.red,
-                  fontSize: 13,
-                ),
+                style: GoogleFonts.montserrat(color: Colors.red, fontSize: 13),
               ),
             ),
           ),
@@ -552,14 +589,19 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     required Color textColor,
     String? errorText,
     TextInputType keyboardType = TextInputType.text,
-    ValueChanged<String>? onChanged, required List<CapitalizeFirstLetterFormatter> inputFormatters,
+    ValueChanged<String>? onChanged,
+    required List<CapitalizeFirstLetterFormatter> inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w600, color: textColor)),
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
@@ -585,10 +627,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               alignment: Alignment.centerLeft,
               child: Text(
                 errorText,
-                style: GoogleFonts.montserrat(
-                  color: Colors.red,
-                  fontSize: 13,
-                ),
+                style: GoogleFonts.montserrat(color: Colors.red, fontSize: 13),
               ),
             ),
           ),
@@ -610,9 +649,13 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w600, color: textColor)),
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
@@ -645,10 +688,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               alignment: Alignment.centerLeft,
               child: Text(
                 errorText,
-                style: GoogleFonts.montserrat(
-                  color: Colors.red,
-                  fontSize: 13,
-                ),
+                style: GoogleFonts.montserrat(color: Colors.red, fontSize: 13),
               ),
             ),
           ),

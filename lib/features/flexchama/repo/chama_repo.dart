@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'package:flexpay/features/flexchama/models/loan_request_model/loan_request_model.dart';
+import 'package:flexpay/features/flexchama/models/pay_loan_model/pay_loan_model.dart';
 import 'package:flexpay/features/flexchama/models/products_model/chama_products_model.dart';
 import 'package:flexpay/features/flexchama/models/profile_model/chama_profile_model.dart';
 import 'package:flexpay/features/flexchama/models/registration_model/chama_reg_model.dart';
 import 'package:flexpay/features/flexchama/models/savings_model/chama_savings_model.dart';
 import 'package:flexpay/features/flexchama/models/subscribe_chama_model/subscribe_chama_model.dart';
+import 'package:flexpay/features/flexchama/models/withdraw_chama_savings/withdraw_savings_model.dart';
 import 'package:flexpay/features/home/models/referral_model/referral_model.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
@@ -62,9 +65,12 @@ class ChamaRepo {
     } catch (e) {
       final message = ErrorHandler.handleGenericError(e);
       AppLogger.log("❌ Error in fetchChamaUserProfile: $message");
-      throw Exception(message);
+      throw (message);
     }
   }
+
+
+
 
   ///--- REGISTER NEW CHAMA MEMBER ---///
   Future<ChamaRegistrationResponse> registerChamaUser({
@@ -114,9 +120,13 @@ class ChamaRepo {
     } catch (e) {
       final message = ErrorHandler.handleGenericError(e);
       AppLogger.log("❌ Error in registerChamaUser: $message");
-      throw Exception(message);
+      throw (message);
     }
   }
+
+
+
+
 
   ///---FETCH CHAMA SAVINGS---///
   Future<ChamaSavingsResponse> fetchUserChamaSavings() async {
@@ -219,7 +229,7 @@ class ChamaRepo {
     } catch (e) {
       final message = ErrorHandler.handleGenericError(e);
       AppLogger.log("❌ Error in getAllChamaProducts: $message");
-      throw Exception(message);
+      throw (message);
     }
   }
 
@@ -250,9 +260,12 @@ class ChamaRepo {
     } catch (e) {
       final message = ErrorHandler.handleGenericError(e);
       AppLogger.log("❌ Error in getUserChamas: $message");
-      throw Exception(message);
+      throw (message);
     }
   }
+
+
+
 
   ///--- SUBSCRIBE TO A CHAMA ---///
   Future<SubscribeChamaResponse> subscribeChama({
@@ -304,7 +317,7 @@ class ChamaRepo {
     } catch (e) {
       final message = ErrorHandler.handleGenericError(e);
       AppLogger.log("❌ Error in subscribeChama: $message");
-      throw Exception(message);
+      throw (message);
     }
   }
 
@@ -368,9 +381,15 @@ Future<SubscribeChamaResponse> saveToChama({
   } catch (e) {
     final message = ErrorHandler.handleGenericError(e);
     AppLogger.log("❌ Error in subscribeChama: $message");
-    throw Exception(message);
+    throw (message);
   }
 }
+
+
+
+
+
+
 
  /// ----------------------
 /// Pay for CHAMA via Wallet
@@ -419,7 +438,7 @@ Future<SaveChamaWalletResponse> payChamaViaWallet({
   } catch (e) {
     final message = ErrorHandler.handleGenericError(e);
     AppLogger.log("❌ Error in payChamaViaWallet: $message");
-    throw Exception(message);
+    throw (message);
   }
 }
 
@@ -454,6 +473,185 @@ Future<SaveChamaWalletResponse> payChamaViaWallet({
     } catch (e, stack) {
       final message = ErrorHandler.handleGenericError(e);
       AppLogger.log("❌ Error in makeReferral: $message\n$stack");
+      throw (message);
+    }
+  }
+
+
+
+
+
+
+    /// --- WITHDRAW CHAMA SAVINGS --- ///
+  Future<WithdrawChamaSavingsResponse> withdrawChamaSavings({
+    required double amount,
+  }) async {
+    try {
+      final userModel = await SharedPreferencesHelper.getUserModel();
+      final phoneNumber = userModel?.user.phoneNumber;
+      // final phoneNumber = '254708075049'; // use this for testing if needed
+
+      if (phoneNumber == null || phoneNumber.isEmpty) {
+        throw Exception("User phone number not found in storage.");
+      }
+
+      final url = "${ApiService.prodEndpointChama}/withdraw";
+
+      final body = {
+        "phone_number": phoneNumber,
+        "amount": amount,
+      };
+
+      AppLogger.log(
+        "📤 Sending Chama withdrawal request for $phoneNumber "
+        "amount: $amount",
+      );
+
+      // ✅ Send request
+      final response = await _apiService.post(url, data: body);
+
+      // ✅ Parse response safely into model
+      final withdrawResponse =
+          WithdrawChamaSavingsResponse.fromJson(response.data);
+
+      // ✅ Log success/failure message
+      AppLogger.log("📦 Raw Withdraw Response: ${response.data}");
+      AppLogger.log("✅ Parsed Message: ${withdrawResponse.message}");
+
+      // ✅ Handle backend errors
+      if (withdrawResponse.success == false) {
+        final errorMsg = withdrawResponse.message ?? "Withdrawal failed";
+        AppLogger.log("⚠️ Backend error: $errorMsg");
+        throw Exception(errorMsg);
+      }
+
+      // ✅ Pretty-print for debugging
+      final prettyJson = const JsonEncoder.withIndent('  ')
+          .convert(withdrawResponse.toJson());
+      AppLogger.log("📦 WithdrawChamaSavingsResponse:\n$prettyJson");
+
+      return withdrawResponse;
+    } catch (e) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in withdrawChamaSavings: $message");
+      throw (message);
+    }
+  }
+  
+
+
+  
+  
+  
+  /// --- REQUEST CHAMA LOAN --- ///
+Future<ChamaLoanRequestResponse> borrowChamaLoan({
+  required double amount,
+}) async {
+  try {
+    // 1️⃣ Get current user info
+    final userModel = await SharedPreferencesHelper.getUserModel();
+    final phoneNumber = userModel?.user.phoneNumber;
+    // final phoneNumber = '254708075049'; // Uncomment for local testing
+
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      throw Exception("User phone number not found in storage.");
+    }
+
+    // 2️⃣ Build endpoint and payload
+    final url = "${ApiService.prodEndpointChama}/borrow";
+    final body = {
+      "phone_number": phoneNumber,
+      "amount": amount,
+    };
+
+    AppLogger.log(
+      "📤 Sending Chama loan request for $phoneNumber "
+      "amount: $amount",
+    );
+
+    // 3️⃣ Send request to backend
+    final response = await _apiService.post(url, data: body);
+
+    // 4️⃣ Parse response into strongly typed model
+    final loanResponse = ChamaLoanRequestResponse.fromJson(response.data);
+
+    // 5️⃣ Log useful details
+    AppLogger.log("📦 Raw Loan Response: ${response.data}");
+    AppLogger.log("✅ Parsed Message: ${loanResponse.message}");
+
+    // 6️⃣ Handle backend errors
+    if (loanResponse.success == false) {
+      final errorMsg =
+          loanResponse.errorMessages?.join(', ') ?? "Loan request failed";
+      AppLogger.log("⚠️ Backend error: $errorMsg");
+      throw Exception(errorMsg);
+    }
+
+    // 7️⃣ Pretty-print JSON for debugging
+    final prettyJson =
+        const JsonEncoder.withIndent('  ').convert(loanResponse.toJson());
+    AppLogger.log("📦 LoanRequestResponse:\n$prettyJson");
+
+    // 8️⃣ Return parsed response
+    return loanResponse;
+  } catch (e) {
+    final message = ErrorHandler.handleGenericError(e);
+    AppLogger.log("❌ Error in requestChamaLoan: $message");
+    throw (message);
+  }
+}
+
+
+
+  /// --- REPAY CHAMA LOAN --- ///
+  Future<PayLoanResponse> repayChamaLoan({
+    required double amount,
+  }) async {
+    try {
+      // 1️⃣ Retrieve logged-in user’s phone number
+      final userModel = await SharedPreferencesHelper.getUserModel();
+      final phoneNumber = userModel?.user.phoneNumber;
+      // final phoneNumber = '254708075049'; // Uncomment for testing
+
+      if (phoneNumber == null || phoneNumber.isEmpty) {
+        throw Exception("User phone number not found in storage.");
+      }
+
+      // 2️⃣ Construct endpoint and request body
+      final url = "${ApiService.prodEndpointChama}/repay";
+      final body = {
+        "phone_number": phoneNumber,
+        "amount": amount,
+      };
+
+      AppLogger.log(
+        "📤 Sending loan repayment request for $phoneNumber "
+        "amount: $amount",
+      );
+
+      // 3️⃣ Send request to backend
+      final response = await _apiService.post(url, data: body);
+
+      // 4️⃣ Parse backend JSON response into PayLoanResponse model
+      final payLoanResponse = PayLoanResponse.fromJson(response.data);
+
+      // 5️⃣ Handle backend-reported errors
+      if (payLoanResponse.errors != null &&
+          payLoanResponse.errors!.isNotEmpty) {
+        AppLogger.log("⚠️ Backend errors: ${payLoanResponse.errors}");
+        throw Exception(payLoanResponse.errors!.first.toString());
+      }
+
+      // 6️⃣ Log for debugging
+      final prettyJson =
+          const JsonEncoder.withIndent('  ').convert(payLoanResponse.toJson());
+      AppLogger.log("📦 PayLoanResponse:\n$prettyJson");
+
+      // 7️⃣ Return parsed model
+      return payLoanResponse;
+    } catch (e) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in repayChamaLoan: $message");
       throw (message);
     }
   }

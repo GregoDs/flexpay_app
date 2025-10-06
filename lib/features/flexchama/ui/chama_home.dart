@@ -74,8 +74,8 @@ class _FlexChamaState extends State<FlexChama> {
 
         child: BlocBuilder<ChamaCubit, ChamaState>(
           builder: (context, state) {
-            // Show shimmer during loading
-            if (state is ChamaSavingsLoading) {
+            // Show shimmer during any loading state
+            if (state.runtimeType.toString().endsWith('Loading')) {
               return const FlexChamaShimmer();
             }
             // Show error

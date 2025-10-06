@@ -2,6 +2,7 @@ import 'package:flexpay/features/flexchama/mappers/membership_mapper.dart';
 import 'package:flexpay/features/flexchama/models/profile_model/chama_profile_model.dart';
 import 'package:flexpay/features/flexchama/models/savings_model/chama_savings_model.dart';
 import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
+import 'package:flexpay/utils/services/error_handler.dart';
 import 'package:flexpay/utils/services/logger.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'chama_state.dart';
@@ -210,7 +211,8 @@ class ChamaCubit extends Cubit<ChamaState> {
       final futures = <Future>[];
       if (forceRefresh || !hasSavings)
         futures.add(_chamaRepo.fetchUserChamaSavings());
-      if (forceRefresh || !hasUserChamas) futures.add(_chamaRepo.getUserChamas());
+      if (forceRefresh || !hasUserChamas)
+        futures.add(_chamaRepo.getUserChamas());
       if (forceRefresh || !hasProductsForType)
         futures.add(_chamaRepo.getAllChamaProducts(type: type));
 
@@ -312,6 +314,85 @@ class ChamaCubit extends Cubit<ChamaState> {
       emit(ChamaReferralSuccess(referralResponse));
     } catch (e) {
       emit(ChamaReferralFailure(e.toString()));
+    }
+  }
+
+  /// ---------------- Withdraw Chama Savings ----------------
+  Future<void> withdrawChamaSavings(double amount) async {
+    emit(WithdrawChamaSavingsLoading());
+    try {
+      final response = await _chamaRepo.withdrawChamaSavings(amount: amount);
+
+      if (response.success == true) {
+        AppLogger.log("✅ Withdrawal successful: ${response.message}");
+        emit(WithdrawChamaSavingsSuccess(response));
+
+        await fetchChamaUserSavings();
+      } else {
+        final errorMessage = response.message ?? "Withdrawal failed.";
+        AppLogger.log("⚠️ Withdrawal error: $errorMessage");
+        emit(WithdrawChamaSavingsFailure(errorMessage));
+      }
+    } catch (e) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Withdrawal exception: $message");
+      emit(WithdrawChamaSavingsFailure(message));
+    }
+  }
+
+
+
+    /// ---------------- Request Chama Loan ----------------
+  Future<void> requestChamaLoan({
+    required double amount,
+  }) async {
+    emit(RequestChamaLoanLoading());
+    try {
+      final response = await _chamaRepo.borrowChamaLoan(amount: amount);
+
+      if (response.success == true) {
+        AppLogger.log("✅ Loan request successful: ${response.message}");
+        emit(RequestChamaLoanSuccess(response));
+
+        // Auto-refresh savings after a successful loan request
+        await fetchChamaUserSavings();
+      } else {
+        final errorMessage = response.message ?? "Loan request failed.";
+        AppLogger.log("⚠️ Loan request error: $errorMessage");
+        emit(RequestChamaLoanFailure(errorMessage));
+      }
+    } catch (e) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Loan request exception: $message");
+      emit(RequestChamaLoanFailure(message));
+    }
+  }
+
+
+
+  /// ---------------- Repay Chama Loan ----------------
+  Future<void> repayChamaLoan(double amount) async {
+    emit(RepayChamaLoanLoading());
+    try {
+      final response = await _chamaRepo.repayChamaLoan(amount: amount);
+
+      if (response.success == true) {
+        AppLogger.log("✅ Loan repayment successful: ${response.statusCode}");
+        emit(RepayChamaLoanSuccess(response));
+
+        // Auto-refresh wallet/savings after successful repayment
+        await fetchChamaUserSavings();
+      } else {
+        final errorMessage = response.errors?.isNotEmpty == true
+            ? response.errors!.first.toString()
+            : "Loan repayment failed.";
+        AppLogger.log("⚠️ Loan repayment error: $errorMessage");
+        emit(RepayChamaLoanFailure(errorMessage));
+      }
+    } catch (e) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Loan repayment exception: $message");
+      emit(RepayChamaLoanFailure(message));
     }
   }
 }

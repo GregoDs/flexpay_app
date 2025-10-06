@@ -23,24 +23,34 @@ class SharedPreferencesHelper {
   // ----------------- UserModel Handling -----------------
   static Future<void> saveUserModel(UserModel userModel) async {
     final prefs = await SharedPreferences.getInstance();
+    if (userModel.user.firstName == null || userModel.user.firstName!.isEmpty) {
+      AppLogger.log('❌ Warning: Saving UserModel with null or empty firstName');
+    }
     final jsonString = jsonEncode(userModel.toJson());
     await prefs.setString(_userModelKey, jsonString);
     AppLogger.log(
-      '[Shared_Pref] Saved User Model is : ${jsonEncode(userModel.toJson())}',
+      '[Shared_Pref] Saved User Model: $jsonString',
     );
   }
 
   static Future<UserModel?> getUserModel() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString(_userModelKey);
-    if (jsonString == null) return null;
+    if (jsonString == null) {
+      AppLogger.log('❌ SharedPreferences: No UserModel found');
+      return null;
+    }
 
     try {
       final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
-      return UserModel.fromJson(jsonMap);
+      final userModel = UserModel.fromJson(jsonMap);
+      if (userModel.user.firstName == null || userModel.user.firstName!.isEmpty) {
+        AppLogger.log('❌ SharedPreferences: Retrieved UserModel with null or empty firstName');
+      }
+      return userModel;
     } catch (e) {
       AppLogger.log(
-        '❌ SharedPreferences: failed to decode user model: $e - clearing corrupt key',
+        '❌ SharedPreferences: Failed to decode user model: $e - clearing corrupt key',
       );
       await prefs.remove(_userModelKey);
       return null;
@@ -50,9 +60,10 @@ class SharedPreferencesHelper {
   static Future<void> clearUserModel() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userModelKey);
+    AppLogger.log('✅ SharedPreferences: UserModel cleared');
   }
 
-// ----------------- Bookings Handling -----------------
+  // ----------------- Bookings Handling -----------------
   static Future<void> saveBookings(AllBookingsResponse bookingsResponse) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = jsonEncode(bookingsResponse.toJson());
@@ -69,7 +80,7 @@ class SharedPreferencesHelper {
       final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
       return AllBookingsResponse.fromJson(jsonMap);
     } catch (e) {
-      AppLogger.log('❌ SharedPreferences: failed to decode bookings: $e - clearing corrupt key');
+      AppLogger.log('❌ SharedPreferences: Failed to decode bookings: $e - clearing corrupt key');
       await prefs.remove(_bookingsKey);
       return null;
     }
@@ -79,14 +90,11 @@ class SharedPreferencesHelper {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_bookingsKey);
   }
-  
-
-  // ----------------- Save Product -----------------
 
   // ----------------- Logout -----------------
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userModelKey);
-    print("✅ User successfully logged out");
+    AppLogger.log("✅ User successfully logged out");
   }
 }

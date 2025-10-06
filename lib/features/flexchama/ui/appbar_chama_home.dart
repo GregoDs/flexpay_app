@@ -1,14 +1,15 @@
-import 'package:flexpay/exports.dart';
+import 'package:flexpay/exports.dart' hide CustomSnackBar;
 import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
+import 'package:flexpay/features/flexchama/ui/borrow_loan.dart';
+import 'package:flexpay/features/flexchama/ui/repay_loan.dart';
 import 'package:flexpay/features/flexchama/ui/statements_chama.dart';
-import 'package:flexpay/features/payments/ui/topup_home_page.dart';
-import 'package:flexpay/features/payments/ui/withdraw_home.dart';
-import 'package:flexpay/features/merchants/ui/merchants.dart';
+import 'package:flexpay/features/flexchama/ui/withdraw_savings.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_state.dart';
 import 'package:flexpay/utils/services/service_repo.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 
 
 class AppBarChama extends StatefulWidget {
@@ -37,13 +38,20 @@ class _AppBarChamaState extends State<AppBarChama> {
         double maturedSavings = 0;
 
         if (state is ChamaSavingsFetched) {
-          maturedSavings = state.savingsResponse.data!.chamaDetails.withdrawableAmount.toDouble();
+          maturedSavings = state
+              .savingsResponse
+              .data!
+              .chamaDetails
+              .withdrawableAmount
+              .toDouble();
         }
 
         return Container(
           width: double.infinity,
           padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.040, vertical: screenHeight * 0.066),
+            horizontal: screenWidth * 0.040,
+            vertical: screenHeight * 0.066,
+          ),
           decoration: BoxDecoration(
             image: DecorationImage(
               image: AssetImage('assets/images/appbarbackground.png'),
@@ -115,7 +123,7 @@ class _AppBarChamaState extends State<AppBarChama> {
                     Expanded(
                       child: Text(
                         _isHomeBalanceVisible
-                            ?   'Kshs ${AppUtils.formatDecimal(maturedSavings.toDouble())}'
+                            ? 'Kshs ${AppUtils.formatDecimal(maturedSavings.toDouble())}'
                             : '******',
                         style: GoogleFonts.montserrat(
                           color: Colors.white,
@@ -145,32 +153,42 @@ class _AppBarChamaState extends State<AppBarChama> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                        child: _buildActionButton(Icons.account_balance_wallet,
-                            'Withdraw',  context, screenWidth)),
-                    SizedBox(width: screenWidth * 0.02),
-                    Expanded(
-                        child: _buildActionButton(Icons.arrow_downward, 'Top up',
-                            context, screenWidth)),
-                    SizedBox(width: screenWidth * 0.02),
-                    Expanded(
-                        child: _buildNavigationActionButton(
-                            FontAwesomeIcons.handHoldingDollar,
-                            'Borrow',
-                            4,
-                            MerchantsScreen(),
-                            context,
-                            screenWidth)),
-                    SizedBox(width: screenWidth * 0.02),
-                    Expanded(
-                    child: _buildNavigationActionButton(
-                      FontAwesomeIcons.fileInvoiceDollar,
-                      'Statement',
-                      2,
-                      const ChamaStatementPage(), 
-                      context,
-                      screenWidth,
+                      child: _buildActionButton(
+                        Icons.account_balance_wallet,
+                        'Withdraw',
+                        context,
+                        screenWidth,
+                      ),
                     ),
-                  ),
+                    SizedBox(width: screenWidth * 0.02),
+                    Expanded(
+                      child: _buildActionButton(
+                        Icons.payments,
+                        'Pay Loan',
+                        context,
+                        screenWidth,
+                      ),
+                    ),
+                    SizedBox(width: screenWidth * 0.02),
+                    Expanded(
+                      child: _buildActionButton(
+                        FontAwesomeIcons.handHoldingDollar,
+                        'Borrow',
+                        context,
+                        screenWidth,
+                      ),
+                    ),
+                    SizedBox(width: screenWidth * 0.02),
+                    Expanded(
+                      child: _buildNavigationActionButton(
+                        FontAwesomeIcons.fileInvoiceDollar,
+                        'Statement',
+                        2,
+                        const ChamaStatementPage(),
+                        context,
+                        screenWidth,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -181,20 +199,39 @@ class _AppBarChamaState extends State<AppBarChama> {
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label,
-      BuildContext context, double screenWidth) {
+  Widget _buildActionButton(
+    IconData icon,
+    String label,
+    BuildContext context,
+    double screenWidth,
+  ) {
     return GestureDetector(
       onTap: () {
-        
-      },
+              if (label == 'Borrow') {
+        showBorrowLoanModalSheet(context);
+      } else if (label.toLowerCase() == 'pay loan') {
+        // Show custom messenger for upcoming feature
+        // CustomSnackBar.showSuccess(
+        //   context,
+        //   title: "Feature Coming Soon",
+        //   message:
+        //       "💡 The Pay Loan  feature will be available in an upcoming update. Stay tuned!",
+        // );
+        showPayLoanModalSheet(context);
+      } else if (label == 'Withdraw') {
+        showWithdrawModalSheet(context);
+      }
+    },
       child: Column(
         children: [
           CircleAvatar(
             backgroundColor: Colors.white24,
             radius: screenWidth.clamp(28.0, 40.0) * 0.40,
-            child: Icon(icon,
-                color: Colors.white,
-                size: screenWidth.clamp(18.0, 28.0) * 0.8),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: screenWidth.clamp(18.0, 28.0) * 0.8,
+            ),
           ),
           SizedBox(height: 8),
           Text(
@@ -211,47 +248,47 @@ class _AppBarChamaState extends State<AppBarChama> {
   }
 
   Widget _buildNavigationActionButton(
-  IconData icon,
-  String label,
-  int index,
-  Widget page,
-  BuildContext context,
-  double screenWidth,
-) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => BlocProvider(
-            create: (_) => ChamaCubit(ChamaRepo())..fetchChamaUserProfile(),
-            child: page,
+    IconData icon,
+    String label,
+    int index,
+    Widget page,
+    BuildContext context,
+    double screenWidth,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BlocProvider(
+              create: (_) => ChamaCubit(ChamaRepo())..fetchChamaUserProfile(),
+              child: page,
+            ),
           ),
-        ),
-      );
-    },
-    child: Column(
-      children: [
-        CircleAvatar(
-          backgroundColor: Colors.white24,
-          radius: screenWidth.clamp(28.0, 40.0) * 0.4,
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: screenWidth.clamp(18.0, 28.0) * 0.8,
+        );
+      },
+      child: Column(
+        children: [
+          CircleAvatar(
+            backgroundColor: Colors.white24,
+            radius: screenWidth.clamp(28.0, 40.0) * 0.4,
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: screenWidth.clamp(18.0, 28.0) * 0.8,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: GoogleFonts.montserrat(
-            color: Colors.white,
-            fontSize: screenWidth.clamp(10.0, 16.0) * 0.8,
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: GoogleFonts.montserrat(
+              color: Colors.white,
+              fontSize: screenWidth.clamp(10.0, 16.0) * 0.8,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 }

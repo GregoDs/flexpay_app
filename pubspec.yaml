@@ -47,6 +47,7 @@ dependencies:
   upgrader: ^11.5.0
   equatable: ^2.0.7
   json_annotation: ^4.9.0
+  webview_flutter: ^4.13.0
 
 
 dev_dependencies:

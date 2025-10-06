@@ -3,6 +3,7 @@ import 'package:flexpay/features/bookings/models/bookings_models.dart';
 import 'package:flexpay/features/bookings/ui/booking_details.dart';
 import 'package:flexpay/features/bookings/cubit/bookings_cubit.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
+import 'package:flexpay/utils/widgets/web_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -128,34 +129,47 @@ class _BookingsPageState extends State<BookingsPage> with RouteAware {
                         color: const Color(0xFF1D3C4E),
                       ),
                     ),
-                    Row(
-                      children: [
-                        Text(
-                          "Add Bookings",
-                          style: GoogleFonts.montserrat(
-                            fontSize: 12.sp,
-                            color: const Color(0xFF1D3C4E),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(width: 6.w),
-                        Container(
-                          width: 24.w,
-                          height: 24.w,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: const Color(0xFFF7B53A),
-                              width: 2,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WebViewPage(
+                              url: "https://marketplace.flexpay.co.ke/",
+                              title: "FlexPay Marketplace",
                             ),
-                            borderRadius: BorderRadius.circular(8.r),
                           ),
-                          child: Icon(
-                            Icons.add,
-                            color: const Color(0xFFF7B53A),
-                            size: 20.sp,
+                        );
+                      },
+                      child: Row(
+                        children: [
+                          Text(
+                            "Add Bookings",
+                            style: GoogleFonts.montserrat(
+                              fontSize: 12.sp,
+                              color: const Color(0xFF1D3C4E),
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 6.w),
+                          Container(
+                            width: 24.w,
+                            height: 24.w,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: const Color(0xFFF7B53A),
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: Icon(
+                              Icons.add,
+                              color: const Color(0xFFF7B53A),
+                              size: 20.sp,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

@@ -1,3 +1,4 @@
+import 'package:flexpay/utils/widgets/web_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -36,6 +37,7 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
     super.initState();
     context.read<MerchantsCubit>().fetchMerchants("all");
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +365,19 @@ class MerchantCard extends StatelessWidget {
         isDarkMode ? Colors.grey[400]! : Colors.grey[600]!;
 
     return GestureDetector(
-      onTap: () => _launchUrl(link),
+      onTap: () {
+        if (link.isNotEmpty) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => WebViewPage(
+                url: link,
+                title: name,
+              ),
+            ),
+          );
+        }
+      },
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 4.h, horizontal: 4.w),
         decoration: BoxDecoration(

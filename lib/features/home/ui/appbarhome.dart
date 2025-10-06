@@ -215,12 +215,21 @@ class _AppBarHomeState extends State<AppBarHome> {
                   Icons.shopping_cart,
                   "Shop",
                   onTap: () {
-                    Navigator.push(
+                    // Navigate to NavigationWrapper with Merchants tab
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => NavigationWrapper(
-                          initialIndex: 4, // Merchants tab index
-                          userModel: widget.userModel,
+                        builder: (context) => MultiBlocProvider(
+                          providers: [
+                            BlocProvider.value(value: chamaCubit),
+                            BlocProvider.value(value: homeCubit),
+                            BlocProvider.value(value: paymentsCubit),
+                            BlocProvider.value(value: merchantsCubit),
+                          ],
+                          child: NavigationWrapper(
+                            initialIndex: 4, // Merchants tab index
+                            userModel: widget.userModel,
+                          ),
                         ),
                       ),
                     );

@@ -1,4 +1,4 @@
-import 'package:flexpay/exports.dart';
+import 'package:flexpay/exports.dart' hide CustomSnackBar;
 import 'package:flexpay/features/auth/cubit/auth_cubit.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/auth/repo/auth_repo.dart';
@@ -24,6 +24,7 @@ import 'package:flexpay/features/home/repo/home_repo.dart';
 import 'package:flexpay/features/payments/cubits/payments_cubit.dart';
 import 'package:flexpay/features/payments/repo/payments_repo.dart';
 import 'package:flexpay/utils/services/api_service.dart';
+import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 
 // Create global Cubit instances
 final authCubit = AuthCubit(AuthRepo());
@@ -52,7 +53,20 @@ class AppRoutes {
     //       isDarkModeOn: Theme.of(context).brightness == Brightness.dark,
     //     ),
     Routes.home: (context) {
-      final userModel = ModalRoute.of(context)!.settings.arguments as UserModel;
+      final userModel = ModalRoute.of(context)!.settings.arguments;
+      if (userModel is! UserModel) {
+        // Show error and redirect
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          CustomSnackBar.showError(
+            context,
+            title: "Error",
+            message: "User data missing. Please log in again.",
+          );
+          Navigator.pushReplacementNamed(context, Routes.login);
+        });
+        // Return a fallback widget while redirecting
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
       return MultiBlocProvider(
         providers: [
           BlocProvider.value(value: chamaCubit),
