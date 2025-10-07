@@ -1,9 +1,8 @@
 import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/home/ui/appbarhome.dart';
 import 'package:flexpay/features/home/ui/transactions_home.dart';
-import 'package:flexpay/features/merchants/cubits/merchant_cubit.dart';
-import 'package:flexpay/features/merchants/cubits/merchant_state.dart';
 import 'package:flexpay/features/payments/ui/voucher_sheet.dart';
+import 'package:flexpay/gen/colors.gen.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -57,20 +56,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _refreshData() async {
-    final cubit = context.read<HomeCubit>();
+  final cubit = context.read<HomeCubit>();
 
-    // Re-fetch wallet
-    cubit.fetchUserWallet();
+  setState(() {
+    _txLoading = true;
+    _txError = null;
+  });
 
-    // Reset transactions loading/error state
-    setState(() {
-      _txLoading = true;
-      _txError = null;
-    });
-
-    // Re-fetch transactions
-    cubit.fetchLatestTransactions();
-  }
+  // ✅ Re-fetch wallet and transactions in parallel, wait for both
+  await Future.wait([
+    cubit.fetchUserWallet(),
+    cubit.fetchLatestTransactions(),
+  ]);
+}
 
   @override
   Widget build(BuildContext context) {
@@ -541,9 +539,15 @@ class _HomeScreenState extends State<HomeScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 10.h),
-        if (_txLoading)
-          const Center(child: CircularProgressIndicator())
+        SizedBox(height: 20.h),
+        if (_txLoading) ...[
+         Center(
+              child: SpinKitWave(
+                color: ColorName.primaryColor,
+                size: 30,
+              ),
+            ),
+          ] 
         else if (_transactions.isEmpty)
           Text(
             _txError ?? "No transactions yet",

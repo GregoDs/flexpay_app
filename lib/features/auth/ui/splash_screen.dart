@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/service_repo.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:upgrader/upgrader.dart';
 import 'package:version/version.dart';
@@ -39,26 +38,19 @@ class _SplashScreenState extends State<SplashScreen>
     controller.forward();
 
     Future.delayed(const Duration(seconds: 4), () async {
-      await _checkForVersionUpdate(testMode: kDebugMode);
+      await _checkForVersionUpdate();
     });
   }
 
-  Future<void> _checkForVersionUpdate({bool testMode = false}) async {
+  Future<void> _checkForVersionUpdate() async {
   try {
     String? playStoreVersion;
     String? installedVersion;
 
-    if (testMode) {
-      // 🔹 Hardcoded values for testing
-      playStoreVersion = "2.0.0";     // pretend store version
-      installedVersion = "1.0.0";     // pretend installed version
-      AppLogger.log('[TEST MODE] Simulating update check...');
-    } else {
-      // 🔹 Production values
-      await upgrader.initialize();
-      playStoreVersion = upgrader.versionInfo?.appStoreVersion.toString();
-      installedVersion = upgrader.versionInfo?.installedVersion.toString();
-    }
+    // 🟢 Production mode — real store version check
+    await upgrader.initialize();
+    playStoreVersion = upgrader.versionInfo?.appStoreVersion?.toString();
+    installedVersion = upgrader.versionInfo?.installedVersion?.toString();
 
     AppLogger.log('Available update version: $playStoreVersion');
     AppLogger.log('Installed app version: $installedVersion');
@@ -76,9 +68,10 @@ class _SplashScreenState extends State<SplashScreen>
     AppLogger.log('Version check failed: $e');
   }
 
-  // fallback → go to next screen
+  // 🟢 Fallback → proceed to the next screen if no update required
   await _decideNextScreen();
 }
+
 
   bool _isNewerVersion(String storeVersion, String installedVersion) {
     try {
@@ -210,7 +203,7 @@ class _SplashScreenState extends State<SplashScreen>
                             mode: LaunchMode.externalApplication,
                           );
                         }
-                        await _decideNextScreen(); // fallback if user comes back
+                        await _decideNextScreen(); 
                       },
                       child: const Text('UPDATE'),
                     ),

@@ -2,6 +2,7 @@ import 'package:flexpay/features/home/cubits/home_cubit.dart';
 import 'package:flexpay/features/home/cubits/home_states.dart';
 import 'package:flexpay/features/payments/cubits/payments_cubit.dart';
 import 'package:flexpay/features/payments/cubits/payments_state.dart';
+import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,6 +29,21 @@ class _WithdrawPageState extends State<WithdrawPage> {
 
   String? phoneError;
   String? amountError;
+
+  @override
+void initState() {
+  super.initState();
+  _loadCachedPhoneNumber();
+}
+
+
+  Future<void> _loadCachedPhoneNumber() async {
+  final userModel = await SharedPreferencesHelper.getUserModel();
+  final cachedPhone = userModel?.user.phoneNumber ?? '';
+  setState(() {
+    phoneController.text = cachedPhone;
+  });
+}
 
   void _validateFields() {
     setState(() {
@@ -274,6 +290,8 @@ class _WithdrawPageState extends State<WithdrawPage> {
           controller: controller,
           keyboardType: keyboardType,
           style: GoogleFonts.montserrat(color: textColor),
+          readOnly: label == "Phone Number", // 👈 makes only phone field non-editable
+          enabled: label != "Phone Number" ? true : false, // optional, to gray it out
           decoration: InputDecoration(
             filled: true,
             fillColor: fieldColor,

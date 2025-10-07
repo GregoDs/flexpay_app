@@ -3,7 +3,6 @@ import 'dart:developer' as AppLogger;
 import 'package:flexpay/features/home/models/home_transactions_model/transactions_model.dart';
 import 'package:flexpay/features/home/models/home_wallet_model/wallet_model.dart';
 import 'package:flexpay/features/home/models/referral_model/referral_model.dart';
-import 'package:flexpay/features/payments/models/voucher_model/voucher_model.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/services/error_handler.dart';

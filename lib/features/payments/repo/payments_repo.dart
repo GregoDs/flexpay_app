@@ -12,7 +12,7 @@ class PaymentsRepo {
 
   PaymentsRepo(this._apiService);
 
-  /// --- REQUEST WALLET REFUND --- ///
+  /// ---Withdraw REQUEST WALLET REFUND --- ///
   Future<RefundResponse> requestWalletRefund({
     required double withAmount,
   }) async {

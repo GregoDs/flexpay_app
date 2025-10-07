@@ -21,24 +21,35 @@ class PaymentsCubit extends Cubit<PaymentsState> {
     }
   }
 
-  /// --- TOP UP WALLET VIA MPESA --- ///
   Future<void> topUpWalletViaMpesa({
-    required double amount,
-    required String phoneNumber,
-  }) async {
-    emit(WalletTopUpLoading());
+  required double amount,
+  required String phoneNumber,
+}) async {
+  emit(WalletTopUpLoading());
 
-    try {
-      final response = await _paymentsRepo.topUpWalletViaMpesa(
-        amount,
-        phoneNumber,
-      );
+  try {
+    final response = await _paymentsRepo.topUpWalletViaMpesa(
+      amount,
+      phoneNumber,
+    );
 
-      emit(WalletTopUpSuccess(response));
-    } catch (e) {
-      emit(WalletTopUpFailure(e.toString()));
+    // ✅ Check if backend returned an internal failure
+    if (response.responseCode != null &&
+        response.responseCode != 0 &&
+        response.responseCode != 200) {
+      final msg = response.responseDescription ??
+          response.extra ??
+          "An unknown error occurred during STK push.";
+      emit(WalletTopUpFailure(msg));
+      return;
     }
+
+    // ✅ If success, proceed normally
+    emit(WalletTopUpSuccess(response));
+  } catch (e) {
+    emit(WalletTopUpFailure(e.toString()));
   }
+}
 
   /// --- GENERATE VOUCHER --- ///
   Future<void> generateVoucher({
