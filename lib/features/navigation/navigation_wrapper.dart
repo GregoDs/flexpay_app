@@ -8,6 +8,7 @@ import 'package:flexpay/features/flexchama/ui/opt_chama_screen.dart';
 import 'package:flexpay/features/flexchama/ui/shimmer_chama_products.dart';
 import 'package:flexpay/features/goals/ui/goals.dart';
 import 'package:flexpay/features/home/ui/homescreen.dart';
+import 'package:flexpay/features/home/ui/side_menu.dart';
 import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/features/navigation/navigation.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
@@ -151,6 +152,14 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           return false;
         },
         child: Scaffold(
+          drawer: FlexPaySideMenu(
+            userModel: widget.userModel,
+            onPageSelected: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            }, userName: null,
+          ),
           body: IndexedStack(index: _currentIndex, children: _pages),
           bottomNavigationBar: hideNavBar
               ? null

@@ -31,7 +31,7 @@ class CapitalizeFirstLetterFormatter extends TextInputFormatter {
 
     return newValue.copyWith(
       text: capitalized,
-      selection: newValue.selection, // keep cursor position
+      selection: newValue.selection, 
     );
   }
 }

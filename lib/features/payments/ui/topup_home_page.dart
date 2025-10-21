@@ -41,9 +41,19 @@ class _TopUpHomePageState extends State<TopUpHomePage> {
 
   void _submit(BuildContext context) {
   _validateFields();
+
   if (phoneError == null && amountError == null) {
     final amount = double.tryParse(amountController.text.trim()) ?? 0;
-    final phone = phoneController.text.trim();
+    String phone = phoneController.text.trim();
+
+    // ✅ Clean & Normalize the phone number
+    if (phone.startsWith('0')) {
+      // Replace starting 0 with +254 or 254 depending on backend format
+      phone = '254${phone.substring(1)}';
+    } else if (phone.startsWith('+254')) {
+      // Remove '+' if backend expects plain 254
+      phone = phone.replaceFirst('+', '');
+    }
 
     context.read<PaymentsCubit>().topUpWalletViaMpesa(
           amount: amount,

@@ -151,8 +151,8 @@ class CustomSnackBar {
           ? Color(0xFF0A3320) // Dark green background
           : Colors.green.shade50,
       iconColor: isDarkMode
-          ? Color(0xFF4ADE80) // Bright green icon
-          : Colors.green,
+          ? Color(0xFF0A3320) // Dark green background
+          : Colors.green.shade50,
       textColor: isDarkMode ? Colors.white : null,
     );
   }

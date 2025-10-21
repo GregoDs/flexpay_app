@@ -265,7 +265,7 @@ class ChamaCubit extends Cubit<ChamaState> {
     }
   }
 
-  /// ---------------- Save to Chama (Mpesa) ----------------
+  /// ---------------- Save to Chama (Mpesa) ---------------- 
   Future<void> saveToChamaMpesa({
     required int productId,
     required double amount,
