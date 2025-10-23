@@ -17,22 +17,30 @@ class BookingPaymentModal {
   }) async {
     final amountController = TextEditingController();
 
-    /// Fetch user model to get stored phone number
+    /// ✅ Prefilled phone
     final userModel = await SharedPreferencesHelper.getUserModel();
     final prefilledPhone = userModel?.user.phoneNumber ?? initialPhone;
-
     final phoneController = TextEditingController(text: prefilledPhone);
 
     String selectedSource = "M-Pesa"; // default
 
-    final fieldColor = const Color(0xFFF3F4F6);
-    final textColor = Colors.black87;
+    /// ✅ Theme Handling
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF121212) : Colors.white;
+    final cardColor = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+    final fieldColor = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final hintColor = isDark ? Colors.white60 : Colors.grey[600];
+    final accentColor = const Color(0xFF009AC1);
+    final borderHighlight = isDark ? Colors.tealAccent : Colors.amber;
+
     final bookingsCubit = context.read<BookingsCubit>();
 
     return await showModalBottomSheet<bool?>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -49,7 +57,7 @@ class BookingPaymentModal {
                       title: "Payment Success",
                       message: "Booking paid successfully ✅",
                     );
-                    Navigator.pop(context, true); // close modal and return true
+                    Navigator.pop(context, true);
                   } else if (state is BookingWalletPaymentError) {
                     CustomSnackBar.showError(
                       context,
@@ -62,7 +70,7 @@ class BookingPaymentModal {
                       title: "M-Pesa Payment Initiated",
                       message: "Check your phone to complete the payment.",
                     );
-                    Navigator.pop(context, true); // close modal and return true
+                    Navigator.pop(context, true);
                   } else if (state is BookingMpesaPaymentError) {
                     CustomSnackBar.showError(
                       context,
@@ -72,9 +80,7 @@ class BookingPaymentModal {
                   }
                 },
                 builder: (context, state) {
-                  final isLoading =
-                      state is BookingWalletPaymentLoading ||
-                      state is BookingMpesaPaymentLoading;
+                  final isLoading = state is BookingWalletPaymentLoading || state is BookingMpesaPaymentLoading;
 
                   return Padding(
                     padding: EdgeInsets.only(
@@ -84,30 +90,26 @@ class BookingPaymentModal {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Header
+                          // ✅ Header
                           Container(
                             width: double.infinity,
                             padding: EdgeInsets.symmetric(
                               vertical: 22.h,
                               horizontal: 16.w,
                             ),
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Color(0xFF009AC1), Color(0xFF1D3C4E)],
+                                colors: isDark
+                                    ? [const Color(0xFF006D80), const Color(0xFF002E3B)]
+                                    : [const Color(0xFF009AC1), const Color(0xFF1D3C4E)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(20),
-                              ),
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                             ),
                             child: Column(
                               children: [
-                                Icon(
-                                  Icons.payment,
-                                  size: 40.sp,
-                                  color: Colors.white,
-                                ),
+                                Icon(Icons.payment, size: 40.sp, color: Colors.white),
                                 SizedBox(height: 8.h),
                                 Text(
                                   "Pay for $bookingName",
@@ -129,14 +131,9 @@ class BookingPaymentModal {
                             ),
                           ),
 
-                          // Body
+                          // ✅ Body
                           Padding(
-                            padding: EdgeInsets.fromLTRB(
-                              24.w,
-                              24.h,
-                              24.w,
-                              12.h,
-                            ),
+                            padding: EdgeInsets.fromLTRB(24.w, 24.h, 24.w, 12.h),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -145,70 +142,56 @@ class BookingPaymentModal {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     _PaymentOptionCard(
-                                      imagePath:
-                                          "assets/images/payment_platform/mpesa_img.png",
+                                      imagePath: "assets/images/payment_platform/mpesa_img.png",
                                       label: "M-Pesa",
                                       isSelected: selectedSource == "M-Pesa",
-                                      onTap: () => setState(() {
-                                        selectedSource = "M-Pesa";
-                                      }),
+                                      onTap: () => setState(() => selectedSource = "M-Pesa"),
+                                      isDark: isDark,
+                                      borderHighlight: borderHighlight,
+                                      cardColor: cardColor,
                                     ),
                                     _PaymentOptionCard(
-                                      imagePath:
-                                          "assets/images/payment_platform/wallet_img.webp",
+                                      imagePath: "assets/images/payment_platform/wallet_img.webp",
                                       label: "Wallet",
                                       isSelected: selectedSource == "Wallet",
-                                      onTap: () => setState(() {
-                                        selectedSource = "Wallet";
-                                      }),
+                                      onTap: () => setState(() => selectedSource = "Wallet"),
+                                      isDark: isDark,
+                                      borderHighlight: borderHighlight,
+                                      cardColor: cardColor,
                                     ),
                                   ],
                                 ),
                                 SizedBox(height: 20.h),
 
                                 // Phone field
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Phone Number",
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 15.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: textColor,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8.h),
-                                    TextField(
-                                      controller: phoneController,
-                                      keyboardType: TextInputType.phone,
-                                      style: GoogleFonts.montserrat(
-                                        color: textColor,
-                                      ),
-                                      decoration: InputDecoration(
-                                        filled: true,
-                                        fillColor: fieldColor,
-                                        prefixIcon: Icon(
-                                          Icons.phone,
-                                          color: Colors.blue[800],
-                                        ),
-                                        hintText: "Enter phone number",
-                                        hintStyle: GoogleFonts.montserrat(
-                                          color: Colors.grey,
-                                        ),
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12.r,
-                                          ),
-                                          borderSide: BorderSide.none,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(height: 16.h),
-                                  ],
+                                Text(
+                                  "Phone Number",
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 15.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: textColor,
+                                  ),
                                 ),
+                                SizedBox(height: 8.h),
+                                TextField(
+                                  controller: phoneController,
+                                  keyboardType: TextInputType.phone,
+                                  style: GoogleFonts.montserrat(color: textColor),
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: fieldColor,
+                                    prefixIcon: Icon(Icons.phone, color: accentColor),
+                                    hintText: "Enter phone number",
+                                    hintStyle: GoogleFonts.montserrat(color: hintColor),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.r),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 16.h),
 
-                                // Amount
+                                // Amount field
                                 Text(
                                   "Amount",
                                   style: GoogleFonts.montserrat(
@@ -221,20 +204,13 @@ class BookingPaymentModal {
                                 TextField(
                                   controller: amountController,
                                   keyboardType: TextInputType.number,
-                                  style: GoogleFonts.montserrat(
-                                    color: textColor,
-                                  ),
+                                  style: GoogleFonts.montserrat(color: textColor),
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: fieldColor,
-                                    prefixIcon: Icon(
-                                      Icons.currency_exchange,
-                                      color: Colors.blue[800],
-                                    ),
+                                    prefixIcon: Icon(Icons.currency_exchange, color: accentColor),
                                     hintText: "Enter amount",
-                                    hintStyle: GoogleFonts.montserrat(
-                                      color: Colors.grey,
-                                    ),
+                                    hintStyle: GoogleFonts.montserrat(color: hintColor),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12.r),
                                       borderSide: BorderSide.none,
@@ -243,7 +219,7 @@ class BookingPaymentModal {
                                 ),
                                 SizedBox(height: 28.h),
 
-                                // Make Payment
+                                // ✅ Payment Button
                                 SizedBox(
                                   width: double.infinity,
                                   height: 52.h,
@@ -251,43 +227,34 @@ class BookingPaymentModal {
                                     onPressed: isLoading
                                         ? null
                                         : () {
-                                            final amount = double.tryParse(
-                                              amountController.text.trim(),
-                                            );
-                                            final phone = phoneController.text
-                                                .trim();
+                                            final amount = double.tryParse(amountController.text.trim());
+                                            final phone = phoneController.text.trim();
 
                                             if (amount == null || amount <= 0) {
                                               CustomSnackBar.showError(
                                                 context,
                                                 title: "Invalid Amount",
-                                                message: "Enter a valid amount",
+                                                message: "Please enter a valid amount.",
                                               );
                                               return;
                                             }
 
-                                            if (selectedSource == "M-Pesa" &&
-                                                phone.isEmpty) {
+                                            if (selectedSource == "M-Pesa" && phone.isEmpty) {
                                               CustomSnackBar.showError(
                                                 context,
                                                 title: "Missing Phone",
-                                                message: "Enter phone number",
+                                                message: "Please enter a phone number.",
                                               );
                                               return;
                                             }
 
                                             if (selectedSource == "Wallet") {
-                                              context
-                                                  .read<BookingsCubit>()
-                                                  .payBookingFromWallet(
+                                              context.read<BookingsCubit>().payBookingFromWallet(
                                                     bookingReference,
                                                     amount,
                                                   );
-                                            } else if (selectedSource ==
-                                                "M-Pesa") {
-                                              context
-                                                  .read<BookingsCubit>()
-                                                  .payBookingViaMpesa(
+                                            } else if (selectedSource == "M-Pesa") {
+                                              context.read<BookingsCubit>().payBookingViaMpesa(
                                                     bookingReference,
                                                     amount,
                                                     phone,
@@ -295,19 +262,14 @@ class BookingPaymentModal {
                                             }
                                           },
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF009AC1),
+                                      backgroundColor: accentColor,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(24),
                                       ),
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 14.h,
-                                      ),
+                                      padding: EdgeInsets.symmetric(vertical: 14.h),
                                     ),
                                     child: isLoading
-                                        ? SpinKitWave(
-                                            color: Colors.white,
-                                            size: 24.sp,
-                                          )
+                                        ? SpinKitWave(color: Colors.white, size: 24.sp)
                                         : Text(
                                             "Make Payment",
                                             style: GoogleFonts.montserrat(
@@ -340,7 +302,10 @@ class _PaymentOptionCard extends StatelessWidget {
   final String imagePath;
   final String label;
   final bool isSelected;
+  final bool isDark;
   final VoidCallback onTap;
+  final Color borderHighlight;
+  final Color cardColor;
 
   const _PaymentOptionCard({
     Key? key,
@@ -348,10 +313,15 @@ class _PaymentOptionCard extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
+    required this.isDark,
+    required this.borderHighlight,
+    required this.cardColor,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -361,19 +331,13 @@ class _PaymentOptionCard extends StatelessWidget {
           margin: EdgeInsets.symmetric(horizontal: 8.w),
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(12.r),
-
-            // ✅ Only add border if selected
-            border: isSelected
-                ? Border.all(color: Colors.amber, width: 2.5)
-                : null,
-
-            // ✅ Only add shadow if selected
+            border: isSelected ? Border.all(color: borderHighlight, width: 2.5) : null,
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.amber.withOpacity(0.4),
+                      color: borderHighlight.withOpacity(0.4),
                       blurRadius: 8,
                       spreadRadius: 1,
                     ),
@@ -393,7 +357,7 @@ class _PaymentOptionCard extends StatelessWidget {
                   style: GoogleFonts.montserrat(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.amber[800] : Colors.black87,
+                    color: isSelected ? borderHighlight : textColor,
                   ),
                 ),
               ],

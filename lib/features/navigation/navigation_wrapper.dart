@@ -57,6 +57,8 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   }
 
   List<Widget> get _pages => [
+
+    
     
     BlocProvider.value(
           value: paymentsCubit,
@@ -64,7 +66,17 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
         ),
 
 
-    GoalsPage(),
+
+
+
+
+        //Goals Page
+    BlocProvider.value(value: goalsCubit, child: const GoalsPage()),
+
+
+
+
+
 
     /// FlexChama Tab
     BlocListener<ChamaCubit, ChamaState>(

@@ -381,13 +381,31 @@ class _BookingsPageState extends State<BookingsPage> with RouteAware {
                         final bookings = state.bookings;
                   
                         if (bookings.isEmpty) {
-                          return Center(
-                            child: Text(
-                              "No ${state.bookingType} bookings yet",
-                              style: GoogleFonts.montserrat(),
-                            ),
-                          );
-                        }
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Lottie animation
+                                  Lottie.asset(
+                                    'assets/images/notification_imgs/empty.json',
+                                    height: 340, 
+                                    repeat: true,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  // Text message
+                                  Text(
+                                    "Ooops....No ${state.bookingType} bookings yet",
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey[600],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
                   
                         return ListView.builder(
                           padding: EdgeInsets.only(top: 12.h, bottom: 24.h),

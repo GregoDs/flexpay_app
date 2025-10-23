@@ -17,8 +17,19 @@ class FetchGoalsResponse {
     this.statusCode,
   });
 
-  factory FetchGoalsResponse.fromJson(Map<String, dynamic> json) =>
-      _$FetchGoalsResponseFromJson(json);
+  /// ✅ Custom factory to handle both `data: []` and `data: {...}`
+  factory FetchGoalsResponse.fromJson(Map<String, dynamic> json) {
+    final dataField = json['data'];
+
+    return FetchGoalsResponse(
+      data: (dataField is Map<String, dynamic>)
+          ? FetchGoalsData.fromJson(dataField)
+          : null, // handles when data is [] or null
+      errors: json['errors'] as List<dynamic>?,
+      success: json['success'] as bool?,
+      statusCode: json['status_code'] as int?,
+    );
+  }
 
   Map<String, dynamic> toJson() => _$FetchGoalsResponseToJson(this);
 }

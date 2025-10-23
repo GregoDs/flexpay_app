@@ -12,6 +12,8 @@ import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
 import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
 import 'package:flexpay/features/flexchama/ui/chama_reg.dart';
 import 'package:flexpay/features/flexchama/ui/viewchama.dart';
+import 'package:flexpay/features/goals/cubits/goals_cubit.dart';
+import 'package:flexpay/features/goals/repo/goals_repo.dart';
 import 'package:flexpay/features/goals/ui/goals.dart';
 import 'package:flexpay/features/auth/ui/onboarding_screen.dart';
 import 'package:flexpay/features/auth/ui/splash_screen.dart';
@@ -33,6 +35,7 @@ final bookingsCubit = BookingsCubit(BookingsRepository());
 final merchantsCubit = MerchantsCubit(MerchantsRepository());
 final homeCubit = HomeCubit(HomeRepo(ApiService()));
 final paymentsCubit = PaymentsCubit(PaymentsRepo(ApiService()));
+final goalsCubit = GoalsCubit(GoalsRepo());
 
 class AppRoutes {
   static final routes = {
@@ -73,6 +76,7 @@ class AppRoutes {
           BlocProvider.value(value: homeCubit),
           BlocProvider.value(value: paymentsCubit),
           BlocProvider.value(value: merchantsCubit),
+          BlocProvider.value(value: goalsCubit),
         ],
         child: NavigationWrapper(initialIndex: 0, userModel: userModel),
       );
