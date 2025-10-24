@@ -2,8 +2,10 @@ import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/home/ui/appbarhome.dart';
 import 'package:flexpay/features/home/ui/transactions_home.dart';
 import 'package:flexpay/features/payments/ui/voucher_sheet.dart';
+import 'package:flexpay/features/promos/ui/promo_cards.dart';
 import 'package:flexpay/gen/colors.gen.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
+import 'package:flexpay/utils/widgets/app_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
@@ -13,6 +15,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flexpay/features/home/cubits/home_cubit.dart';
 import 'package:flexpay/features/home/cubits/home_states.dart';
 import 'package:flexpay/features/home/models/home_transactions_model/transactions_model.dart';
+import 'package:lottie/lottie.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool isDarkModeOn;
@@ -56,19 +59,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _refreshData() async {
-  final cubit = context.read<HomeCubit>();
+    final cubit = context.read<HomeCubit>();
 
-  setState(() {
-    _txLoading = true;
-    _txError = null;
-  });
+    setState(() {
+      _txLoading = true;
+      _txError = null;
+    });
 
-  // ✅ Re-fetch wallet and transactions in parallel, wait for both
-  await Future.wait([
-    cubit.fetchUserWallet(),
-    cubit.fetchLatestTransactions(),
-  ]);
-}
+    // ✅ Re-fetch wallet and transactions in parallel, wait for both
+    await Future.wait([
+      cubit.fetchUserWallet(),
+      cubit.fetchLatestTransactions(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,16 +138,151 @@ class _HomeScreenState extends State<HomeScreen> {
             color: const Color(0xFF337687),
             child: SingleChildScrollView(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 36.h),
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 🎅 Xmas Kapu Promo Banner
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 8.h,
+                      ),
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  PromoCardsPage(userModel: widget.userModel),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          height: 110.h,
+                          padding: EdgeInsets.all(16.w),
+                          decoration: BoxDecoration(
+                            color: widget.isDarkModeOn
+                                ? Colors.white.withOpacity(0.05)
+                                : Colors.grey.shade100,
+                            borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(20.r),
+                              bottomLeft: Radius.circular(20.r),
+                              bottomRight: Radius.circular(20.r),
+                            ),
+                            // Add glow effect for light mode
+                            boxShadow: widget.isDarkModeOn
+                                ? null
+                                : [
+                                    // BoxShadow(
+                                    //   color: Colors.white.withOpacity(0.8),
+                                    //   blurRadius: 15.r,
+                                    //   spreadRadius: 3.r,
+                                    //   offset: Offset(0, 0),
+                                    // ),
+                                    BoxShadow(
+                                      color: Colors.white.withOpacity(0.4),
+                                      blurRadius: 5.r,
+                                      spreadRadius: 5.r,
+                                      offset: Offset(0, 0),
+                                    ),
+                                    BoxShadow(
+                                      color: widget.isDarkModeOn
+                                          ? Colors.white.withOpacity(0.4)
+                                          : Colors.amber.withOpacity(0.4),
+                                      blurRadius: 35.r,
+                                      spreadRadius: 2.r,
+                                      offset: Offset(0, 0),
+                                    ),
+                                  ],
+                          ),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppText.small(
+                                    "Lipia PolePole",
+                                    fontSize: 18.sp,
+                                    color: widget.isDarkModeOn
+                                        ? ColorName.whiteColor
+                                        : ColorName.blackColor,
+                                  ),
+                                  SizedBox(height: 2.h),
+                                  AppText.small(
+                                    "Christmas Kapu 🎅",
+                                    fontSize: 18.sp,
+                                    color: widget.isDarkModeOn
+                                        ? ColorName.whiteColor
+                                        : ColorName.blackColor,
+                                  ),
+                                  SizedBox(height: 2.h),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 12.w,
+                                          vertical: 2.h,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.touch_app_rounded,
+                                              size: 12.sp,
+                                              color: widget.isDarkModeOn
+                                                  ? ColorName.whiteColor
+                                                  : ColorName.blackColor,
+                                            ),
+                                            SizedBox(width: 4.w),
+                                            AppText.medium(
+                                              "Tap to view",
+                                              fontSize: 12.sp,
+                                              color: widget.isDarkModeOn
+                                                  ? ColorName.whiteColor
+                                                  : ColorName.blackColor,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(width: 12.w),
+                                      Container(
+                                        padding: EdgeInsets.all(8.w),
+                                        decoration: BoxDecoration(
+                                          color: widget.isDarkModeOn
+                                              ? Colors.white.withOpacity(0.1)
+                                              : Colors.white,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              // ❄️ Replace image with Lottie animation
+                              Positioned(
+                                right: -94.w,
+                                top: -34.h,
+                                child: Lottie.asset(
+                                  'assets/images/home_images/happy_snowman.json',
+                                  height: 146.h,
+                                  fit: BoxFit.cover,
+                                  repeat: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: 10.h),
                     _buildCampaignCard(context),
-                    SizedBox(height: 40.h),
+                    SizedBox(height: 28.h),
                     VoucherModalSheet(context: context),
-                    SizedBox(height: 15.h),
+                    SizedBox(height: 8.h),
                     _buildMerchantImages(context),
-                    SizedBox(height: 25.h),
+                    SizedBox(height: 8.h),
                     _buildTransactionsSection(context),
                   ],
                 ),
@@ -436,7 +574,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMerchantImages(BuildContext context) {
-    final bool useDynamicMerchants = false; 
+    final bool useDynamicMerchants = false;
 
     if (!useDynamicMerchants) {
       // ✅ Hardcoded fallback
@@ -541,14 +679,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         SizedBox(height: 20.h),
         if (_txLoading) ...[
-         Center(
-              child: SpinKitWave(
-                color: ColorName.primaryColor,
-                size: 30,
-              ),
-            ),
-          ] 
-        else if (_transactions.isEmpty)
+          Center(child: SpinKitWave(color: ColorName.primaryColor, size: 30)),
+        ] else if (_transactions.isEmpty)
           Text(
             _txError ?? "No transactions yet",
             style: GoogleFonts.montserrat(fontSize: 14.sp),

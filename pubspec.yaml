@@ -96,4 +96,5 @@ flutter:
     - assets/images/goals_imgs/
     - assets/images/notification_imgs/
     - assets/images/payment_platform/
+    - assets/images/home_images/
     - .env 

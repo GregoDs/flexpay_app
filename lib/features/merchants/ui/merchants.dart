@@ -16,8 +16,9 @@ class MerchantsScreen extends StatefulWidget {
 
 class _MerchantsScreenState extends State<MerchantsScreen> {
   final Set<int> favoriteIndices = {};
+  final TextEditingController _searchController = TextEditingController();
+  List<dynamic> _filteredMerchants = [];
 
-  // Local map: backend merchant_name -> local asset
   final Map<String, String> localMerchantImages = {
     "Smart Devices": "assets/merchantspageimg/Quickmart.png",
     "Moko": "assets/merchantspageimg/Moko.png",
@@ -38,6 +39,15 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
     context.read<MerchantsCubit>().fetchMerchants("all");
   }
 
+  void _filterMerchants(String query, List merchants) {
+    final lowerQuery = query.toLowerCase();
+    setState(() {
+      _filteredMerchants = merchants
+          .where((merchant) => merchant.merchantName != null &&
+              merchant.merchantName!.toLowerCase().contains(lowerQuery))
+          .toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,14 +76,14 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
                   child: Image.asset(
                     'assets/icon/logos/logo.png',
                     height: 60.h,
-                    color: isDarkMode ? Colors.white : Color(0xFF337687),
+                    color: isDarkMode ? Colors.white : const Color(0xFF337687),
                     fit: BoxFit.contain,
                   ),
                 ),
 
                 _buildWelcomeSection(isDarkMode),
 
-                // Search + filter
+                // 🔍 Search Bar
                 Padding(
                   padding:
                       EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.w),
@@ -94,10 +104,19 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
                               SizedBox(width: 10.w),
                               Expanded(
                                 child: TextField(
+                                  controller: _searchController,
+                                  onChanged: (query) {
+                                    final state =
+                                        context.read<MerchantsCubit>().state;
+                                    if (state is MerchantsFetched) {
+                                      _filterMerchants(
+                                          query, state.merchants ?? []);
+                                    }
+                                  },
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
                                     isDense: true,
-                                    hintText: "Search",
+                                    hintText: "Search for a merchant...",
                                     hintStyle: GoogleFonts.montserrat(
                                       fontSize: 16.sp,
                                       color: subTextColor,
@@ -130,40 +149,12 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
                   ),
                 ),
 
-               // Category icons
-                  SizedBox(
-                    height: 86.h,
-                    child: ListView.separated(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: 5,
-                      separatorBuilder: (context, _) => SizedBox(width: 20.w),
-                      itemBuilder: (context, index) {
-                        final categories = [
-                          {"icon": Icons.shopping_cart_outlined, "label": "Shopping"},
-                          {"icon": Icons.chair_outlined, "label": "Furniture"},
-                          {"icon": Icons.luggage_outlined, "label": "Travel"},
-                          {"icon": Icons.blender_outlined, "label": "Appliances"},
-                          {"icon": Icons.grid_view_rounded, "label": "All"},
-                        ];
-
-                        return _MerchantCategoryIcon(
-                          icon: categories[index]["icon"] as IconData,
-                          label: categories[index]["label"] as String,
-                          selected: index == 4, // "All" selected by default
-                          isDarkMode: isDarkMode,
-                        );
-                      },
-                    ),
-                  ),
-
-                // Merchants grid from Cubit
+                // 🛍 Merchants grid
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: BlocBuilder<MerchantsCubit, MerchantsState>(
                     builder: (context, state) {
-                     if (state is MerchantsLoading) {
+                      if (state is MerchantsLoading) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -186,7 +177,32 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
                           ),
                         );
                       } else if (state is MerchantsFetched) {
-                        final merchants = state.merchants;
+                        final merchants = _searchController.text.isEmpty
+                            ? state.merchants
+                            : _filteredMerchants;
+
+                        if (merchants.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Lottie.asset(
+                                  'assets/images/notification_imgs/empty.json',
+                                  width: 360.w,
+                                  height: 360.w,
+                                ),
+                                SizedBox(height: 16.h),
+                                Text(
+                                  "No merchants found",
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 16.sp,
+                                    color: subTextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
 
                         return GridView.builder(
                           physics: const NeverScrollableScrollPhysics(),
@@ -201,8 +217,6 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
                           itemCount: merchants.length,
                           itemBuilder: (context, index) {
                             final merchant = merchants[index];
-
-                            // Map local image by name
                             final imagePath = localMerchantImages[
                                     merchant.merchantName ?? ""] ??
                                 "assets/merchantspageimg/default.png";
@@ -238,10 +252,11 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
   }
 }
 
+// 🟡 WELCOME SECTION
 Widget _buildWelcomeSection(bool isDarkMode) {
   return Container(
     width: double.infinity,
-    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h), 
+    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -260,7 +275,7 @@ Widget _buildWelcomeSection(bool isDarkMode) {
               bottom: 0,
               child: Container(
                 width: 64.w,
-                height: 4.h, // slightly thinner underline
+                height: 4.h,
                 color: const Color(0xFFF7B53A),
               ),
             ),
@@ -279,54 +294,7 @@ Widget _buildWelcomeSection(bool isDarkMode) {
   );
 }
 
-class _MerchantCategoryIcon extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final bool isDarkMode;
-
-  const _MerchantCategoryIcon({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.isDarkMode,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final Color bg = selected
-        ? const Color(0xFF4CA0C6)
-        : (isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF6F7F9));
-    final Color textColor = isDarkMode ? Colors.white : Colors.black;
-    final Color iconColor = isDarkMode ?  Colors.white : Colors.black;
-
-    return Column(
-      children: [
-        Container(
-          width: 42.w,
-          height: 42.w,
-          decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-          child: Icon(
-            icon,
-            color: selected ? Colors.white : iconColor,
-            size: 20.sp,
-          ),
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          label,
-          style: GoogleFonts.montserrat(
-            fontSize: 11.sp,
-            color: textColor,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
+// 🟢 MERCHANT CARD
 class MerchantCard extends StatelessWidget {
   final String name;
   final String link;
@@ -396,8 +364,12 @@ class MerchantCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(18.r),
-              child: Image.asset(imageUrl,
-                  height: 200.h, width: double.infinity, fit: BoxFit.cover),
+              child: Image.asset(
+                imageUrl,
+                height: 200.h,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
             ),
 
             // Heart button
@@ -410,15 +382,18 @@ class MerchantCard extends StatelessWidget {
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   iconSize: 18.sp,
-                  icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color:
-                          isFavorite ? const Color(0xFFF7B53A) : subTextColor),
+                  icon: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite
+                        ? const Color(0xFFF7B53A)
+                        : subTextColor,
+                  ),
                   onPressed: onFavoriteToggle,
                 ),
               ),
             ),
 
-            // Arrow button 
+            // Arrow button
             Positioned(
               bottom: 52.h,
               left: 0,
