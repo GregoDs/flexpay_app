@@ -154,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  PromoCardsPage(userModel: widget.userModel),
+                                  PromoCardsSwiperPage(userModel: widget.userModel),
                             ),
                           );
                         },
@@ -677,7 +677,7 @@ class _HomeScreenState extends State<HomeScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 20.h),
+        SizedBox(height: 2.h),
         if (_txLoading) ...[
           Center(child: SpinKitWave(color: ColorName.primaryColor, size: 30)),
         ] else if (_transactions.isEmpty)
@@ -718,7 +718,7 @@ class _HomeScreenState extends State<HomeScreen> {
     BuildContext context,
   ) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 6.h),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
       child: GestureDetector(
         onTap: () {
           Navigator.of(context).push(_createSlideUpRoute(_transactions));

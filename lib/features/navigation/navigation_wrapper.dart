@@ -152,6 +152,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
       providers: [
         BlocProvider.value(value: chamaCubit),
         BlocProvider.value(value: homeCubit),
+        BlocProvider.value(value: kapuCubit),
       ],
       child: WillPopScope(
         onWillPop: () async {

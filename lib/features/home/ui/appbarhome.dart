@@ -1,5 +1,6 @@
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
+import 'package:flexpay/features/home/ui/notifications_page.dart';
 import 'package:flexpay/features/payments/cubits/payments_cubit.dart';
 import 'package:flexpay/features/payments/repo/payments_repo.dart';
 import 'package:flexpay/features/payments/ui/topup_home_page.dart';
@@ -59,40 +60,24 @@ class _AppBarHomeState extends State<AppBarHome> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile and Notifications
+
+            SizedBox(height: screenHeight * 0.02),
+             // Profile and Notifications (Logo Only)
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.menu,
-                    color: Colors.white,
-                    size: screenWidth * 0.07,
+                ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.white,
+                    BlendMode.srcIn,
                   ),
-                  onPressed: () {},
-                ),
-                Center(
-                  child: ColorFiltered(
-                    colorFilter: ColorFilter.mode(
-                      Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.white,
-                      BlendMode.srcIn,
-                    ),
-                    child: Image.asset(
-                      'assets/icon/logos/logo.png',
-                      height: 30.h,
-                      fit: BoxFit.contain,
-                    ),
+                  child: Image.asset(
+                    'assets/icon/logos/logo.png',
+                    height: 30.h,
+                    fit: BoxFit.contain,
                   ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.notifications,
-                    color: Colors.white,
-                    size: screenWidth * 0.07,
-                  ),
-                  onPressed: () {},
                 ),
               ],
             ),
@@ -131,6 +116,23 @@ class _AppBarHomeState extends State<AppBarHome> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    SizedBox(width: 144.w),
+                    IconButton(
+                  icon: Icon(
+                    Icons.notifications,
+                    color: Colors.white,
+                    size: screenWidth * 0.07,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationsPage(),
+                      ),
+                    );
+                  },
+                ),
+
                   ],
                 ),
                 // Icon(Icons.notifications, color: Colors.white, size: 28.sp),

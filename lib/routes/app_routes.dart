@@ -25,6 +25,8 @@ import 'package:flexpay/features/home/cubits/home_cubit.dart';
 import 'package:flexpay/features/home/repo/home_repo.dart';
 import 'package:flexpay/features/payments/cubits/payments_cubit.dart';
 import 'package:flexpay/features/payments/repo/payments_repo.dart';
+import 'package:flexpay/features/promos/cubits/kapu_cubit.dart';
+import 'package:flexpay/features/promos/repo/kapu_repo.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 
@@ -36,6 +38,7 @@ final merchantsCubit = MerchantsCubit(MerchantsRepository());
 final homeCubit = HomeCubit(HomeRepo(ApiService()));
 final paymentsCubit = PaymentsCubit(PaymentsRepo(ApiService()));
 final goalsCubit = GoalsCubit(GoalsRepo());
+final kapuCubit = KapuCubit(KapuRepo(ApiService()));
 
 class AppRoutes {
   static final routes = {
@@ -77,6 +80,7 @@ class AppRoutes {
           BlocProvider.value(value: paymentsCubit),
           BlocProvider.value(value: merchantsCubit),
           BlocProvider.value(value: goalsCubit),
+          BlocProvider.value(value: kapuCubit),
         ],
         child: NavigationWrapper(initialIndex: 0, userModel: userModel),
       );
