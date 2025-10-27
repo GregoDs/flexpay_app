@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flexpay/features/promos/models/kapu_balance_model/kapu_wallet_models.dart';
 import 'package:flexpay/features/promos/models/kapu_transfer_model/kapu_transfer_model.dart';
 import 'package:flexpay/features/promos/models/kapu_debit_model/kapu_debit_model.dart';
+import 'package:flexpay/features/promos/models/kapu_booking_model/kapu_booking_model.dart';
 
 abstract class KapuState extends Equatable {
   const KapuState();
@@ -19,11 +20,12 @@ class KapuWalletLoading extends KapuState {}
 
 class KapuWalletFetched extends KapuState {
   final KapuWalletBalances kapuWalletResponse;
+  final String merchantId;
 
-  const KapuWalletFetched(this.kapuWalletResponse);
+  const KapuWalletFetched(this.kapuWalletResponse, this.merchantId);
 
   @override
-  List<Object?> get props => [kapuWalletResponse];
+  List<Object?> get props => [kapuWalletResponse, merchantId];
 }
 
 class KapuWalletListFetched extends KapuState {
@@ -81,6 +83,27 @@ class KapuDebitFailure extends KapuState {
   final String message;
 
   const KapuDebitFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+/// ---------------- BOOKING STATES ---------------- ///
+class KapuBookingLoading extends KapuState {}
+
+class KapuBookingSuccess extends KapuState {
+  final KapuBookingResponse response;
+
+  const KapuBookingSuccess(this.response);
+
+  @override
+  List<Object?> get props => [response];
+}
+
+class KapuBookingFailure extends KapuState {
+  final String message;
+
+  const KapuBookingFailure(this.message);
 
   @override
   List<Object?> get props => [message];

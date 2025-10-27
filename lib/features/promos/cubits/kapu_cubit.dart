@@ -19,7 +19,7 @@ class KapuCubit extends Cubit<KapuState> {
 
       AppLogger.log("✅ Kapu wallet fetched successfully for $merchantId");
 
-      emit(KapuWalletFetched(response));
+      emit(KapuWalletFetched(response, merchantId));
     } catch (e, stack) {
       AppLogger.log("❌ Kapu wallet fetch failed: $e\n$stack");
       emit(KapuWalletFailure(e.toString()));
@@ -64,11 +64,11 @@ class KapuCubit extends Cubit<KapuState> {
       );
 
       if (response.success) {
-        AppLogger.log("✅ Transfer completed successfully: ${response.message}");
+        AppLogger.log("✅ Transfer completed successfully.");
         emit(KapuTransferSuccess(response));
       } else {
-        AppLogger.log("⚠️ Transfer failed: ${response.message}");
-        emit(KapuTransferFailure(response.message));
+        AppLogger.log("⚠️ Transfer failed.");
+        emit(KapuTransferFailure("Transfer failed"));
       }
     } catch (e, stack) {
       AppLogger.log("❌ Transfer API call failed: $e\n$stack");
@@ -91,15 +91,40 @@ class KapuCubit extends Cubit<KapuState> {
       );
 
       if (response.success) {
-        AppLogger.log("✅ Wallet debit successful: ${response.message}");
+        AppLogger.log("✅ Wallet debit successful");
         emit(KapuDebitSuccess(response));
       } else {
-        AppLogger.log("⚠️ Wallet debit failed: ${response.message}");
-        emit(KapuDebitFailure(response.message));
+        AppLogger.log("⚠️ Wallet debit failed");
+        emit(KapuDebitFailure("Wallet debit failed"));
       }
     } catch (e, stack) {
       AppLogger.log("❌ Debit API call failed: $e\n$stack");
       emit(KapuDebitFailure(e.toString()));
+    }
+  }
+
+  /// ---------------- CREATE KAPU BOOKING ---------------- ///
+  Future<void> createKapuBooking({
+    required String merchantId,
+  }) async {
+    emit(KapuBookingLoading());
+    try {
+      AppLogger.log("🧾 Creating Kapu booking for merchant: $merchantId");
+
+      final response = await _kapuRepo.createKapuBooking(
+        merchantId: merchantId,
+      );
+
+      if (response.success) {
+        AppLogger.log("✅ Booking successfully created: ${response.data?.bookingReference}");
+        emit(KapuBookingSuccess(response));
+      } else {
+        AppLogger.log("⚠️ Booking creation failed with status ${response.statusCode}");
+        emit(KapuBookingFailure("Booking creation failed"));
+      }
+    } catch (e, stack) {
+      AppLogger.log("❌ Booking API call failed: $e\n$stack");
+      emit(KapuBookingFailure(e.toString())); 
     }
   }
 }

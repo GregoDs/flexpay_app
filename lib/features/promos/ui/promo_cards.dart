@@ -23,6 +23,9 @@ class PromoCardsSwiperPage extends StatefulWidget {
 class _PromoCardsSwiperPageState extends State<PromoCardsSwiperPage> {
   late KapuCubit _kapuCubit;
   bool _isBalanceHidden = true;
+  bool _hasFetchedOnce = false;
+
+  Map<String, double> _merchantBalances = {}; //store live balances locally
 
   final List<Map<String, dynamic>> merchants = [
     {'name': 'Jaza', 'merchant_id': '403', 'color': const Color(0xFF761B1A)},
@@ -58,27 +61,26 @@ class _PromoCardsSwiperPageState extends State<PromoCardsSwiperPage> {
   double _currentPage = 0.0;
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  _visibleMerchants = merchants;
-  _kapuCubit = KapuCubit(KapuRepo(ApiService()));
+    _visibleMerchants = merchants;
+    _kapuCubit = KapuCubit(KapuRepo(ApiService()));
 
-  final merchantIds = merchants
-      .map((m) => m['merchant_id'] as String)
-      .toList();
-  _kapuCubit.fetchMultipleKapuWalletBalances(merchantIds);
+    final merchantIds = merchants
+        .map((m) => m['merchant_id'] as String)
+        .toList();
+    _kapuCubit.fetchMultipleKapuWalletBalances(merchantIds);
 
-  
-  _pageController = PageController(viewportFraction: 0.78, initialPage: 1);
+    _pageController = PageController(viewportFraction: 0.78, initialPage: 1);
 
-  _pageController.addListener(() {
-    setState(() {
-      _currentPage =
-          _pageController.page ?? _pageController.initialPage.toDouble();
+    _pageController.addListener(() {
+      setState(() {
+        _currentPage =
+            _pageController.page ?? _pageController.initialPage.toDouble();
+      });
     });
-  });
-}
+  }
 
   @override
   void dispose() {
@@ -116,94 +118,121 @@ void initState() {
 
     return BlocProvider(
       create: (_) => _kapuCubit,
-      child: Scaffold(
-        backgroundColor: bgColor,
-        body: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 22.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // top row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _circleIcon(
-                      context,
-                      icon: Icons.arrow_back_ios_new_rounded,
-                      onTap: () {
-                        if (widget.userModel != null) {
-                          Navigator.pushReplacementNamed(
-                            context,
-                            '/home',
-                            arguments: widget.userModel,
-                          );
-                        } else {
-                          Navigator.pushReplacementNamed(context, '/home');
-                        }
-                      },
-                    ),
-                    Text(
-                      'Christmas Kapu'.toUpperCase(),
-                      style: subtitleStyle.copyWith(letterSpacing: 1.6),
-                    ),
-                    Text(
-                      '${(_currentPage.round() + 1)}/${merchants.length}',
-                      style: subtitleStyle,
-                    ),
-                  ],
-                ),
+      child: BlocListener<KapuCubit, KapuState>(
+        listener: (context, state) {
+          if (state is KapuWalletFetched) {
+            final merchantId = state.merchantId;
+            final newBalance = state.kapuWalletResponse.data?.balance ?? 0.0;
 
-                SizedBox(height: 18.h),
+            // ✅ Only update the affected merchant balance
+            setState(() {
+              _merchantBalances[merchantId] = newBalance;
+            });
+          }
 
-                Text.rich(
-                  TextSpan(
-                    text: 'Select your\n',
+          if (state is KapuWalletListFetched) {
+            // ✅ Initialize the map with balances when loaded
+            final balances = <String, double>{};
+            for (int i = 0; i < state.wallets.length; i++) {
+              final merchantId = merchants[i]['merchant_id'].toString();
+              final balance = state.wallets[i].data?.balance ?? 0.0;
+              balances[merchantId] = balance;
+            }
+            setState(() {
+              _merchantBalances = balances;
+              _hasFetchedOnce = true;
+            });
+          }
+        },
+        child: Scaffold(
+          backgroundColor: bgColor,
+          body: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 22.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // top row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      TextSpan(
-                        text: 'Christmas Kapu 🎅 ',
-                        style: headlineStyle,
+                      _circleIcon(
+                        context,
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        onTap: () {
+                          if (widget.userModel != null) {
+                            Navigator.pushReplacementNamed(
+                              context,
+                              '/home',
+                              arguments: widget.userModel,
+                            );
+                          } else {
+                            Navigator.pushReplacementNamed(context, '/home');
+                          }
+                        },
                       ),
-                      TextSpan(
-                        text: 'from our wide varieties',
-                        style: headlineStyle.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Text(
+                        'Christmas Kapu'.toUpperCase(),
+                        style: subtitleStyle.copyWith(letterSpacing: 1.6),
+                      ),
+                      Text(
+                        '${(_currentPage.round() + 1)}/${merchants.length}',
+                        style: subtitleStyle,
                       ),
                     ],
-                    style: headlineStyle,
                   ),
-                ),
 
-                SizedBox(height: 26.h),
+                  SizedBox(height: 18.h),
 
-                Expanded(
-                  child: BlocBuilder<KapuCubit, KapuState>(
-                    builder: (context, state) {
-                      return AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 600),
-                        switchInCurve: Curves.easeOut,
-                        switchOutCurve: Curves.easeIn,
-                        transitionBuilder: (child, anim) =>
-                            FadeTransition(opacity: anim, child: child),
-                        child: _buildStateChild(state),
-                      );
-                    },
-                  ),
-                ),
-
-                Center(
-                  child: Text(
-                    'Swipe to view more',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12.sp,
-                      color: Colors.grey[500],
+                  Text.rich(
+                    TextSpan(
+                      text: 'Select your\n',
+                      children: [
+                        TextSpan(
+                          text: 'Christmas Kapu 🎅 ',
+                          style: headlineStyle,
+                        ),
+                        TextSpan(
+                          text: 'from our wide varieties',
+                          style: headlineStyle.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                      style: headlineStyle,
                     ),
                   ),
-                ),
 
-                SizedBox(height: 20.h),
-              ],
+                  SizedBox(height: 26.h),
+
+                  Expanded(
+                    child: BlocBuilder<KapuCubit, KapuState>(
+                      builder: (context, state) {
+                        return AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 600),
+                          switchInCurve: Curves.easeOut,
+                          switchOutCurve: Curves.easeIn,
+                          transitionBuilder: (child, anim) =>
+                              FadeTransition(opacity: anim, child: child),
+                          child: _buildStateChild(state),
+                        );
+                      },
+                    ),
+                  ),
+
+                  Center(
+                    child: Text(
+                      'Swipe to view more',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 12.sp,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 20.h),
+                ],
+              ),
             ),
           ),
         ),
@@ -212,6 +241,9 @@ void initState() {
   }
 
   Widget _buildStateChild(KapuState state) {
+    if (_hasFetchedOnce && _merchantBalances.isNotEmpty) {
+    return _buildSwiper([]); // we’ll use local map, so wallets param not needed
+  }
     if (state is KapuWalletLoading) {
       return const PromoCardsShimmer(key: ValueKey('shimmer'));
     } else if (state is KapuWalletListFetched) {
@@ -238,15 +270,15 @@ void initState() {
           child: PageView.builder(
             controller: _pageController,
             itemCount: _visibleMerchants.length,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index.toDouble();
-              });
-            },
+            // onPageChanged: (index) {
+            //   setState(() {
+            //     _currentPage = index.toDouble();
+            //   });
+            // },
             itemBuilder: (context, index) {
               final merchant = _visibleMerchants[index];
-              final walletModel = _walletForMerchantIndex(index, wallets);
-              final balance = walletModel?.data?.balance ?? 0.0;
+              final merchantId = merchant['merchant_id'].toString();
+              final balance = _merchantBalances[merchantId] ?? 0.0;
               final bool isCurrent = index == _currentPage.round();
 
               return AnimatedContainer(
@@ -279,6 +311,10 @@ void initState() {
                       setState(() {
                         _currentPage = tappedIndex.toDouble();
                       });
+
+                      final merchantId = merchant['merchant_id'].toString();
+
+                      _kapuCubit.createKapuBooking(merchantId: merchantId);
 
                       await Future.delayed(const Duration(milliseconds: 120));
                       await Navigator.push(
@@ -316,11 +352,11 @@ void initState() {
                         ),
                       );
 
-                      // 🩶 Refresh balances when returning
-                      final merchantIds = merchants
-                          .map((m) => m['merchant_id'].toString())
-                          .toList();
-                      _kapuCubit.fetchMultipleKapuWalletBalances(merchantIds);
+                      // // 🩶 Refresh balances when returning
+                      // final merchantIds = merchants
+                      //     .map((m) => m['merchant_id'].toString())
+                      //     .toList();
+                      // _kapuCubit.fetchMultipleKapuWalletBalances(merchantIds);
                     },
                     child: _buildCard(merchant, balance, index),
                   ),
@@ -354,7 +390,7 @@ void initState() {
     );
   }
 
-  Widget _buildCard(Map<String, dynamic> merchant, double balance, int index) {
+   Widget _buildCard(Map<String, dynamic> merchant, double balance, int index) {
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final Color base = merchant['color'] as Color;
     final Color darker = _shadeColor(base, 0.85);
@@ -362,6 +398,22 @@ void initState() {
 
     return Hero(
       tag: 'kapu_card_${merchant['merchant_id']}',
+      flightShuttleBuilder: (
+        flightContext,
+        animation,
+        direction,
+        fromHeroContext,
+        toHeroContext,
+      ) {
+            return FadeTransition(
+      opacity: animation.drive(
+        Tween<double>(begin: 0.0, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+      ),
+      child: toHeroContext.widget,
+    );
+  },
+  transitionOnUserGestures: true,
       child: Material(
         color: Colors.transparent,
         child: Container(
@@ -454,42 +506,45 @@ void initState() {
                     ),
                     const Spacer(),
                     Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Amount",
-                              style: GoogleFonts.montserrat(
-                                color: Colors.white70,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            // 👁️ Hide/Show button
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _isBalanceHidden = !_isBalanceHidden;
-                                });
-                              },
-                              child: Icon(
-                                _isBalanceHidden ? Icons.visibility_off : Icons.visibility,
-                                color: Colors.white,
-                                size: 18.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 6.h),
-
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
                         Text(
-                          _isBalanceHidden ? "Ksh •••••" : "Ksh ${balance.toStringAsFixed(2)}",
+                          "Amount",
                           style: GoogleFonts.montserrat(
-                            color: Colors.white,
-                            fontSize: 26.sp,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
+                            color: Colors.white70,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
+                        // 👁️ Hide/Show button
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isBalanceHidden = !_isBalanceHidden;
+                            });
+                          },
+                          child: Icon(
+                            _isBalanceHidden
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.white,
+                            size: 18.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 6.h),
+                    Text(
+                      _isBalanceHidden
+                          ? "Ksh •••••"
+                          : "Ksh ${balance.toStringAsFixed(2)}",
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white,
+                        fontSize: 26.sp,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Align(
                       alignment: Alignment.bottomRight,

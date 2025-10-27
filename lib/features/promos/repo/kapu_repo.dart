@@ -1,12 +1,12 @@
 import 'dart:developer' as AppLogger;
 
 import 'package:flexpay/features/promos/models/kapu_balance_model/kapu_wallet_models.dart';
+import 'package:flexpay/features/promos/models/kapu_booking_model/kapu_booking_model.dart';
 import 'package:flexpay/features/promos/models/kapu_debit_model/kapu_debit_model.dart';
 import 'package:flexpay/features/promos/models/kapu_transfer_model/kapu_transfer_model.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/services/error_handler.dart';
-
 
 class KapuRepo {
   final ApiService _apiService;
@@ -49,12 +49,11 @@ class KapuRepo {
     } catch (e, stack) {
       final message = ErrorHandler.handleGenericError(e);
       AppLogger.log("❌ Error in requestKapuWalletBalances: $message\n$stack");
-      throw Exception(message);
+      throw (message);
     }
   }
 
-
-    /// --- DEBIT or TRANSFER WALLET --- ///
+  /// --- TRANSFER FUNDS BETWEEN WALLETS --- ///
   Future<KapuTransferModel> transferFunds({
     required String fromMerchantId,
     required String toMerchantId,
@@ -97,8 +96,7 @@ class KapuRepo {
     }
   }
 
-  
-    /// --- DEBIT WALLET --- ///
+  /// --- DEBIT WALLET --- ///
   Future<DebitResponseModel> debitWallet({
     required String merchantId,
     required double amount,
@@ -124,7 +122,6 @@ class KapuRepo {
 
       AppLogger.log("📦 Debit Payload: $payload");
 
-      // Send POST request
       final response = await _apiService.post(url, data: payload);
 
       // Parse into DebitResponseModel
@@ -140,5 +137,44 @@ class KapuRepo {
     }
   }
 
+  /// --- CREATE KAPU MERCHANT BOOKING --- ///
+  Future<KapuBookingResponse> createKapuBooking({
+    required String merchantId,
+  }) async {
+    try {
+      AppLogger.log("🧾 Creating Kapu Merchant Booking with merchantId: $merchantId ...");
 
+      final url = "${ApiService.prodEndpointBookingsKapu}/create-merchant-booking";
+
+      final userModel = await SharedPreferencesHelper.getUserModel();
+      final userId = userModel?.user.id;
+
+      if (userId == null) {
+        throw Exception("User ID not found in storage.");
+      }
+
+      // Construct booking payload
+      final payload = {
+        "user_id": userId,
+        "merchant_id": merchantId,
+        "booking_source": "app"
+      };
+
+      AppLogger.log("📦 Booking Payload: $payload");
+
+      // Send POST request
+      final response = await _apiService.post(url, data: payload);
+
+      // Parse into KapuBookingResponse model
+      final bookingResponse = KapuBookingResponse.fromJson(response.data);
+
+      AppLogger.log("✅ Booking Response: ${bookingResponse.toJson()}");
+
+      return bookingResponse;
+    } catch (e, stack) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in createKapuBooking: $message\n$stack");
+      throw (message);
+    }
+  }
 }

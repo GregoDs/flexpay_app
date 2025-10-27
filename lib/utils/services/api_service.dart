@@ -22,6 +22,7 @@ class ApiService {
   static String prodEndpointPayments = dotenv.env['PROD_ENDPOINT_PAYMENTS']!;
   static String prodEndpointGoals = dotenv.env['PROD_ENDPOINT_GOALS']!;
   static String prodEndpointKapuWallet = dotenv.env['PROD_ENDPOINT_KAPU_WALLET']!;
+  static String prodEndpointBookingsKapu = dotenv.env['PROD_ENDPOINT_BOOKINGS_KAPU']!;
 
 
 

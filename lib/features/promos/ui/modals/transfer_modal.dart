@@ -81,6 +81,17 @@ void showKapuTransferModalSheet(
                 return BlocConsumer<KapuCubit, KapuState>(
                   listener: (context, state) {
                     if (state is KapuTransferSuccess) {
+                      Future.delayed(
+                        const Duration(milliseconds: 600),
+                        () async {
+                          await kapuCubit.fetchKapuWalletBalance(
+                            fromMerchantId,
+                          );
+                          if (selectedMerchantId != null) {
+                            await kapuCubit.fetchKapuWalletBalance(selectedMerchantId!);
+                          }
+                        },
+                      );
                       Navigator.pop(context);
                       CustomSnackBar.showSuccess(
                         context,
@@ -163,7 +174,9 @@ void showKapuTransferModalSheet(
                               ],
                             ),
                             padding: EdgeInsets.symmetric(
-                                horizontal: 12.w, vertical: 4.h),
+                              horizontal: 12.w,
+                              vertical: 4.h,
+                            ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 dropdownColor: Colors.white, // always white
@@ -200,7 +213,8 @@ void showKapuTransferModalSheet(
                                         Text(
                                           merchant['name'],
                                           style: GoogleFonts.montserrat(
-                                              color: Colors.black),
+                                            color: Colors.black,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -234,8 +248,13 @@ void showKapuTransferModalSheet(
                             spacing: 12.w,
                             runSpacing: 12.h,
                             children: [
-                              for (final amt
-                                  in ["500", "1000", "5000", "10000", "20000"])
+                              for (final amt in [
+                                "500",
+                                "1000",
+                                "5000",
+                                "10000",
+                                "20000",
+                              ])
                                 _amountChip(amt, () {
                                   amountController.text = amt;
                                 }),
@@ -251,7 +270,8 @@ void showKapuTransferModalSheet(
                             decoration: InputDecoration(
                               hintText: "Enter amount to transfer",
                               hintStyle: GoogleFonts.montserrat(
-                                  color: Colors.grey[600]),
+                                color: Colors.grey[600],
+                              ),
                               filled: true,
                               fillColor: Colors.white,
                               prefixIcon: const Icon(
@@ -261,12 +281,16 @@ void showKapuTransferModalSheet(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                    color: Colors.grey.shade300, width: 1),
+                                  color: Colors.grey.shade300,
+                                  width: 1,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                    color: Colors.grey.shade300, width: 1),
+                                  color: Colors.grey.shade300,
+                                  width: 1,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -294,8 +318,8 @@ void showKapuTransferModalSheet(
                               onPressed: isLoading
                                   ? null
                                   : () {
-                                      final amountText =
-                                          amountController.text.trim();
+                                      final amountText = amountController.text
+                                          .trim();
 
                                       if (selectedMerchantId == null) {
                                         CustomSnackBar.showError(
@@ -307,8 +331,9 @@ void showKapuTransferModalSheet(
                                         return;
                                       }
 
-                                      final parsedAmount =
-                                          double.tryParse(amountText);
+                                      final parsedAmount = double.tryParse(
+                                        amountText,
+                                      );
                                       if (parsedAmount == null ||
                                           parsedAmount <= 0) {
                                         CustomSnackBar.showError(
@@ -321,10 +346,10 @@ void showKapuTransferModalSheet(
                                       }
 
                                       context.read<KapuCubit>().transferFunds(
-                                            fromMerchantId: fromMerchantId,
-                                            toMerchantId: selectedMerchantId!,
-                                            amount: parsedAmount,
-                                          );
+                                        fromMerchantId: fromMerchantId,
+                                        toMerchantId: selectedMerchantId!,
+                                        amount: parsedAmount,
+                                      );
                                     },
                               child: isLoading
                                   ? const SpinKitWave(
