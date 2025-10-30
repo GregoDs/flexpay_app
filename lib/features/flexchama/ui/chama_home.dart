@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_state.dart';
+import 'package:flexpay/features/flexchama/models/savings_model/chama_savings_model.dart';
 import 'package:flexpay/features/flexchama/ui/appbar_chama_home.dart';
 import 'package:flexpay/features/flexchama/ui/shimmer_chama_products.dart';
 import 'package:flexpay/routes/app_routes.dart';
@@ -73,147 +74,179 @@ class _FlexChamaState extends State<FlexChama> {
         },
 
         child: BlocBuilder<ChamaCubit, ChamaState>(
-          builder: (context, state) {
-            // Show shimmer during any loading state
-            if (state.runtimeType.toString().endsWith('Loading')) {
-              return const FlexChamaShimmer();
-            }
-            // Show error
-            if (state is ChamaError) {
-              return Center(
-                child: Text(
-                  state.message,
-                  style: const TextStyle(color: Colors.red),
+  builder: (context, state) {
+    // ✅ Extract previous savings if in loading state
+    ChamaSavingsResponse? savingsData;
+    
+    if (state is ChamaSavingsFetched) {
+      savingsData = state.savingsResponse;
+    } else if (state is ChamaSavingsLoading && state.previousSavings != null) {
+      // ✅ Use cached data during loading
+      savingsData = state.previousSavings;
+    }
+
+    // ✅ Only show shimmer if we have NO data at all
+    if (savingsData == null && state is ChamaSavingsLoading) {
+      return const FlexChamaShimmer();
+    }
+    
+    // Show error
+    if (state is ChamaError) {
+      return Center(
+        child: Text(
+          state.message,
+          style: const TextStyle(color: Colors.red),
+        ),
+      );
+    }
+
+    // ✅ Set balances from available data
+    int loanBalance = 0;
+    int loanLimit = 0;
+    
+    if (savingsData?.data?.chamaDetails != null) {
+      final chamaDetails = savingsData!.data!.chamaDetails;
+      loanBalance = chamaDetails.loanTaken;
+      loanLimit = chamaDetails.loanLimit;
+    }
+
+    // ✅ Check if we're in a withdrawal loading state
+    final isWithdrawing = state is WithdrawChamaSavingsLoading;
+
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      color: highlightColor,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(16.0.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Loan Balance & Limit Cards
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildBalanceCard(
+                  FontAwesomeIcons.creditCard,
+                  'Loan Balance',
+                  '${AppUtils.formatAmount(loanBalance)}',
+                  Colors.green,
+                  textColor,
+                  cardColor,
                 ),
-              );
-            }
+                _buildBalanceCard(
+                  FontAwesomeIcons.handHoldingDollar,
+                  'Loan Limit',
+                  '${AppUtils.formatAmount(loanLimit)}',
+                  Colors.orange,
+                  textColor,
+                  cardColor,
+                ),
+              ],
+            ),
+            SizedBox(height: 20.h),
 
-            // Set default balances
-            int loanBalance = 0;
-            int loanLimit = 0;
-            if (state is ChamaSavingsFetched) {
-              final chamaDetails = state.savingsResponse.data!.chamaDetails;
-              loanBalance = chamaDetails.loanTaken;
-              loanLimit = chamaDetails.loanLimit;
-            }
-
-            return RefreshIndicator(
-              onRefresh: _refresh,
-              color: highlightColor,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.all(16.0.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Loan Balance & Limit Cards
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        state is ChamaSavingsLoading
-                            ? _buildShimmerBalanceCard(
-                                cardColor,
-                                highlightColor,
-                              )
-                            : _buildBalanceCard(
-                                FontAwesomeIcons.creditCard,
-                                'Loan Balance',
-                                '${AppUtils.formatAmount(loanBalance)}',
-                                Colors.green,
-                                textColor,
-                                cardColor,
-                              ),
-                        state is ChamaSavingsLoading
-                            ? _buildShimmerBalanceCard(
-                                cardColor,
-                                highlightColor,
-                              )
-                            : _buildBalanceCard(
-                                FontAwesomeIcons.handHoldingDollar,
-                                'Loan Limit',
-                                '${AppUtils.formatAmount(loanLimit)}',
-                                Colors.orange,
-                                textColor,
-                                cardColor,
-                              ),
-                      ],
-                    ),
-                    SizedBox(height: 20.h),
-
-                    // Chamas card
-                    GestureDetector(
-                      onTap: () async {
-                        await Navigator.pushNamed(context, Routes.viewChamas);
-                        await context
-                            .read<ChamaCubit>()
-                            .fetchChamaUserSavings();
-                      },
-                      child: _buildCard(
-                        icon: Icons.groups,
-                        title: 'Chamas',
-                        description: 'Tap to view your chama',
-                        highlightColor: highlightColor,
-                        textColor: textColor,
-                        cardColor: cardColor,
+            // ✅ Show loading indicator if withdrawing
+            if (isWithdrawing)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.h),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 16.w,
+                        height: 16.w,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(highlightColor),
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 20.h),
-
-                    // Transactions
-                    Text(
-                      'Transactions',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
-                    ),
-                    SizedBox(height: 10.h),
-
-                    if (state is ChamaSavingsFetched) ...[
-                      Builder(
-                        builder: (_) {
-                          final payments =
-                              state.savingsResponse.data?.payments.data ?? [];
-
-                          if (payments.isEmpty) {
-                            return Padding(
-                              padding: EdgeInsets.all(16.w),
-                              child: Text(
-                                "No Payments yet",
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 14.sp,
-                                  fontStyle: FontStyle.italic,
-                                  color: textColor,
-                                ),
-                              ),
-                            );
-                          }
-
-                          return ListView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            shrinkWrap: true,
-                            itemCount: min(5, payments.length),
-                            itemBuilder: (context, index) {
-                              final payment = payments[index];
-                              return _buildTransactionRow(
-                                payment.createdAt,
-                                payment.paymentSource,
-                                'Kshs ${AppUtils.formatAmount(payment.paymentAmount)}',
-                                textColor,
-                                cardColor,
-                              );
-                            },
-                          );
-                        },
+                      SizedBox(width: 12.w),
+                      Text(
+                        "Processing withdrawal...",
+                        style: GoogleFonts.montserrat(
+                          fontSize: 13.sp,
+                          color: highlightColor,
+                        ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
               ),
-            );
-          },
+
+            // Chamas card
+            GestureDetector(
+              onTap: () async {
+                await Navigator.pushNamed(context, Routes.viewChamas);
+                await context.read<ChamaCubit>().fetchChamaUserSavings();
+              },
+              child: _buildCard(
+                icon: Icons.groups,
+                title: 'Chamas',
+                description: 'Tap to view your chama',
+                highlightColor: highlightColor,
+                textColor: textColor,
+                cardColor: cardColor,
+              ),
+            ),
+            SizedBox(height: 20.h),
+
+            // Transactions
+            Text(
+              'Transactions',
+              style: GoogleFonts.montserrat(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            SizedBox(height: 10.h),
+
+            // ✅ Show transactions if we have data
+            if (savingsData?.data != null) ...[
+              Builder(
+                builder: (_) {
+                  final payments = savingsData!.data!.payments.data ?? [];
+
+                  if (payments.isEmpty) {
+                    return Padding(
+                      padding: EdgeInsets.all(16.w),
+                      child: Text(
+                        "No Payments yet",
+                        style: GoogleFonts.montserrat(
+                          fontSize: 14.sp,
+                          fontStyle: FontStyle.italic,
+                          color: textColor,
+                        ),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: min(5, payments.length),
+                    itemBuilder: (context, index) {
+                      final payment = payments[index];
+                      return _buildTransactionRow(
+                        payment.createdAt,
+                        payment.paymentSource,
+                        'Kshs ${AppUtils.formatAmount(payment.paymentAmount)}',
+                        textColor,
+                        cardColor,
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ],
         ),
+      ),
+    );
+  },
+),
       ),
     );
   }

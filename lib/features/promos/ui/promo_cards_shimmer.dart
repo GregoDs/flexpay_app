@@ -47,7 +47,7 @@ class _PromoCardsShimmerState extends State<PromoCardsShimmer> {
     super.initState();
     _pageController = PageController(
       viewportFraction: 0.78, // same as main file
-      initialPage: 1,
+      initialPage: 0,
     );
 
     _pageController.addListener(() {

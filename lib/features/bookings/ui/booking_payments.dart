@@ -50,13 +50,15 @@ class BookingPaymentModal {
           child: StatefulBuilder(
             builder: (context, setState) {
               return BlocConsumer<BookingsCubit, BookingsState>(
-                listener: (context, state) {
+                listener: (context, state) async {
                   if (state is BookingWalletPaymentSuccess) {
                     CustomSnackBar.showSuccess(
                       context,
                       title: "Payment Success",
                       message: "Booking paid successfully ✅",
                     );
+                    // 🕒 Delay pop so user can see feedback
+                    // await Future.delayed(const Duration(seconds: 1));
                     Navigator.pop(context, true);
                   } else if (state is BookingWalletPaymentError) {
                     CustomSnackBar.showError(
@@ -70,6 +72,8 @@ class BookingPaymentModal {
                       title: "M-Pesa Payment Initiated",
                       message: "Check your phone to complete the payment.",
                     );
+                    // 🕒 Delay pop so user can see feedback
+                    // await Future.delayed(const Duration(seconds: 1));
                     Navigator.pop(context, true);
                   } else if (state is BookingMpesaPaymentError) {
                     CustomSnackBar.showError(

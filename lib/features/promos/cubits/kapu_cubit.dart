@@ -127,4 +127,54 @@ class KapuCubit extends Cubit<KapuState> {
       emit(KapuBookingFailure(e.toString())); 
     }
   }
+
+  /// ---------------- CREATE KAPU VOUCHER ---------------- ///
+Future<void> createKapuVoucher({
+  required String merchantId,
+  required double amount,
+}) async {
+  emit(KapuVoucherLoading());
+  try {
+    AppLogger.log("🎟️ Creating Kapu voucher for merchant: $merchantId | Amount: $amount");
+
+    final response = await _kapuRepo.createKapuVoucher(
+      merchantId: merchantId,
+      amount: amount,
+    );
+
+    final innerSuccess = response.data?.success ?? false;
+    final hasInnerErrors = (response.data?.errors?.isNotEmpty ?? false);
+    final allErrors = response.collectAllErrors();
+
+    // ✅ Detect flat success (when data contains actual voucher fields directly)
+    final isFlatVoucherSuccess =
+        response.success &&
+        !hasInnerErrors &&
+        response.data?.data == null && // means no nested structure
+        response.data != null &&
+        response.statusCode == 200;
+
+    // ✅ Normal nested success OR flat success
+    if ((response.success && innerSuccess && !hasInnerErrors) || isFlatVoucherSuccess) {
+      final ref = response.data?.data?.bookingReference ??
+          (response.data?.data == null
+              ? (response.data?.data?.bookingReference ?? "N/A")
+              : "N/A");
+
+      AppLogger.log("✅ Voucher created successfully — Ref: $ref");
+      emit(KapuVoucherSuccess(response));
+    } else {
+      final errorMessage = allErrors.isNotEmpty
+          ? allErrors.join(", ")
+          : "Voucher creation failed (code: ${response.data?.statusCode ?? response.statusCode})";
+
+      AppLogger.log("⚠️ Voucher creation failed: $errorMessage");
+      emit(KapuVoucherFailure(errorMessage));
+    }
+  } catch (e, stack) {
+    AppLogger.log("❌ Voucher API call failed: $e\n$stack");
+    emit(KapuVoucherFailure(e.toString()));
+  }
+}
+
 }

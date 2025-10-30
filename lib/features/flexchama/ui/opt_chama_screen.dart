@@ -2,7 +2,6 @@ import 'package:flexpay/features/flexchama/ui/chama_reg.dart';
 import 'package:flexpay/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flexpay/features/navigation/navigation_wrapper.dart';
 import 'package:flexpay/gen/colors.gen.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
 
@@ -30,14 +29,12 @@ class OnBoardFlexChama extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
           Positioned.fill(
             child: Image.asset(
               'assets/images/optflexchama.png',
               fit: BoxFit.cover,
             ),
           ),
-          // Gradient Overlay
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -54,40 +51,6 @@ class OnBoardFlexChama extends StatelessWidget {
               ),
             ),
           ),
-
-          // Top-right Close Button → Go to Home
-          // Positioned(
-          //   top: 52,
-          //   right: 24,
-          //   child: GestureDetector(
-          //     onTap: () {
-          //       Navigator.pushReplacement(
-          //         context,
-          //         MaterialPageRoute(
-          //           builder: (_) =>
-          //               NavigationWrapper(userModel: userModel, initialIndex: 0),
-          //         ),
-          //       );
-          //     },
-          //     child: Container(
-          //       padding: const EdgeInsets.all(10),
-          //       decoration: BoxDecoration(
-          //         color: Colors.white.withOpacity(0.85),
-          //         shape: BoxShape.circle,
-          //         boxShadow: [
-          //           BoxShadow(
-          //             color: Colors.black26,
-          //             blurRadius: 6,
-          //             offset: const Offset(0, 3),
-          //           ),
-          //         ],
-          //       ),
-          //       child: const Icon(Icons.close, color: Colors.black87, size: 22),
-          //     ),
-          //   ),
-          // ),
-
-          // Bottom Content
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -96,11 +59,8 @@ class OnBoardFlexChama extends StatelessWidget {
                 horizontal: screenWidth * 0.08,
                 vertical: 28,
               ),
-              decoration: BoxDecoration(
-                // color: Colors.black.withOpacity(0.4),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(28),
-                ),
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -116,8 +76,6 @@ class OnBoardFlexChama extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: screenHeight * 0.04),
-
-                  // Opt In Button
                   SizedBox(
                     width: double.infinity,
                     height: 52,
@@ -142,25 +100,16 @@ class OnBoardFlexChama extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => NavigationWrapper(
-                            userModel: userModel,
-                            initialIndex: 0,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      "Maybe Later",
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ),
+                  // // ✅ FIXED: just call callback
+                  // TextButton(
+                  //   onPressed: onOptIn,
+                  //   child: Text(
+                  //     "Maybe Later",
+                  //     style: textTheme.bodyMedium?.copyWith(
+                  //       color: Colors.white70,
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),

@@ -65,9 +65,11 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
+  remove_alpha_ios: true
   image_path: "assets/icon/flexpaylogo.png"
-  adaptive_icon_foreground: "assets/icon/flexpaylogo.png" 
-  adaptive_icon_background: "#ffffff" 
+  min_sdk_android: 21
+  adaptive_icon_foreground: "assets/icon/flexpaylogo.png"
+  adaptive_icon_background: "#ffffff"
   
   flutter_lints: ^5.0.0
 

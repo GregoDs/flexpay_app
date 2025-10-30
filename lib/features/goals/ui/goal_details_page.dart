@@ -65,6 +65,7 @@ class _GoalDetailsPageState extends State<GoalDetailsPage> {
     final double deposit = _toDouble(initialDepositRaw);
     final double total = _toDouble(totalRaw);
     final double progress = bookingPrice > 0 ? (total / bookingPrice) : 0.0;
+    final bool goalCompleted = total >= bookingPrice;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -285,46 +286,49 @@ class _GoalDetailsPageState extends State<GoalDetailsPage> {
                   ],
                 ),
                 SizedBox(height: 30.h),
-
-                // Top Up Button
+                // Top Up Button (with goal completion logic)
                 SizedBox(
                   width: double.infinity,
                   height: 60.h,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: accentColor,
+                      backgroundColor: goalCompleted
+                          ? Colors.grey.shade400.withOpacity(0.8) // Frozen state
+                          : accentColor, // Active state
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14.r),
                       ),
+                      elevation: goalCompleted ? 0 : 4,
                     ),
-                    onPressed: () async {
-                      final bookingReference =
-                          goal['booking_reference'] ?? '';
-                      final goalName = goal['product_name'] ?? 'Unnamed Goal';
+                    onPressed: goalCompleted
+                        ? null // Disable the button entirely
+                        : () async {
+                            final bookingReference = goal['booking_reference'] ?? '';
+                            final goalName = goal['product_name'] ?? 'Unnamed Goal';
 
-                      final userModel =
-                          await SharedPreferencesHelper.getUserModel();
-                      final userPhone = userModel?.user.phoneNumber ?? '';
+                            final userModel = await SharedPreferencesHelper.getUserModel();
+                            final userPhone = userModel?.user.phoneNumber ?? '';
 
-                      final selectedAmount = topUpAmounts[selectedIndex];
+                            final selectedAmount = topUpAmounts[selectedIndex];
 
-                      final result = await GoalPaymentModal.show(
-                        context,
-                        goalName: goalName,
-                        initialPhone: userPhone,
-                        goalReference: bookingReference,
-                        prefilledAmount: selectedAmount.toString(),
-                      );
+                            final result = await GoalPaymentModal.show(
+                              context,
+                              goalName: goalName,
+                              initialPhone: userPhone,
+                              goalReference: bookingReference,
+                              prefilledAmount: selectedAmount.toString(),
+                            );
 
-                      if (result == true) {
-                        context.read<GoalsCubit>().fetchGoals();
-                      }
-                    },
+                            if (result == true) {
+                              // Refetch updated goal state
+                              context.read<GoalsCubit>().fetchGoals();
+                            }
+                          },
                     child: Text(
-                      "Top Up Goal Balance",
+                      goalCompleted ? "Goal Accomplished 🎉" : "Top Up Goal Balance",
                       style: GoogleFonts.montserrat(
                         fontSize: 18.sp,
-                        fontWeight: FontWeight.w400,
+                        fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
                     ),

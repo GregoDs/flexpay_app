@@ -56,19 +56,18 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
       emailError = emailController.text.trim().isEmpty
           ? "Email is required"
-          : (!RegExp(
-                  r'^[^@]+@[^@]+\.[^@]+',
-                ).hasMatch(emailController.text.trim())
-                ? "Enter a valid email address"
-                : null);
+          : (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                  .hasMatch(emailController.text.trim())
+              ? "Enter a valid email address"
+              : null);
 
       phoneError = phoneController.text.trim().isEmpty
           ? "Phone number is required"
           : (!RegExp(r'^\d{10,13}$').hasMatch(phoneController.text.trim())
-                ? "Enter a valid phone number"
-                : null);
+              ? "Enter a valid phone number"
+              : null);
 
-      // DOB is optional
+      // DOB optional
       dobError = null;
 
       genderError = gender == null ? "Select your gender" : null;
@@ -76,13 +75,13 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       passwordError = passwordController.text.length < 8
           ? "Password must be at least 8 characters"
           : (!RegExp(r'[0-9]').hasMatch(passwordController.text)
-                ? "Password must contain at least one number"
-                : null);
+              ? "Password must contain at least one number"
+              : null);
 
       confirmPasswordError =
           confirmPasswordController.text != passwordController.text
-          ? "Passwords do not match"
-          : null;
+              ? "Passwords do not match"
+              : null;
     });
   }
 
@@ -96,30 +95,26 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         passwordError == null &&
         confirmPasswordError == null &&
         agreedToTerms) {
-      // Send data to backend via AuthCubit
       context.read<AuthCubit>().createAccount(
-        emailController.text.trim(),
-        passwordController.text,
-        confirmPasswordController.text,
-        firstNameController.text.trim(),
-        lastNameController.text.trim(),
-        phoneController.text.trim(),
-        "1", // userType
-        gender ?? "",
-        dobController.text.trim(), // can be empty
-      );
+            emailController.text.trim(),
+            passwordController.text,
+            confirmPasswordController.text,
+            firstNameController.text.trim(),
+            lastNameController.text.trim(),
+            phoneController.text.trim(),
+            "1", // userType
+            gender ?? "",
+            dobController.text.trim(),
+          );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final isDark = brightness == Brightness.dark;
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final textTheme = GoogleFonts.montserratTextTheme(
       Theme.of(context).textTheme,
     );
-
     final fieldColor = isDark ? Colors.grey[850]! : Colors.grey[200]!;
     final textColor = isDark ? Colors.white : Colors.black87;
 
@@ -161,303 +156,304 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               title: "Error",
               message: state.errorMessage,
             );
-          } else if (state is AuthTokenInvalid) {
-            CustomSnackBar.showError(
-              context,
-              title: "Error",
-              message: "Token invalid or registration failed",
-            );
           }
         },
         builder: (context, state) {
           final isLoading = state is AuthLoading;
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              return SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 22,
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Fields
-                        Column(
-                          children: [
-                            // First + Last Name
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildTextField(
-                                    controller: firstNameController,
-                                    label: "First Name",
-                                    hint: "John",
-                                    icon: Icons.person_outline,
-                                    fieldColor: fieldColor,
-                                    textColor: textColor,
-                                    errorText: firstNameError,
-                                    onChanged: (_) => _validateFields(),
-                                    inputFormatters: [
-                                      CapitalizeFirstLetterFormatter(),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildTextField(
-                                    controller: lastNameController,
-                                    label: "Last Name",
-                                    hint: "Doe",
-                                    icon: Icons.person_outline,
-                                    fieldColor: fieldColor,
-                                    textColor: textColor,
-                                    errorText: lastNameError,
-                                    onChanged: (_) => _validateFields(),
-                                    inputFormatters: [
-                                      CapitalizeFirstLetterFormatter(),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 12.h),
-
-                            _buildTextField(
-                              controller: emailController,
-                              label: "Email",
-                              hint: "example@email.com",
-                              icon: Icons.mail_outline,
-                              keyboardType: TextInputType.emailAddress,
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+              child: Column(
+                children: [
+                  // Fields
+                  Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              controller: firstNameController,
+                              label: "First Name",
+                              hint: "John",
+                              icon: Icons.person_outline,
                               fieldColor: fieldColor,
                               textColor: textColor,
-                              errorText: emailError,
-                              onChanged: (_) => _validateFields(),
-                              inputFormatters: [
-                                CapitalizeFirstLetterFormatter(),
-                              ],
+                              errorText: firstNameError,
+                              onChanged: (_) {
+                                if (firstNameError != null &&
+                                    firstNameController.text.isNotEmpty) {
+                                  setState(() => firstNameError = null);
+                                }
+                              },
                             ),
-                            SizedBox(height: 12.h),
-
-                            _buildTextField(
-                              controller: phoneController,
-                              label: "Phone",
-                              hint: "0712345678",
-                              icon: Icons.phone_outlined,
-                              keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildTextField(
+                              controller: lastNameController,
+                              label: "Last Name",
+                              hint: "Doe",
+                              icon: Icons.person_outline,
                               fieldColor: fieldColor,
                               textColor: textColor,
-                              errorText: phoneError,
-                              onChanged: (_) => _validateFields(),
-                              inputFormatters: [
-                                CapitalizeFirstLetterFormatter(),
-                              ],
+                              errorText: lastNameError,
+                              onChanged: (_) {
+                                if (lastNameError != null &&
+                                    lastNameController.text.isNotEmpty) {
+                                  setState(() => lastNameError = null);
+                                }
+                              },
                             ),
-                            SizedBox(height: 12.h),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12.h),
 
-                            // DOB (optional)
-                            _buildDobField(
-                              label: "Date of Birth (optional)",
-                              controller: dobController,
-                              fieldColor: fieldColor,
-                              textColor: textColor,
-                              errorText: dobError,
-                              onChanged: (_) => _validateFields(),
-                            ),
-                            SizedBox(height: 12.h),
+                      _buildTextField(
+                        controller: emailController,
+                        label: "Email",
+                        hint: "example@email.com",
+                        icon: Icons.mail_outline,
+                        keyboardType: TextInputType.emailAddress,
+                        fieldColor: fieldColor,
+                        textColor: textColor,
+                        errorText: emailError,
+                        onChanged: (_) {
+                          if (emailError != null &&
+                              RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                  .hasMatch(emailController.text.trim())) {
+                            setState(() => emailError = null);
+                          }
+                        },
+                      ),
+                      SizedBox(height: 12.h),
 
-                            // Gender
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                "Gender",
-                                style: GoogleFonts.montserrat(
-                                  fontWeight: FontWeight.w600,
-                                  color: textColor,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 6.h),
-                            Row(
-                              children: [
-                                _buildGenderButton("Male", Icons.male),
-                                const SizedBox(width: 12),
-                                _buildGenderButton("Female", Icons.female),
-                              ],
-                            ),
-                            if (genderError != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4, left: 4),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    genderError!,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.red,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            SizedBox(height: 12.h),
+                      _buildTextField(
+                        controller: phoneController,
+                        label: "Phone",
+                        hint: "0712345678",
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
+                        fieldColor: fieldColor,
+                        textColor: textColor,
+                        errorText: phoneError,
+                        onChanged: (_) {
+                          if (phoneError != null &&
+                              RegExp(r'^\d{10,13}$')
+                                  .hasMatch(phoneController.text.trim())) {
+                            setState(() => phoneError = null);
+                          }
+                        },
+                      ),
+                      SizedBox(height: 12.h),
 
-                            // Passwords
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildPasswordField(
-                                    controller: passwordController,
-                                    label: "Password",
-                                    hint: "Enter password",
-                                    visible: passwordVisible,
-                                    toggleVisibility: () => setState(
-                                      () => passwordVisible = !passwordVisible,
-                                    ),
-                                    fieldColor: fieldColor,
-                                    textColor: textColor,
-                                    errorText: passwordError,
-                                    onChanged: (_) => _validateFields(),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildPasswordField(
-                                    controller: confirmPasswordController,
-                                    label: "Confirm Password",
-                                    hint: "Re-enter password",
-                                    visible: confirmPasswordVisible,
-                                    toggleVisibility: () => setState(
-                                      () => confirmPasswordVisible =
-                                          !confirmPasswordVisible,
-                                    ),
-                                    fieldColor: fieldColor,
-                                    textColor: textColor,
-                                    errorText: confirmPasswordError,
-                                    onChanged: (_) => _validateFields(),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 12.h),
+                      _buildDobField(
+                        label: "Date of Birth (optional)",
+                        controller: dobController,
+                        fieldColor: fieldColor,
+                        textColor: textColor,
+                        errorText: dobError,
+                      ),
+                      SizedBox(height: 12.h),
 
-                            // Terms
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: agreedToTerms,
-                                  activeColor: ColorName.primaryColor,
-                                  onChanged: (val) => setState(
-                                    () => agreedToTerms = val ?? false,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Wrap(
-                                    children: [
-                                      Text(
-                                        "I agree to the ",
-                                        style: textTheme.bodySmall?.copyWith(
-                                          color: textColor,
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {},
-                                        child: Text(
-                                          "Terms & Conditions",
-                                          style: textTheme.bodySmall?.copyWith(
-                                            color: ColorName.primaryColor,
-                                            fontWeight: FontWeight.w600,
-                                            decoration:
-                                                TextDecoration.underline,
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        " and Privacy Policy",
-                                        style: textTheme.bodySmall?.copyWith(
-                                          color: textColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Gender",
+                          style: GoogleFonts.montserrat(
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
                         ),
-
-                        // Sign up button + already have account
-                        Column(
-                          children: [
-                            SizedBox(
-                              width: double.infinity,
-                              child: isLoading
-                                  ? Center(
-                                      child: SpinKitWave(
-                                        color: ColorName.primaryColor,
-                                        size: 28,
-                                      ),
-                                    )
-                                  : ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: ColorName.primaryColor,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            24,
-                                          ),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                        ),
-                                      ),
-                                      onPressed: _submit,
-                                      child: Text(
-                                        "Sign Up",
-                                        style: textTheme.titleMedium?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
+                      ),
+                      SizedBox(height: 6.h),
+                      Row(
+                        children: [
+                          _buildGenderButton("Male", Icons.male),
+                          const SizedBox(width: 12),
+                          _buildGenderButton("Female", Icons.female),
+                        ],
+                      ),
+                      if (genderError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, left: 4),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              genderError!,
+                              style: GoogleFonts.montserrat(
+                                color: Colors.red,
+                                fontSize: 13,
+                              ),
                             ),
-                            SizedBox(height: 12.h),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                          ),
+                        ),
+                      SizedBox(height: 12.h),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildPasswordField(
+                              controller: passwordController,
+                              label: "Password",
+                              hint: "Enter password",
+                              visible: passwordVisible,
+                              toggleVisibility: () => setState(() {
+                                passwordVisible = !passwordVisible;
+                              }),
+                              fieldColor: fieldColor,
+                              textColor: textColor,
+                              errorText: passwordError,
+                              onChanged: (_) {
+                                if (passwordController.text.length >= 8 &&
+                                    RegExp(r'[0-9]')
+                                        .hasMatch(passwordController.text)) {
+                                  setState(() => passwordError = null);
+                                }
+                                if (confirmPasswordController.text.isNotEmpty) {
+                                  setState(() {
+                                    confirmPasswordError =
+                                        confirmPasswordController.text ==
+                                                passwordController.text
+                                            ? null
+                                            : "Passwords do not match";
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildPasswordField(
+                              controller: confirmPasswordController,
+                              label: "Confirm Password",
+                              hint: "Re-enter password",
+                              visible: confirmPasswordVisible,
+                              toggleVisibility: () => setState(() {
+                                confirmPasswordVisible =
+                                    !confirmPasswordVisible;
+                              }),
+                              fieldColor: fieldColor,
+                              textColor: textColor,
+                              errorText: confirmPasswordError,
+                              onChanged: (_) {
+                                setState(() {
+                                  confirmPasswordError =
+                                      confirmPasswordController.text ==
+                                              passwordController.text
+                                          ? null
+                                          : "Passwords do not match";
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12.h),
+
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: agreedToTerms,
+                            activeColor: ColorName.primaryColor,
+                            onChanged: (val) =>
+                                setState(() => agreedToTerms = val ?? false),
+                          ),
+                          Expanded(
+                            child: Wrap(
                               children: [
-                                Text(
-                                  "Already have an account? ",
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    color: textColor,
-                                  ),
-                                ),
+                                Text("I agree to the ",
+                                    style: textTheme.bodySmall
+                                        ?.copyWith(color: textColor)),
                                 GestureDetector(
-                                  onTap: () => Navigator.pushReplacementNamed(
-                                    context,
-                                    Routes.login,
-                                  ),
+                                  onTap: () {},
                                   child: Text(
-                                    "Sign In",
-                                    style: textTheme.bodyMedium?.copyWith(
+                                    "Terms & Conditions",
+                                    style: textTheme.bodySmall?.copyWith(
                                       color: ColorName.primaryColor,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w600,
+                                      decoration: TextDecoration.underline,
                                     ),
                                   ),
                                 ),
+                                Text(" and Privacy Policy",
+                                    style: textTheme.bodySmall
+                                        ?.copyWith(color: textColor)),
                               ],
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-              );
-            },
+
+                  const SizedBox(height: 20),
+
+                  isLoading
+                    ? Center(
+                        child: SpinKitWave(
+                          color: ColorName.primaryColor,
+                          size: 28,
+                        ),
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        height: 52.h,
+                        child: ElevatedButton(
+                          onPressed: _submit,
+                          style: ElevatedButton.styleFrom(
+                            elevation: 5,
+                            padding: EdgeInsets.symmetric(vertical: 14.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                            backgroundColor: ColorName.primaryColor,
+                            shadowColor: ColorName.primaryColor.withOpacity(0.4),
+                          ),
+                          child: Text(
+                            "Create Account",
+                            style: GoogleFonts.montserrat(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 17.sp,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                  SizedBox(height: 12.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Already have an account? ",
+                          style: textTheme.bodyMedium
+                              ?.copyWith(color: textColor)),
+                      GestureDetector(
+                        onTap: () =>
+                            Navigator.pushReplacementNamed(context, Routes.login),
+                        child: Text(
+                          "Sign In",
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: ColorName.primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),
     );
   }
+
+  // -----------------------------
+  // FIELD HELPERS
+  // -----------------------------
 
   Widget _buildDobField({
     required String label,
@@ -465,48 +461,51 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     required Color fieldColor,
     required Color textColor,
     String? errorText,
-    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w600,
-            color: textColor,
-          ),
-        ),
+        Text(label,
+            style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.w600, color: textColor)),
         const SizedBox(height: 6),
         GestureDetector(
           onTap: () async {
             FocusScope.of(context).unfocus();
-            await showModalBottomSheet(
+
+            DateTime? pickedDate = await showDatePicker(
               context: context,
-              builder: (_) {
-                return DefaultTextStyle(
-                  style: GoogleFonts.montserrat(
-                    fontSize: 18,
-                    color: Colors.black,
-                  ),
-                  child: SizedBox(
-                    height: 250,
-                    child: CupertinoDatePicker(
-                      mode: CupertinoDatePickerMode.date,
-                      initialDateTime: DateTime(2000, 1, 1),
-                      maximumDate: DateTime.now(),
-                      onDateTimeChanged: (date) {
-                        setState(() {
-                          controller.text =
-                              "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-                          if (onChanged != null) onChanged(controller.text);
-                        });
-                      },
+              initialDate: DateTime(2000, 1, 1),
+              firstDate: DateTime(1900),
+              lastDate: DateTime.now(),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: ColorScheme.light(
+                      primary: ColorName.primaryColor,
+                      onPrimary: Colors.white,
+                      onSurface: Colors.black,
+                    ),
+                    dialogTheme: DialogThemeData(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    textTheme: GoogleFonts.montserratTextTheme(
+                      Theme.of(context).textTheme,
                     ),
                   ),
+                  child: child!,
                 );
               },
             );
+
+            if (pickedDate != null) {
+              setState(() {
+                controller.text =
+                    "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+              });
+            }
           },
           child: AbsorbPointer(
             child: TextField(
@@ -515,10 +514,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: fieldColor,
-                prefixIcon: Icon(
-                  Icons.calendar_today_outlined,
-                  color: Colors.blue[800],
-                ),
+                prefixIcon:
+                    Icon(Icons.calendar_today_outlined, color: Colors.blue[800]),
                 hintText: "yyyy-MM-dd",
                 hintStyle: GoogleFonts.montserrat(color: Colors.grey),
                 border: OutlineInputBorder(
@@ -526,20 +523,15 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   borderSide: BorderSide.none,
                 ),
               ),
-              onChanged: onChanged,
             ),
           ),
         ),
         if (errorText != null)
           Padding(
             padding: const EdgeInsets.only(top: 4, left: 4),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                errorText,
-                style: GoogleFonts.montserrat(color: Colors.red, fontSize: 13),
-              ),
-            ),
+            child: Text(errorText,
+                style:
+                    GoogleFonts.montserrat(color: Colors.red, fontSize: 13)),
           ),
       ],
     );
@@ -552,7 +544,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         onTap: () {
           setState(() {
             gender = label;
-            _validateFields();
+            genderError = null; // ✅ Clear validation immediately
           });
         },
         child: Container(
@@ -566,13 +558,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             children: [
               Icon(icon, color: isSelected ? Colors.white : Colors.black87),
               const SizedBox(width: 6),
-              Text(
-                label,
-                style: GoogleFonts.montserrat(
-                  color: isSelected ? Colors.white : Colors.black87,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text(label,
+                  style: GoogleFonts.montserrat(
+                    color: isSelected ? Colors.white : Colors.black87,
+                    fontWeight: FontWeight.w600,
+                  )),
             ],
           ),
         ),
@@ -590,18 +580,13 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     String? errorText,
     TextInputType keyboardType = TextInputType.text,
     ValueChanged<String>? onChanged,
-    required List<CapitalizeFirstLetterFormatter> inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w600,
-            color: textColor,
-          ),
-        ),
+        Text(label,
+            style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.w600, color: textColor)),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
@@ -623,13 +608,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         if (errorText != null)
           Padding(
             padding: const EdgeInsets.only(top: 4, left: 4),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                errorText,
-                style: GoogleFonts.montserrat(color: Colors.red, fontSize: 13),
-              ),
-            ),
+            child: Text(errorText,
+                style:
+                    GoogleFonts.montserrat(color: Colors.red, fontSize: 13)),
           ),
       ],
     );
@@ -649,18 +630,15 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w600,
-            color: textColor,
-          ),
-        ),
+        Text(label,
+            style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.w600, color: textColor)),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
           obscureText: !visible,
           style: GoogleFonts.montserrat(color: textColor),
+          onChanged: onChanged,
           decoration: InputDecoration(
             filled: true,
             fillColor: fieldColor,
@@ -679,18 +657,13 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               onPressed: toggleVisibility,
             ),
           ),
-          onChanged: onChanged,
         ),
         if (errorText != null)
           Padding(
             padding: const EdgeInsets.only(top: 4, left: 4),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                errorText,
-                style: GoogleFonts.montserrat(color: Colors.red, fontSize: 13),
-              ),
-            ),
+            child: Text(errorText,
+                style:
+                    GoogleFonts.montserrat(color: Colors.red, fontSize: 13)),
           ),
       ],
     );

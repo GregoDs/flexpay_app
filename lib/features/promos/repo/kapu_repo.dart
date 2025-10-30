@@ -4,6 +4,7 @@ import 'package:flexpay/features/promos/models/kapu_balance_model/kapu_wallet_mo
 import 'package:flexpay/features/promos/models/kapu_booking_model/kapu_booking_model.dart';
 import 'package:flexpay/features/promos/models/kapu_debit_model/kapu_debit_model.dart';
 import 'package:flexpay/features/promos/models/kapu_transfer_model/kapu_transfer_model.dart';
+import 'package:flexpay/features/promos/models/kapu_voucher_model/kapu_voucher_model.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/services/error_handler.dart';
@@ -174,6 +175,52 @@ class KapuRepo {
     } catch (e, stack) {
       final message = ErrorHandler.handleGenericError(e);
       AppLogger.log("❌ Error in createKapuBooking: $message\n$stack");
+      throw (message);
+    }
+  }
+
+
+    /// --- CREATE KAPU VOUCHER --- ///
+  Future<CreateVoucherResponse> createKapuVoucher({
+    required String merchantId,
+    required double amount,
+  }) async {
+    try {
+      AppLogger.log("🎟️ Creating new Kapu voucher for merchant: $merchantId ...");
+
+      // API endpoint for creating voucher
+      final url = "${ApiService.prodEndpointBookingsKapu}/create-merchant-voucher";
+
+      // Retrieve user ID from local storage
+      final userModel = await SharedPreferencesHelper.getUserModel();
+      final userId = userModel?.user.id;
+
+      if (userId == null) {
+        throw Exception("User ID not found in storage.");
+      }
+
+      // Construct payload
+      final payload = {
+        "user_id": userId,
+        "merchant_id": merchantId,
+        "amount": amount,
+      };
+
+      AppLogger.log("📦 Voucher Payload: $payload");
+
+      // Send POST request
+      final response = await _apiService.post(url, data: payload);
+
+      // Parse into CreateVoucherResponse model
+      final voucherResponse = CreateVoucherResponse.fromJson(response.data);
+
+      // Log response for debugging
+      AppLogger.log("✅ Voucher Response: ${voucherResponse.toJson()}");
+
+      return voucherResponse;
+    } catch (e, stack) {
+      final message = ErrorHandler.handleGenericError(e);
+      AppLogger.log("❌ Error in createVoucher: $message\n$stack");
       throw (message);
     }
   }

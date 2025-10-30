@@ -59,28 +59,90 @@ class ChamaCubit extends Cubit<ChamaState> {
     }
   }
 
-  /// ---------------- Fetch Chama User Savings ----------------
-  Future<void> fetchChamaUserSavings() async {
-    emit(ChamaSavingsLoading(previousProfile: _currentProfile));
+  // /// ---------------- Fetch Chama User Savings ----------------
+  // Future<void> fetchChamaUserSavings() async {
+  //   emit(ChamaSavingsLoading(previousProfile: _currentProfile));
 
-    final savingsResponse = await _chamaRepo.fetchUserChamaSavings();
+  //   final savingsResponse = await _chamaRepo.fetchUserChamaSavings();
 
-    // ✅ Always emit Fetched so FlexChama page renders
-    emit(ChamaSavingsFetched(savingsResponse));
+  //   // ✅ Always emit Fetched so FlexChama page renders
+  //   emit(ChamaSavingsFetched(savingsResponse));
 
-    // ✅ Show error if there is one in the logs..the user doesnt need to see the errors here
-    // Show snackbar only for non-400 errors
-    if (savingsResponse.errors?.isNotEmpty ?? false) {
-      final errorMsg = savingsResponse.errors!.first.toString();
+  //   // ✅ Show error if there is one in the logs..the user doesnt need to see the errors here
+  //   // Show snackbar only for non-400 errors
+  //   if (savingsResponse.errors?.isNotEmpty ?? false) {
+  //     final errorMsg = savingsResponse.errors!.first.toString();
 
-      if (!errorMsg.toLowerCase().contains("member product not found")) {
-        // Show error only for serious errors
-        AppLogger.log("⚠️ Non-400 error: $errorMsg");
-      } else {
-        AppLogger.log("ℹ️ 400 error ignored for UI: $errorMsg");
-      }
+  //     if (!errorMsg.toLowerCase().contains("member product not found")) {
+  //       // Show error only for serious errors
+  //       AppLogger.log("⚠️ Non-400 error: $errorMsg");
+  //     } else {
+  //       AppLogger.log("ℹ️ 400 error ignored for UI: $errorMsg");
+  //     }
+  //   }
+  // }
+
+
+/// ---------------- Fetch Chama User Savings ----------------
+Future<void> fetchChamaUserSavings() async {
+  // ✅ Pass previous savings response to loading state
+  emit(ChamaSavingsLoading(
+    previousProfile: _currentProfile,
+    previousSavings: _cachedSavings, // ✅ Add this
+  ));
+
+  final savingsResponse = await _chamaRepo.fetchUserChamaSavings();
+
+  // ✅ Update cache
+  _cachedSavings = savingsResponse;
+
+  // ✅ Always emit Fetched so FlexChama page renders
+  emit(ChamaSavingsFetched(savingsResponse));
+
+  // ✅ Show error if there is one in the logs
+  if (savingsResponse.errors?.isNotEmpty ?? false) {
+    final errorMsg = savingsResponse.errors!.first.toString();
+
+    if (!errorMsg.toLowerCase().contains("member product not found")) {
+      AppLogger.log("⚠️ Non-400 error: $errorMsg");
+    } else {
+      AppLogger.log("ℹ️ 400 error ignored for UI: $errorMsg");
     }
   }
+}
+
+/// ---------------- Withdraw Chama Savings ----------------
+Future<void> withdrawChamaSavings(double amount) async {
+  emit(WithdrawChamaSavingsLoading());
+  try {
+    final response = await _chamaRepo.withdrawChamaSavings(amount: amount);
+
+    if (response.success == true) {
+      AppLogger.log("✅ Withdrawal successful: ${response.message}");
+      emit(WithdrawChamaSavingsSuccess(response));
+
+      // ✅ Refresh savings immediately (will use cached data during load)
+      await fetchChamaUserSavings();
+    } else {
+      final errorMessage = response.message ?? "Withdrawal failed.";
+      AppLogger.log("⚠️ Withdrawal error: $errorMessage");
+      emit(WithdrawChamaSavingsFailure(errorMessage));
+      
+      // ✅ CRITICAL: Refresh even on failure to reset state
+      await fetchChamaUserSavings();
+    }
+  } catch (e) {
+    final message = ErrorHandler.handleGenericError(e);
+    AppLogger.log("❌ Withdrawal exception: $message");
+    emit(WithdrawChamaSavingsFailure(message));
+    
+    // ✅ CRITICAL: Refresh even on exception to reset state
+    await fetchChamaUserSavings();
+  }
+}
+
+
+
 
   /// ---------------- Register Chama User ----------------
   Future<void> registerChamaUser({
@@ -317,28 +379,28 @@ class ChamaCubit extends Cubit<ChamaState> {
     }
   }
 
-  /// ---------------- Withdraw Chama Savings ----------------
-  Future<void> withdrawChamaSavings(double amount) async {
-    emit(WithdrawChamaSavingsLoading());
-    try {
-      final response = await _chamaRepo.withdrawChamaSavings(amount: amount);
+  // /// ---------------- Withdraw Chama Savings ----------------
+  // Future<void> withdrawChamaSavings(double amount) async {
+  //   emit(WithdrawChamaSavingsLoading());
+  //   try {
+  //     final response = await _chamaRepo.withdrawChamaSavings(amount: amount);
 
-      if (response.success == true) {
-        AppLogger.log("✅ Withdrawal successful: ${response.message}");
-        emit(WithdrawChamaSavingsSuccess(response));
+  //     if (response.success == true) {
+  //       AppLogger.log("✅ Withdrawal successful: ${response.message}");
+  //       emit(WithdrawChamaSavingsSuccess(response));
 
-        await fetchChamaUserSavings();
-      } else {
-        final errorMessage = response.message ?? "Withdrawal failed.";
-        AppLogger.log("⚠️ Withdrawal error: $errorMessage");
-        emit(WithdrawChamaSavingsFailure(errorMessage));
-      }
-    } catch (e) {
-      final message = ErrorHandler.handleGenericError(e);
-      AppLogger.log("❌ Withdrawal exception: $message");
-      emit(WithdrawChamaSavingsFailure(message));
-    }
-  }
+  //       await fetchChamaUserSavings();
+  //     } else {
+  //       final errorMessage = response.message ?? "Withdrawal failed.";
+  //       AppLogger.log("⚠️ Withdrawal error: $errorMessage");
+  //       emit(WithdrawChamaSavingsFailure(errorMessage));
+  //     }
+  //   } catch (e) {
+  //     final message = ErrorHandler.handleGenericError(e);
+  //     AppLogger.log("❌ Withdrawal exception: $message");
+  //     emit(WithdrawChamaSavingsFailure(message));
+  //   }
+  // }
 
 
 

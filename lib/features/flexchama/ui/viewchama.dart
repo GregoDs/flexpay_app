@@ -1,7 +1,6 @@
 import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_state.dart';
 import 'package:flexpay/features/flexchama/ui/shimmer_chama_products.dart';
-import 'package:flexpay/features/home/cubits/home_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -212,21 +211,38 @@ class _ViewChamasState extends State<ViewChamas> {
                 ? view.allProducts!.data.length.toString()
                 : "_";
 
-            String totalSavings = "_";
+            String totalSavings = "0";
             String maturityDate = "_";
             double progress = 0.0;
             String progressText = "0%";
 
+            // final chamaDetails = view.savings?.data?.chamaDetails;
+            // if (chamaDetails != null) {
+            //   totalSavings = chamaDetails.totalSavings.toString();
+            //   maturityDate = chamaDetails.maturityDate;
+            //   if (chamaDetails.targetAmount > 0) {
+            //     progress =
+            //         chamaDetails.totalSavings / chamaDetails.targetAmount;
+            //     progressText = "${(progress * 100).toStringAsFixed(1)}%";
+            //   }
+            // }
+
             final chamaDetails = view.savings?.data?.chamaDetails;
-            if (chamaDetails != null) {
-              totalSavings = chamaDetails.totalSavings.toString();
-              maturityDate = chamaDetails.maturityDate;
-              if (chamaDetails.targetAmount > 0) {
-                progress =
-                    chamaDetails.totalSavings / chamaDetails.targetAmount;
-                progressText = "${(progress * 100).toStringAsFixed(1)}%";
-              }
+          if (chamaDetails != null) {
+            // ✅ Check if totalSavings is negative (e.g., -1), treat as 0
+            final rawSavings = chamaDetails.totalSavings;
+            totalSavings = rawSavings > 0 
+                ? rawSavings.toString() 
+                : "0";
+            
+            maturityDate = chamaDetails.maturityDate;
+            
+            if (chamaDetails.targetAmount > 0 && rawSavings > 0) {
+              progress = rawSavings / chamaDetails.targetAmount;
+              progressText = "${(progress * 100).toStringAsFixed(1)}%";
             }
+          }
+
 
             return RefreshIndicator(
               onRefresh: () async {

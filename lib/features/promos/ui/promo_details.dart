@@ -1,4 +1,5 @@
 import 'package:flexpay/features/promos/ui/modals/debit_modal.dart';
+import 'package:flexpay/features/promos/ui/modals/kapu_voucher_modal.dart';
 import 'package:flexpay/features/promos/ui/modals/transfer_modal.dart';
 import 'package:flexpay/features/promos/cubits/kapu_cubit.dart';
 import 'package:flexpay/features/promos/cubits/kapu_state.dart';
@@ -107,31 +108,54 @@ class _PromoCardDetailPageState extends State<PromoCardDetailPage> {
                       // Left actions
                       Column(
                         children: [
+
                           _buildActionButton(
-                            icon: Icons.transfer_within_a_station,
-                            label: "Transfer",
-                            isDark: isDark,
-                            onTap: () {
-                              showKapuTransferModalSheet(
-                                context,
-                                fromMerchantId:
-                                    widget.merchant['merchant_id'].toString(),
-                              );
-                            },
-                          ),
+                          icon: Icons.transfer_within_a_station,
+                          label: "Transfer",
+                          isDark: isDark,
+                          onTap: () async {  // ✅ Make async
+                            final didTransfer = await showKapuTransferModalSheet(
+                              context,
+                              fromMerchantId: widget.merchant['merchant_id'].toString(),
+                            );
+                            
+                            // ✅ If a transfer actually occurred (modal returns true)
+                            if (didTransfer == true && mounted) {
+                              Navigator.pop(context, true); // notify previous page to refresh
+                            }
+                          },
+                        ),
+
+
                           SizedBox(height: 20.h),
-                          _buildActionButton(
-                            icon: Icons.edit_outlined,
-                            label: "Deposit",
-                            isDark: isDark,
-                            onTap: () {
-                              showKapuDebitModalSheet(
-                                context,
-                                merchantId:
-                                    widget.merchant['merchant_id'].toString(),
-                              );
-                            },
-                          ),
+                          // _buildActionButton(
+                          //   icon: Icons.edit_outlined,
+                          //   label: "Deposit",
+                          //   isDark: isDark,
+                          //   onTap: () {
+                          //     showKapuDebitModalSheet(
+                          //       context,
+                          //       merchantId:
+                          //           widget.merchant['merchant_id'].toString(),
+                          //     );
+                          //   },
+                          // ),
+                            _buildActionButton(
+                              icon: Icons.confirmation_num_outlined,
+                              label: "Create Voucher",
+                              isDark: isDark,
+                              onTap: () async {  // ✅ Make async
+                                final didCreate = await showKapuCreateVoucherModalSheet(
+                                  context,
+                                  merchantId: widget.merchant['merchant_id'].toString(),
+                                );
+                                
+                                if (didCreate == true && mounted) {
+                                  Navigator.pop(context, true); // notify previous page to refresh
+                                }
+                              },
+                            ),
+
                           SizedBox(height: 20.h),
                           _buildActionButton(
                             icon: _hideBalance

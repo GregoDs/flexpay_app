@@ -1,4 +1,4 @@
-import 'package:flexpay/features/payments/ui/booking_payments.dart';
+import 'package:flexpay/features/bookings/ui/booking_payments.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,6 +33,8 @@ class _BookingDetailsPageState extends State<BookingDetailsPage>
     with RouteAware {
   late Booking _booking;
   bool _isRefreshing = false;
+  bool _shouldRefreshOnReturn = false;
+  bool _shouldRefreshHome = false;
 
   @override
   void initState() {
@@ -58,8 +60,20 @@ class _BookingDetailsPageState extends State<BookingDetailsPage>
 
   @override
   void didPopNext() {
-    // Called when coming back to this page (e.g., after popping payment modal)
-    _fetchLatestBooking();
+    // // Called when coming back to this page (e.g., after popping payment modal)
+    if (_shouldRefreshOnReturn) {
+      _shouldRefreshOnReturn = false; // reset the flag
+      _showUpdatingSnackbar();
+      _fetchLatestBooking();
+    }
+  }
+
+  void _showUpdatingSnackbar() {
+    CustomSnackBar.showInfo(
+      context,
+      title: "Please Wait",
+      message: "Updating booking details...",
+    );
   }
 
   Future<void> _fetchLatestBooking() async {
@@ -68,6 +82,13 @@ class _BookingDetailsPageState extends State<BookingDetailsPage>
       await context.read<BookingsCubit>().fetchBookingByReference(
         _booking.bookingReference ?? "",
       );
+      CustomSnackBar.showSuccess(
+        context,
+        title: "Updated",
+        message: "Booking details refreshed successfully.",
+      );
+
+      _shouldRefreshHome = true;
     } finally {
       setState(() => _isRefreshing = false);
     }
@@ -84,9 +105,13 @@ class _BookingDetailsPageState extends State<BookingDetailsPage>
       initialPhone: widget.user.phoneNumber1 ?? "",
       bookingReference: _booking.bookingReference ?? "",
     );
+
     if (result == true) {
-      // Payment was successful, fetch latest booking
+      // ✅ Immediately show feedback & refresh
+      _showUpdatingSnackbar();
       await _fetchLatestBooking();
+
+      _shouldRefreshHome = true;
     }
   }
 
@@ -125,7 +150,7 @@ class _BookingDetailsPageState extends State<BookingDetailsPage>
           backgroundColor: bgColor,
           leading: IconButton(
             icon: Icon(Icons.arrow_back, color: textColor),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, _shouldRefreshHome),
           ),
           centerTitle: true,
           title: Text(
@@ -303,6 +328,9 @@ class _BookingDetailsPageState extends State<BookingDetailsPage>
                                             title: "Error",
                                             message: state.message,
                                           );
+                                          if (context.mounted) {
+                                            Navigator.pop(context, true); // This will trigger refresh
+                                          }
                                         }
                                       },
                                       builder: (context, state) {

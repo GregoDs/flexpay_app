@@ -17,6 +17,29 @@ class PayLoanResponse {
     required this.statusCode,
   });
 
+  /// Safely extracts a readable message for the UI
+  String get message {
+    // ✅ Case 1: data is a list (like ["Please wait for mpesa confirmation"])
+    if (data is List && (data as List).isNotEmpty) {
+      final first = (data as List).first;
+      if (first is String && first.trim().isNotEmpty) return first;
+      return first.toString();
+    }
+
+    // ✅ Case 2: data is a string
+    if (data is String && data.trim().isNotEmpty) {
+      return data;
+    }
+
+    // ✅ Case 3: data is a map that contains a message key
+    if (data is Map && data['message'] != null) {
+      return data['message'].toString();
+    }
+
+    // ✅ Default fallback
+    return "Loan repayment completed successfully.";
+  }
+
   factory PayLoanResponse.fromJson(Map<String, dynamic> json) =>
       _$PayLoanResponseFromJson(json);
 

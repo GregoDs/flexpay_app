@@ -3,6 +3,7 @@ import 'package:flexpay/features/promos/models/kapu_balance_model/kapu_wallet_mo
 import 'package:flexpay/features/promos/models/kapu_transfer_model/kapu_transfer_model.dart';
 import 'package:flexpay/features/promos/models/kapu_debit_model/kapu_debit_model.dart';
 import 'package:flexpay/features/promos/models/kapu_booking_model/kapu_booking_model.dart';
+import 'package:flexpay/features/promos/models/kapu_voucher_model/kapu_voucher_model.dart'; // ✅ added
 
 abstract class KapuState extends Equatable {
   const KapuState();
@@ -104,6 +105,27 @@ class KapuBookingFailure extends KapuState {
   final String message;
 
   const KapuBookingFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+/// ---------------- VOUCHER STATES ---------------- /// ✅ NEW
+class KapuVoucherLoading extends KapuState {}
+
+class KapuVoucherSuccess extends KapuState {
+  final CreateVoucherResponse response;
+
+  const KapuVoucherSuccess(this.response);
+
+  @override
+  List<Object?> get props => [response];
+}
+
+class KapuVoucherFailure extends KapuState {
+  final String message;
+
+  const KapuVoucherFailure(this.message);
 
   @override
   List<Object?> get props => [message];

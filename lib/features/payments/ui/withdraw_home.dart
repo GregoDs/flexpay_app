@@ -12,12 +12,7 @@ import 'package:flexpay/gen/colors.gen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class WithdrawPage extends StatefulWidget {
-  final double refundableBalance; // initial balance passed from Home
-
-  const WithdrawPage({
-    super.key,
-    required this.refundableBalance,
-  });
+  const WithdrawPage({super.key});
 
   @override
   State<WithdrawPage> createState() => _WithdrawPageState();
@@ -30,20 +25,29 @@ class _WithdrawPageState extends State<WithdrawPage> {
   String? phoneError;
   String? amountError;
 
-  @override
-void initState() {
-  super.initState();
-  _loadCachedPhoneNumber();
-}
+  bool _withdrawSuccess = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadCachedPhoneNumber();
+    // Fetch wallet on page load to get latest refundable balance
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<HomeCubit>().fetchUserWallet();
+      }
+    });
+  }
 
   Future<void> _loadCachedPhoneNumber() async {
-  final userModel = await SharedPreferencesHelper.getUserModel();
-  final cachedPhone = userModel?.user.phoneNumber ?? '';
-  setState(() {
-    phoneController.text = cachedPhone;
-  });
-}
+    final userModel = await SharedPreferencesHelper.getUserModel();
+    final cachedPhone = userModel?.user.phoneNumber ?? '';
+    if (mounted) {
+      setState(() {
+        phoneController.text = cachedPhone;
+      });
+    }
+  }
 
   void _validateFields() {
     setState(() {
@@ -82,7 +86,14 @@ void initState() {
         backgroundColor: isDark ? Colors.black : Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: textColor),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            // ✅ Only return true if a withdrawal actually happened
+            if (_withdrawSuccess) {
+              Navigator.pop(context, true);
+            } else {
+              Navigator.pop(context, false);
+            }
+          },
         ),
         centerTitle: true,
         title: Text(
@@ -98,6 +109,7 @@ void initState() {
           BlocListener<PaymentsCubit, PaymentsState>(
             listener: (context, state) {
               if (state is WalletRefundFetched) {
+                _withdrawSuccess = true;
                 CustomSnackBar.showSuccess(
                   context,
                   title: "Success",
@@ -106,6 +118,18 @@ void initState() {
 
                 // 🔄 Refresh wallet balance after refund
                 context.read<HomeCubit>().fetchUserWallet();
+
+                // 🧹 Clear the amount field immediately
+                setState(() {
+                  amountController.clear();
+                });
+
+                // ✅ Return true to indicate success
+                // Future.delayed(const Duration(milliseconds: 500), () {
+                //   // if (mounted) {
+                //   //   Navigator.pop(context, true);
+                //   // }
+                // });
               } else if (state is WalletRefundFailure) {
                 CustomSnackBar.showError(
                   context,
@@ -118,20 +142,29 @@ void initState() {
         ],
         child: BlocBuilder<HomeCubit, HomeState>(
           builder: (context, homeState) {
-            double currentRefundableBalance = widget.refundableBalance;
+            // Get refundable balance from HomeCubit state
+            double currentRefundableBalance = 0.0;
 
             if (homeState is HomeWalletFetched) {
               currentRefundableBalance =
-                  homeState.walletResponse.data?.walletAccount?.walletRefundBalance
+                  homeState
+                      .walletResponse
+                      .data
+                      ?.walletAccount
+                      ?.walletRefundBalance
                       ?.toDouble() ??
                   0.0;
             }
 
-            final isLoading = context.watch<PaymentsCubit>().state is WalletRefundLoading;
+            final isLoading =
+                context.watch<PaymentsCubit>().state is WalletRefundLoading;
 
             return SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 22,
+                ),
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
@@ -139,8 +172,11 @@ void initState() {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.info_outline,
-                              color: ColorName.primaryColor, size: 22),
+                          Icon(
+                            Icons.info_outline,
+                            color: ColorName.primaryColor,
+                            size: 22,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -185,10 +221,11 @@ void initState() {
 
                       /// Show Refundable Balance (updated from HomeCubit)
                       Text(
-                        "Withdrawable Balance: $currentRefundableBalance",
+                        "Withdrawable Balance: KES ${currentRefundableBalance.toStringAsFixed(2)}",
                         style: GoogleFonts.montserrat(
                           color: isDark ? Colors.white70 : Colors.black87,
                           fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
 
@@ -262,7 +299,6 @@ void initState() {
       ),
     );
   }
-}
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -290,8 +326,8 @@ void initState() {
           controller: controller,
           keyboardType: keyboardType,
           style: GoogleFonts.montserrat(color: textColor),
-          readOnly: label == "Phone Number", // 👈 makes only phone field non-editable
-          enabled: label != "Phone Number" ? true : false, // optional, to gray it out
+          readOnly: label == "Phone Number",
+          enabled: label != "Phone Number" ? true : false,
           decoration: InputDecoration(
             filled: true,
             fillColor: fieldColor,
@@ -311,14 +347,12 @@ void initState() {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                errorText!,
-                style: GoogleFonts.montserrat(
-                  color: Colors.red,
-                  fontSize: 13,
-                ),
+                errorText,
+                style: GoogleFonts.montserrat(color: Colors.red, fontSize: 13),
               ),
             ),
           ),
       ],
     );
   }
+}

@@ -24,11 +24,14 @@ class _BookingsPageState extends State<BookingsPage> with RouteAware {
   final TextEditingController _searchController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    // fetch bookings immediately
+void initState() {
+  super.initState();
+  // Only fetch if not already loaded
+  final state = context.read<BookingsCubit>().state;
+  if (state is! BookingsFetched || state.bookings.isEmpty) {
     context.read<BookingsCubit>().fetchBookingsByType("active");
   }
+}
 
   @override
   void didChangeDependencies() {
@@ -465,14 +468,12 @@ class _BookingCard extends StatelessWidget {
                  ),
             ),
           ),
-        );
-
-        if (result == true && context.mounted) {
-          // 🔄 Re-fetch for the current tab
-          context.read<BookingsCubit>().fetchBookingsByType(
-            selectedTab.toLowerCase(),
-          );
-        }
+        );// Only refetch if something changed
+     if (result == true) {
+    context.read<BookingsCubit>().fetchBookingsByType(selectedTab.toLowerCase());
+    }
+        
+        
       },
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),

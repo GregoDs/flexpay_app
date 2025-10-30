@@ -1,28 +1,27 @@
 import 'package:flexpay/exports.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
+import 'package:flexpay/features/home/cubits/home_cubit.dart';
+import 'package:flexpay/features/home/cubits/home_states.dart';
 import 'package:flexpay/features/home/ui/notifications_page.dart';
-import 'package:flexpay/features/payments/cubits/payments_cubit.dart';
-import 'package:flexpay/features/payments/repo/payments_repo.dart';
+import 'package:flexpay/features/profile/ui/profile.dart';
 import 'package:flexpay/features/payments/ui/topup_home_page.dart';
 import 'package:flexpay/features/payments/ui/withdraw_home.dart';
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
-import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
-import 'package:flexpay/utils/services/api_service.dart';
+import 'package:flexpay/features/promos/ui/promo_cards.dart';
+import 'package:flexpay/main.dart';
+import 'package:flexpay/utils/getters/getters.dart' as AppUtils;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shimmer/shimmer.dart';
 
 class AppBarHome extends StatefulWidget {
   final String userName;
-  final double balance;
   final UserModel userModel;
-  final double refundableBalance;
 
   const AppBarHome(
     BuildContext context, {
     super.key,
     required this.userName,
-    required this.balance,
     required this.userModel,
-    required this.refundableBalance
   });
 
   @override
@@ -42,6 +41,7 @@ class _AppBarHomeState extends State<AppBarHome> {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 48.h),
@@ -60,42 +60,37 @@ class _AppBarHomeState extends State<AppBarHome> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             SizedBox(height: screenHeight * 0.02),
-             // Profile and Notifications (Logo Only)
+
+            /// Centered Logo
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.white,
-                    BlendMode.srcIn,
-                  ),
-                  child: Image.asset(
-                    'assets/icon/logos/logo.png',
-                    height: 30.h,
-                    fit: BoxFit.contain,
-                  ),
+                Image.asset(
+                  'assets/icon/logos/logo.png',
+                  height: 30.h,
+                  fit: BoxFit.contain,
                 ),
               ],
             ),
 
             SizedBox(height: screenHeight * 0.02),
 
-            //Username
+            /// Profile + Greeting + Notifications
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
                     GestureDetector(
-                      onTap: () async {
-                        await SharedPreferencesHelper.logout();
-                        Navigator.of(
+                      onTap: () {
+                        Navigator.push(
                           context,
-                        ).pushNamedAndRemoveUntil('/login', (route) => false);
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ProfilePage(userModel: widget.userModel),
+                          ),
+                        );
                       },
                       child: CircleAvatar(
                         radius: 20.r,
@@ -109,17 +104,18 @@ class _AppBarHomeState extends State<AppBarHome> {
                     ),
                     SizedBox(width: 10.w),
                     Text(
-                      "Hello  ${widget.userName}",
+                      AppUtils.greetingMessage(widget.userName),
                       style: GoogleFonts.montserrat(
                         fontSize: 18.sp,
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
-                    SizedBox(width: 144.w),
-                    IconButton(
+                  ],
+                ),
+                IconButton(
                   icon: Icon(
-                    Icons.notifications,
+                    Icons.notifications_outlined,
                     color: Colors.white,
                     size: screenWidth * 0.07,
                   ),
@@ -132,12 +128,9 @@ class _AppBarHomeState extends State<AppBarHome> {
                     );
                   },
                 ),
-
-                  ],
-                ),
-                // Icon(Icons.notifications, color: Colors.white, size: 28.sp),
               ],
             ),
+
             SizedBox(height: 22.h),
 
             /// Balance Label
@@ -151,134 +144,127 @@ class _AppBarHomeState extends State<AppBarHome> {
             SizedBox(height: 4.h),
 
             /// Balance Value + Visibility Toggle
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    isBalanceVisible
-                        ? 'Ksh ${widget.balance.toStringAsFixed(2)}'
-                        : '••••••',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 32.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
+            BlocBuilder<HomeCubit, HomeState>(
+              builder: (context, state) {
+                if (state is HomeWalletLoading) {
+                  return const AppBarBalanceShimmer();
+                }
+
+                double balance = 0.0;
+                if (state is HomeWalletFetched) {
+                  final wallet = state.walletResponse.data?.walletAccount?.walletBalance;
+                  balance = wallet?.balance.toDouble() ?? 0.0;
+                }
+
+                return Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        isBalanceVisible
+                            ? 'Ksh ${balance.toStringAsFixed(2)}'
+                            : '••••••',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 32.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: toggleBalanceVisibility,
-                  child: Icon(
-                    isBalanceVisible ? Icons.visibility : Icons.visibility_off,
-                    color: Colors.white70,
-                    size: 24.sp,
-                  ),
-                ),
-              ],
+                    GestureDetector(
+                      onTap: toggleBalanceVisibility,
+                      child: Icon(
+                        isBalanceVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Colors.white70,
+                        size: 24.sp,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
 
-          SizedBox(height: 20.h),
-          // /// Balance Label
-          //   Text(
-          //     'Withdrawable balance',
-          //     style: GoogleFonts.montserrat(
-          //       fontSize: 14.sp,
-          //       color: Colors.white70,
-          //     ),
-          //   ),
-          //   SizedBox(height: 4.h),
-          //   /// Balance Value + Visibility Toggle
-          //   Row(
-          //     children: [
-          //       Expanded(
-          //         child: Text(
-          //           isBalanceVisible
-          //               ? 'Ksh ${widget.refundableBalance.toStringAsFixed(2)}'
-          //               : '••••••',
-          //           style: GoogleFonts.montserrat(
-          //             fontSize: 12.sp,
-          //             fontWeight: FontWeight.w500,
-          //             color: Colors.white,
-          //           ),
-          //           overflow: TextOverflow.ellipsis,
-          //         ),
-          //       ),
-          //     ],
-          //   ),
+            SizedBox(height: 20.h),
 
-          //   SizedBox(height: 20.h),
-
-            /// Action Buttons
+            /// Action Buttons (Shop, Top up, Withdraw, Kapu)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildActionButton(
-                  Icons.shopping_cart,
-                  "Shop",
-                  onTap: () {
-                    // Navigate to NavigationWrapper with Merchants tab
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MultiBlocProvider(
-                          providers: [
-                            BlocProvider.value(value: chamaCubit),
-                            BlocProvider.value(value: homeCubit),
-                            BlocProvider.value(value: paymentsCubit),
-                            BlocProvider.value(value: merchantsCubit),
-                          ],
-                          child: NavigationWrapper(
-                            initialIndex: 4, // Merchants tab index
-                            userModel: widget.userModel,
+                  _buildActionButton(
+                    Icons.shopping_cart,
+                    "Shop",
+                    onTap: () {
+                      final navWrapper = context.findAncestorStateOfType<NavigationWrapperState>();
+                      if (navWrapper != null) {
+                        navWrapper.setTabIndex(4); // 👈 jump to the Merchant tab
+                      } else {
+                        // fallback if somehow opened outside NavigationWrapper
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => NavigationWrapper(
+                              initialIndex: 4,
+                              userModel: widget.userModel,
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      }
+                    },
+                  ),
                 _buildActionButton(
                   Icons.arrow_downward,
                   "Top up",
-                   onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MultiBlocProvider(
-                        providers: [
-                          BlocProvider.value(value: homeCubit),
-                          BlocProvider(create: (_) => PaymentsCubit(PaymentsRepo(ApiService()))), 
-                        ],
-                        child: TopUpHomePage()
-                      ),
-                    ),
-                  ),
+                  onTap: () async {
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(builder: (_) => TopUpHomePage()),
+                    );
+                    if (result == true) {
+                      context.read<HomeCubit>().fetchUserWallet();
+                    }
+                  },
                 ),
                 _buildActionButton(
                   Icons.account_balance_wallet,
                   "Withdraw",
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MultiBlocProvider(
-                        providers: [
-                          BlocProvider.value(value: homeCubit),
-                          BlocProvider(create: (_) => PaymentsCubit(PaymentsRepo(ApiService()))), 
-                        ],
-                        child: WithdrawPage(
-                          refundableBalance: widget.refundableBalance, 
-                        ),
-                      ),
-                    ),
-                  ),
+                  onTap: () async {
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(builder: (_) => WithdrawPage()),
+                    );
+                    if (result == true) {
+                      context.read<HomeCubit>().fetchUserWallet();
+                    }
+                  },
                 ),
-                _buildActionButton(Icons.sync_alt, "Transfer"),
+                _buildActionButton(
+                  Icons.card_giftcard,
+                  "Kapu",
+                  onTap: () async {
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PromoCardsSwiperPage(userModel: widget.userModel),
+                      ),
+                    );
+
+                    // ✅ Only refresh if a voucher or promo action actually changed the wallet
+                    if (result == true && context.mounted) {
+                      context.read<HomeCubit>().fetchUserWallet();
+                    }
+                  },
+                ),
               ],
-            ),       
+            ),
           ],
         ),
       ),
     );
   }
 
+  /// Action Button Builder
   Widget _buildActionButton(
     IconData icon,
     String label, {
@@ -298,6 +284,36 @@ class _AppBarHomeState extends State<AppBarHome> {
             label,
             style: GoogleFonts.montserrat(color: Colors.white, fontSize: 13.sp),
             textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 🧩 SHIMMER for AppBar balance section
+class AppBarBalanceShimmer extends StatelessWidget {
+  const AppBarBalanceShimmer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.white54,
+      highlightColor: Colors.white,
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 36.h,
+              width: 120.w,
+              color: Colors.white54,
+            ),
+          ),
+          SizedBox(width: 10.w),
+          Icon(
+            Icons.visibility,
+            color: Colors.white70,
+            size: 24.sp,
           ),
         ],
       ),

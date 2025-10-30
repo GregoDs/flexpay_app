@@ -2,6 +2,7 @@ import 'package:flexpay/features/auth/cubit/auth_cubit.dart';
 import 'package:flexpay/features/auth/cubit/auth_state.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/gen/colors.gen.dart';
+import 'package:flexpay/main.dart';
 import 'package:flexpay/routes/app_routes.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flutter/material.dart';

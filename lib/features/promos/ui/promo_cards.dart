@@ -28,7 +28,7 @@ class _PromoCardsSwiperPageState extends State<PromoCardsSwiperPage> {
   Map<String, double> _merchantBalances = {}; //store live balances locally
 
   final List<Map<String, dynamic>> merchants = [
-    {'name': 'Jaza', 'merchant_id': '403', 'color': const Color(0xFF761B1A)},
+    {'name': 'Jaza Supermarket', 'merchant_id': '812', 'color': const Color(0xFF761B1A)},
     {
       'name': 'Quickmart Supermarket',
       'merchant_id': '347',
@@ -72,7 +72,7 @@ class _PromoCardsSwiperPageState extends State<PromoCardsSwiperPage> {
         .toList();
     _kapuCubit.fetchMultipleKapuWalletBalances(merchantIds);
 
-    _pageController = PageController(viewportFraction: 0.78, initialPage: 1);
+    _pageController = PageController(viewportFraction: 0.78, initialPage: 0);
 
     _pageController.addListener(() {
       setState(() {
@@ -157,20 +157,12 @@ class _PromoCardsSwiperPageState extends State<PromoCardsSwiperPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _circleIcon(
-                        context,
-                        icon: Icons.arrow_back_ios_new_rounded,
-                        onTap: () {
-                          if (widget.userModel != null) {
-                            Navigator.pushReplacementNamed(
-                              context,
-                              '/home',
-                              arguments: widget.userModel,
-                            );
-                          } else {
-                            Navigator.pushReplacementNamed(context, '/home');
-                          }
-                        },
-                      ),
+                          context,
+                          icon: Icons.arrow_back_ios_new_rounded,
+                          onTap: () {
+                            Navigator.pop(context, false); 
+                          },
+                        ),
                       Text(
                         'Christmas Kapu'.toUpperCase(),
                         style: subtitleStyle.copyWith(letterSpacing: 1.6),
@@ -317,7 +309,7 @@ class _PromoCardsSwiperPageState extends State<PromoCardsSwiperPage> {
                       _kapuCubit.createKapuBooking(merchantId: merchantId);
 
                       await Future.delayed(const Duration(milliseconds: 120));
-                      await Navigator.push(
+                      final result = await Navigator.push(
                         context,
                         PageRouteBuilder(
                           transitionDuration: const Duration(milliseconds: 700),
@@ -350,7 +342,25 @@ class _PromoCardsSwiperPageState extends State<PromoCardsSwiperPage> {
                             ),
                           ),
                         ),
+                        ).then((shouldRefresh) {
+                        // ✅ If detail page returned true, refresh the balances
+                        if (shouldRefresh == true && mounted) {
+                          final merchantIds = merchants
+                              .map((m) => m['merchant_id'].toString())
+                              .toList();
+                          _kapuCubit.fetchMultipleKapuWalletBalances(merchantIds);
+                        }
+                      }
+
                       );
+
+                      // // ✅ Only refetch if promo details page indicated wallet changed
+                      //   if (result == true) {
+                      //     final merchantIds = merchants
+                      //         .map((m) => m['merchant_id'].toString())
+                      //         .toList();
+                      //     _kapuCubit.fetchMultipleKapuWalletBalances(merchantIds);
+                      //   }
 
                       // // 🩶 Refresh balances when returning
                       // final merchantIds = merchants

@@ -1,5 +1,4 @@
 import 'package:flexpay/features/home/cubits/home_cubit.dart';
-import 'package:flexpay/features/home/cubits/home_states.dart';
 import 'package:flexpay/features/payments/cubits/payments_cubit.dart';
 import 'package:flexpay/features/payments/cubits/payments_state.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
@@ -11,10 +10,7 @@ import 'package:flexpay/gen/colors.gen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class TopUpHomePage extends StatefulWidget {
-
-  const TopUpHomePage({
-    super.key,
-  });
+  const TopUpHomePage({super.key});
 
   @override
   State<TopUpHomePage> createState() => _TopUpHomePageState();
@@ -27,12 +23,13 @@ class _TopUpHomePageState extends State<TopUpHomePage> {
   String? phoneError;
   String? amountError;
 
+  bool _topUpSuccess = false;
+
   void _validateFields() {
     setState(() {
       phoneError = phoneController.text.trim().isEmpty
           ? "Phone number is required"
           : null;
-
       amountError = amountController.text.trim().isEmpty
           ? "Enter an amount"
           : null;
@@ -40,27 +37,25 @@ class _TopUpHomePageState extends State<TopUpHomePage> {
   }
 
   void _submit(BuildContext context) {
-  _validateFields();
+    _validateFields();
 
-  if (phoneError == null && amountError == null) {
-    final amount = double.tryParse(amountController.text.trim()) ?? 0;
-    String phone = phoneController.text.trim();
+    if (phoneError == null && amountError == null) {
+      final amount = double.tryParse(amountController.text.trim()) ?? 0;
+      String phone = phoneController.text.trim();
 
-    // ✅ Clean & Normalize the phone number
-    if (phone.startsWith('0')) {
-      // Replace starting 0 with +254 or 254 depending on backend format
-      phone = '254${phone.substring(1)}';
-    } else if (phone.startsWith('+254')) {
-      // Remove '+' if backend expects plain 254
-      phone = phone.replaceFirst('+', '');
+      // ✅ Normalize phone number to backend format
+      if (phone.startsWith('0')) {
+        phone = '254${phone.substring(1)}';
+      } else if (phone.startsWith('+254')) {
+        phone = phone.replaceFirst('+', '');
+      }
+
+      context.read<PaymentsCubit>().topUpWalletViaMpesa(
+        amount: amount,
+        phoneNumber: phone,
+      );
     }
-
-    context.read<PaymentsCubit>().topUpWalletViaMpesa(
-          amount: amount,
-          phoneNumber: phone,
-        );
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +74,15 @@ class _TopUpHomePageState extends State<TopUpHomePage> {
         backgroundColor: isDark ? Colors.black : Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: textColor),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (_topUpSuccess) {
+              // ✅ If top-up was done, tell parent to refetch
+              Navigator.pop(context, true);
+            } else {
+              // 🚫 If nothing happened, just go back silently
+              Navigator.pop(context);
+            }
+          },
         ),
         centerTitle: true,
         title: Text(
@@ -90,50 +93,64 @@ class _TopUpHomePageState extends State<TopUpHomePage> {
           ),
         ),
       ),
-      body: MultiBlocListener(
-        listeners: [
-          BlocListener<PaymentsCubit, PaymentsState>(
-            listener: (context, state) {
-              if (state is WalletTopUpSuccess) {
-                CustomSnackBar.showSuccess(
-                  context,
-                  title: "Success",
-                  message: "Wait for Mpesa confirmation to top up",
-                );
 
-                // 🔄 Refresh wallet balance after refund
-                context.read<HomeCubit>().fetchUserWallet();
-              } else if (state is WalletTopUpFailure) {
-                CustomSnackBar.showError(
-                  context,
-                  title: "Error",
-                  message: state.message,
-                );
-              }
-            },
-          ),
-        ],
-        child: BlocBuilder<HomeCubit, HomeState>(
-          builder: (context, homeState) {
+      // ✅ Use global cubits: no MultiBlocListener, no new providers
+      body: BlocListener<PaymentsCubit, PaymentsState>(
+        listener: (context, state) {
+          if (state is WalletTopUpSuccess) {
+            _topUpSuccess = true;
+            CustomSnackBar.showSuccess(
+              context,
+              title: "Success",
+              message: "Wait for Mpesa confirmation to top up",
+            );
 
-            final isLoading = context.watch<PaymentsCubit>().state is WalletTopUpLoading;
+            // 🔄 Instantly trigger wallet refresh
+            context.read<HomeCubit>().fetchUserWallet();
+
+            // 🧹 Clear input fields after successful request
+            phoneController.clear();
+            amountController.clear();
+
+            // ✅ Also clear any previous validation errors
+            setState(() {
+              phoneError = null;
+              amountError = null;
+            });
+          } else if (state is WalletTopUpFailure) {
+            CustomSnackBar.showError(
+              context,
+              title: "Error",
+              message: state.message,
+            );
+          }
+        },
+        child: BlocBuilder<PaymentsCubit, PaymentsState>(
+          builder: (context, state) {
+            final isLoading = state is WalletTopUpLoading;
 
             return SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 22,
+                ),
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      /// Info text
+                      /// Info Text
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.info_outline,
-                              color: ColorName.primaryColor, size: 22),
+                          Icon(
+                            Icons.info_outline,
+                            color: ColorName.primaryColor,
+                            size: 22,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              "Top Up to your wallet via M-Pesa to facilitate easy purchases on the Flexpay ecosystem.",
+                              "Top up your wallet via M-Pesa to facilitate easy purchases on the Flexpay ecosystem.",
                               style: GoogleFonts.montserrat(
                                 color: isDark ? Colors.white70 : Colors.black87,
                                 fontSize: 14,
@@ -144,7 +161,7 @@ class _TopUpHomePageState extends State<TopUpHomePage> {
                       ),
                       SizedBox(height: 20.h),
 
-                      /// Mpesa target
+                      /// Mpesa Icon Target
                       Column(
                         children: [
                           Container(
@@ -173,7 +190,7 @@ class _TopUpHomePageState extends State<TopUpHomePage> {
 
                       SizedBox(height: 28.h),
 
-                      /// Phone Number
+                      /// Phone Number Input
                       _buildTextField(
                         controller: phoneController,
                         label: "Phone Number",
@@ -187,7 +204,7 @@ class _TopUpHomePageState extends State<TopUpHomePage> {
                       ),
                       SizedBox(height: 16.h),
 
-                      /// Amount
+                      /// Amount Input
                       _buildTextField(
                         controller: amountController,
                         label: "Enter Amount (KES)",
@@ -201,7 +218,7 @@ class _TopUpHomePageState extends State<TopUpHomePage> {
                       ),
                       SizedBox(height: 28.h),
 
-                      /// Top up button
+                      /// Submit Button
                       SizedBox(
                         width: double.infinity,
                         child: isLoading
@@ -241,7 +258,6 @@ class _TopUpHomePageState extends State<TopUpHomePage> {
       ),
     );
   }
-}
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -289,13 +305,11 @@ class _TopUpHomePageState extends State<TopUpHomePage> {
               alignment: Alignment.centerLeft,
               child: Text(
                 errorText!,
-                style: GoogleFonts.montserrat(
-                  color: Colors.red,
-                  fontSize: 13,
-                ),
+                style: GoogleFonts.montserrat(color: Colors.red, fontSize: 13),
               ),
             ),
           ),
       ],
     );
   }
+}

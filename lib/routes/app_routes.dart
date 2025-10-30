@@ -1,67 +1,32 @@
 import 'package:flexpay/exports.dart' hide CustomSnackBar;
-import 'package:flexpay/features/auth/cubit/auth_cubit.dart';
 import 'package:flexpay/features/auth/models/user_model.dart';
-import 'package:flexpay/features/auth/repo/auth_repo.dart';
 import 'package:flexpay/features/auth/ui/login.dart';
 import 'package:flexpay/features/auth/ui/otp_verification.dart';
 import 'package:flexpay/features/auth/ui/register.dart';
-import 'package:flexpay/features/bookings/cubit/bookings_cubit.dart';
-import 'package:flexpay/features/bookings/repo/bookings_repo.dart';
-import 'package:flexpay/features/bookings/ui/bookings.dart';
-import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
-import 'package:flexpay/features/flexchama/repo/chama_repo.dart';
-import 'package:flexpay/features/flexchama/ui/chama_reg.dart';
-import 'package:flexpay/features/flexchama/ui/viewchama.dart';
-import 'package:flexpay/features/goals/cubits/goals_cubit.dart';
-import 'package:flexpay/features/goals/repo/goals_repo.dart';
-import 'package:flexpay/features/goals/ui/goals.dart';
 import 'package:flexpay/features/auth/ui/onboarding_screen.dart';
 import 'package:flexpay/features/auth/ui/splash_screen.dart';
-import 'package:flexpay/features/merchants/cubits/merchant_cubit.dart';
-import 'package:flexpay/features/merchants/repo/merchants_repo.dart';
+import 'package:flexpay/features/bookings/ui/bookings.dart';
+import 'package:flexpay/features/flexchama/ui/chama_reg.dart';
+import 'package:flexpay/features/flexchama/ui/viewchama.dart';
+import 'package:flexpay/features/goals/ui/goals.dart';
 import 'package:flexpay/features/merchants/ui/merchants.dart';
 import 'package:flexpay/features/navigation/navigation_wrapper.dart';
-import 'package:flexpay/features/home/cubits/home_cubit.dart';
-import 'package:flexpay/features/home/repo/home_repo.dart';
-import 'package:flexpay/features/payments/cubits/payments_cubit.dart';
-import 'package:flexpay/features/payments/repo/payments_repo.dart';
-import 'package:flexpay/features/promos/cubits/kapu_cubit.dart';
-import 'package:flexpay/features/promos/repo/kapu_repo.dart';
-import 'package:flexpay/utils/services/api_service.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 
-// Create global Cubit instances
-final authCubit = AuthCubit(AuthRepo());
-final chamaCubit = ChamaCubit(ChamaRepo());
-final bookingsCubit = BookingsCubit(BookingsRepository());
-final merchantsCubit = MerchantsCubit(MerchantsRepository());
-final homeCubit = HomeCubit(HomeRepo(ApiService()));
-final paymentsCubit = PaymentsCubit(PaymentsRepo(ApiService()));
-final goalsCubit = GoalsCubit(GoalsRepo());
-final kapuCubit = KapuCubit(KapuRepo(ApiService()));
-
+/// ✅ Centralized route configuration
 class AppRoutes {
   static final routes = {
     Routes.splash: (context) => const SplashScreen(),
-
     Routes.onboarding: (context) => const OnBoardingScreen(),
 
-    Routes.register: (context) =>
-        BlocProvider.value(value: authCubit, child: const CreateAccountPage()),
+    Routes.register: (context) => const CreateAccountPage(),
+    Routes.login: (context) => const LoginScreen(),
+    Routes.otp: (context) => const OtpScreen(),
 
-    Routes.login: (context) =>
-        BlocProvider.value(value: authCubit, child: const LoginScreen()),
-
-    Routes.otp: (context) =>
-        BlocProvider.value(value: authCubit, child: const OtpScreen()),
-
-    // Routes.home: (context) => HomeScreen(
-    //       isDarkModeOn: Theme.of(context).brightness == Brightness.dark,
-    //     ),
     Routes.home: (context) {
-      final userModel = ModalRoute.of(context)!.settings.arguments;
-      if (userModel is! UserModel) {
-        // Show error and redirect
+      final args = ModalRoute.of(context)!.settings.arguments;
+
+      if (args is! UserModel) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           CustomSnackBar.showError(
             context,
@@ -70,49 +35,34 @@ class AppRoutes {
           );
           Navigator.pushReplacementNamed(context, Routes.login);
         });
-        // Return a fallback widget while redirecting
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
       }
-      return MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: chamaCubit),
-          BlocProvider.value(value: homeCubit),
-          BlocProvider.value(value: paymentsCubit),
-          BlocProvider.value(value: merchantsCubit),
-          BlocProvider.value(value: goalsCubit),
-          BlocProvider.value(value: kapuCubit),
-        ],
-        child: NavigationWrapper(initialIndex: 0, userModel: userModel),
-      );
+
+      // ✅ NavigationWrapper will automatically access Cubits from global providers in main.dart
+      return NavigationWrapper(initialIndex: 0, userModel: args);
     },
 
-    Routes.goals: (context) => GoalsPage(),
-
-    Routes.registerChama: (context) =>
-        BlocProvider.value(value: chamaCubit, child: ChamaRegistrationPage()),
-
-    Routes.viewChamas: (context) =>
-        BlocProvider.value(value: chamaCubit, child: const ViewChamas()),
-
-    Routes.bookings: (context) =>
-        BlocProvider.value(value: bookingsCubit, child: const BookingsPage()),
-
-    Routes.merchants: (context) =>
-        BlocProvider.value(value: merchantsCubit, child: MerchantsScreen()),
+    Routes.goals: (context) => const GoalsPage(),
+    Routes.registerChama: (context) => const ChamaRegistrationPage(),
+    Routes.viewChamas: (context) => const ViewChamas(),
+    Routes.bookings: (context) => const BookingsPage(),
+    Routes.merchants: (context) =>  MerchantsScreen(),
   };
 }
 
+/// ✅ Route name constants
 class Routes {
   static const splash = '/splash';
   static const onboarding = '/onboarding';
   static const register = '/register';
   static const login = '/login';
   static const otp = '/otp';
-  static const main = '/main';
   static const home = '/home';
+  static const goals = '/goals';
   static const registerChama = '/registerChama';
-  static const viewChamas = 'viewChamas';
-  static const goals = 'goals';
+  static const viewChamas = '/viewChamas';
   static const bookings = '/bookings';
   static const merchants = '/merchants';
   static const bookingDetails = '/booking-details';

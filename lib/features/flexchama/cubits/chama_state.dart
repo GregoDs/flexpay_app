@@ -24,14 +24,20 @@ class ChamaProfileLoading extends ChamaState {}
 
 
 /// ---------------- Savings States ----------------
+
 class ChamaSavingsLoading extends ChamaState {
   final ChamaProfile? previousProfile;
+  final ChamaSavingsResponse? previousSavings; // ✅ Add this
 
-  const ChamaSavingsLoading({this.previousProfile});
+  const ChamaSavingsLoading({
+    this.previousProfile,
+    this.previousSavings, 
+  });
 
   @override
-  List<Object?> get props => [previousProfile];
+  List<Object?> get props => [previousProfile, previousSavings];
 }
+
 
 class ChamaProfileFetched extends ChamaState {
   final ChamaProfile profile;

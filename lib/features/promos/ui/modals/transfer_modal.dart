@@ -8,47 +8,29 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void showKapuTransferModalSheet(
+
+
+
+Future<bool?> showKapuTransferModalSheet(
   BuildContext context, {
   required String fromMerchantId,
-}) {
+}) async {
   final TextEditingController amountController = TextEditingController();
   final kapuCubit = context.read<KapuCubit>();
 
-  // Merchants list
   final List<Map<String, dynamic>> merchants = [
     {'name': 'Jaza', 'merchant_id': '403', 'color': const Color(0xFF761B1A)},
-    {
-      'name': 'Quickmart Supermarket',
-      'merchant_id': '347',
-      'color': const Color(0xFF111111),
-    },
-    {
-      'name': 'Naivas Supermarket',
-      'merchant_id': '107',
-      'color': const Color(0xFFFFB020),
-    },
-    {
-      'name': 'HotPoint Appliances',
-      'merchant_id': '73',
-      'color': const Color(0xFFCD0000),
-    },
-    {
-      'name': 'Azone Supermarket',
-      'merchant_id': '252',
-      'color': const Color(0xFF6C63FF),
-    },
-    {
-      'name': 'Open Wallet',
-      'merchant_id': '4',
-      'color': const Color(0xFF00A86B),
-    },
+    {'name': 'Quickmart Supermarket', 'merchant_id': '347', 'color': const Color(0xFF111111)},
+    {'name': 'Naivas Supermarket', 'merchant_id': '107', 'color': const Color(0xFFFFB020)},
+    {'name': 'HotPoint Appliances', 'merchant_id': '73', 'color': const Color(0xFFCD0000)},
+    {'name': 'Azone Supermarket', 'merchant_id': '252', 'color': const Color(0xFF6C63FF)},
+    {'name': 'Open Wallet', 'merchant_id': '4', 'color': const Color(0xFF00A86B)},
   ];
 
   String? selectedMerchantId;
   String? selectedMerchantName;
 
-  showModalBottomSheet(
+  return showModalBottomSheet<bool>(  // ✅ Add <bool> type
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,
@@ -84,22 +66,20 @@ void showKapuTransferModalSheet(
                       Future.delayed(
                         const Duration(milliseconds: 600),
                         () async {
-                          await kapuCubit.fetchKapuWalletBalance(
-                            fromMerchantId,
-                          );
+                          await kapuCubit.fetchKapuWalletBalance(fromMerchantId);
                           if (selectedMerchantId != null) {
                             await kapuCubit.fetchKapuWalletBalance(selectedMerchantId!);
                           }
                         },
                       );
-                      Navigator.pop(context);
+                      Navigator.pop(context, true); // ✅ Return true on success
                       CustomSnackBar.showSuccess(
                         context,
                         title: "Transfer Successful",
                         message: "✅ ${state.response.message}",
                       );
                     } else if (state is KapuTransferFailure) {
-                      Navigator.pop(context);
+                      Navigator.pop(context, false); // ✅ Return false on failure
                       CustomSnackBar.showError(
                         context,
                         title: "Transfer Failed",
@@ -109,8 +89,7 @@ void showKapuTransferModalSheet(
                   },
                   builder: (context, state) {
                     final isLoading = state is KapuTransferLoading;
-
-                    return SingleChildScrollView(
+                      return SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,

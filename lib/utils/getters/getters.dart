@@ -35,3 +35,14 @@ class CapitalizeFirstLetterFormatter extends TextInputFormatter {
     );
   }
 }
+
+String greetingMessage(String userName) {
+  final hour = DateTime.now().hour;
+  if (hour < 12) {
+    return "Good morning, $userName 🌅";
+  } else if (hour < 17) {
+    return "Good afternoon, $userName ☀️";
+  } else {
+    return "Good evening, $userName 🌙";
+  }
+}

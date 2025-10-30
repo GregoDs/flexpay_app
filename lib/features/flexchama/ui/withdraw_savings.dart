@@ -6,16 +6,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart'; // ✅ import this
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 void showWithdrawModalSheet(BuildContext context) {
   final TextEditingController amountController = TextEditingController();
   final chamaCubit = context.read<ChamaCubit>();
 
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+  final bgColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+  final textColor = isDark ? Colors.white : Colors.black87;
+  final subtitleColor = isDark ? Colors.white70 : Colors.grey[700];
+  final chipBgColor = isDark ? const Color(0xFF2A2A2D) : Colors.grey[200];
+  final chipBorderColor = isDark ? Colors.white54 : Colors.blue[800];
+  final inputFillColor = isDark ? const Color(0xFF2A2A2D) : Colors.grey[200];
+  final iconColor = isDark ? Colors.white70 : Colors.blue[800];
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: bgColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -38,6 +48,13 @@ void showWithdrawModalSheet(BuildContext context) {
                   title: "Withdrawal Sent",
                   message: "✅ ${state.response.message ?? 'Request successful!'}",
                 );
+                
+                // ✅ Refresh savings after successful withdrawal
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  if (context.mounted) {
+                    context.read<ChamaCubit>().fetchChamaUserSavings();
+                  }
+                });
               } else if (state is WithdrawChamaSavingsFailure) {
                 Navigator.pop(context);
                 CustomSnackBar.showError(
@@ -45,6 +62,13 @@ void showWithdrawModalSheet(BuildContext context) {
                   title: "Withdrawal Failed",
                   message: "⚠️ ${state.message}",
                 );
+                
+                // ✅ CRITICAL: Refresh savings even after failure to reset loading state
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  if (context.mounted) {
+                    context.read<ChamaCubit>().fetchChamaUserSavings();
+                  }
+                });
               }
             },
             builder: (context, state) {
@@ -61,7 +85,7 @@ void showWithdrawModalSheet(BuildContext context) {
                         width: 50.w,
                         height: 5.h,
                         decoration: BoxDecoration(
-                          color: Colors.grey[400],
+                          color: isDark ? Colors.grey[600] : Colors.grey[400],
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
@@ -74,17 +98,17 @@ void showWithdrawModalSheet(BuildContext context) {
                       style: GoogleFonts.montserrat(
                         fontSize: 20.sp,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: textColor,
                       ),
                     ),
                     SizedBox(height: 10.h),
 
                     // --- Description
                     Text(
-                      "Enter the amount you’d like to withdraw. The funds will be processed and sent to your registered M-PESA number.",
+                      "Enter the amount you'd like to withdraw. The funds will be processed and sent to your registered M-PESA number.",
                       style: GoogleFonts.montserrat(
                         fontSize: 13.sp,
-                        color: Colors.grey[700],
+                        color: subtitleColor,
                         height: 1.4,
                       ),
                     ),
@@ -96,6 +120,7 @@ void showWithdrawModalSheet(BuildContext context) {
                       style: GoogleFonts.montserrat(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
+                        color: textColor,
                       ),
                     ),
                     SizedBox(height: 10.h),
@@ -104,9 +129,30 @@ void showWithdrawModalSheet(BuildContext context) {
                       runSpacing: 12.h,
                       children: [
                         for (final amt in ["500", "1000", "5000", "10000", "20000"])
-                          _amountChip(amt, () {
-                            amountController.text = amt;
-                          }),
+                          GestureDetector(
+                            onTap: () {
+                              amountController.text = amt;
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
+                              decoration: BoxDecoration(
+                                color: chipBgColor,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: chipBorderColor!,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                "Ksh $amt",
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : Colors.blue[800],
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     SizedBox(height: 20.h),
@@ -115,14 +161,15 @@ void showWithdrawModalSheet(BuildContext context) {
                     TextField(
                       controller: amountController,
                       keyboardType: TextInputType.number,
-                      style: GoogleFonts.montserrat(),
+                      style: GoogleFonts.montserrat(color: textColor),
                       decoration: InputDecoration(
                         hintText: "Enter amount to withdraw",
+                        hintStyle: GoogleFonts.montserrat(color: subtitleColor),
                         filled: true,
-                        fillColor: Colors.grey[200],
+                        fillColor: inputFillColor,
                         prefixIcon: Icon(
                           Icons.money_outlined,
-                          color: Colors.blue[800],
+                          color: iconColor,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -194,27 +241,5 @@ void showWithdrawModalSheet(BuildContext context) {
         ),
       );
     },
-  );
-}
-
-Widget _amountChip(String label, VoidCallback onTap) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[800]!, width: 1),
-      ),
-      child: Text(
-        "Ksh $label",
-        style: GoogleFonts.montserrat(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w600,
-          color: Colors.blue[800],
-        ),
-      ),
-    ),
   );
 }

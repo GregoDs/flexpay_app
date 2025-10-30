@@ -24,14 +24,16 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.isDarkModeOn,
-    required this.userModel,
+    required this.userModel, UserModel? user,
   });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMixin {
+    @override
+  bool get wantKeepAlive => true;
   List<dynamic> outlets = [];
   bool isLoading = true;
   double _walletBalance = 0.0;
@@ -42,18 +44,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
+
     super.initState();
     // Fetch wallet when arriving on HomeScreen regardless of navigation path
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final cubit = context.read<HomeCubit>();
+      if (!mounted) return;
+
+      final cubit = context.read<HomeCubit>();
+
+
+      // ✅ Only fetch if Cubit has no existing data
+      if (cubit.state is! HomeWalletFetched) {
         cubit.fetchUserWallet();
+      }
+
+      if (cubit.state is! HomeTransactionsFetched) { 
         setState(() {
           _txLoading = true;
           _txError = null;
         });
         cubit.fetchLatestTransactions();
-        // context.read<MerchantsCubit>().fetchMerchants();
       }
     });
   }
@@ -75,6 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         return Scaffold(
@@ -96,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       0;
                   if (wallet != null) {
                     setState(() {
-                      _walletBalance = wallet.balance.toDouble();
+                      // _walletBalance = wallet.balance.toDouble();
                       _refundableBalance = refundableWalletBalance.toDouble();
                     });
                   }
@@ -127,8 +138,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: AppBarHome(
                 context,
                 userName: "${widget.userModel.user.firstName}",
-                balance: _walletBalance,
-                refundableBalance: _refundableBalance,
+                // balance: _walletBalance,
+                // refundableBalance: _refundableBalance,
                 userModel: widget.userModel,
               ),
             ),
@@ -150,11 +161,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.pushReplacement(
+                          Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  PromoCardsSwiperPage(userModel: widget.userModel),
+                              builder: (context) => PromoCardsSwiperPage(
+                                userModel: widget.userModel,
+                              ),
                             ),
                           );
                         },
