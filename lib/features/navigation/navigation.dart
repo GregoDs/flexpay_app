@@ -40,17 +40,16 @@ class BottomNavBar extends StatelessWidget {
             offset: const Offset(0, -2),
           ),
         ],
-        // ✅ Dark mode = solid dark bg, Light mode = background image
         color: isDarkMode ? Colors.grey[900] : null,
-        image:  const DecorationImage(
-                image: AssetImage('assets/images/appbarbackground.png'),
-                fit: BoxFit.cover,
-              ),
+        image: const DecorationImage(
+          image: AssetImage('assets/images/appbarbackground.png'),
+          fit: BoxFit.cover,
+        ),
       ),
       child: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(
-            vertical: screenWidth * 0.02,
+            vertical: screenWidth * 0.04, // Increased vertical padding
             horizontal: screenWidth * 0.05,
           ),
           child: Row(
@@ -62,25 +61,32 @@ class BottomNavBar extends StatelessWidget {
 
               return GestureDetector(
                 onTap: () => onTabTapped(index),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      item.icon,
-                      size: screenWidth * 0.06,
-                      color: isSelected ? activeColor : inactiveColor,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.label,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
+                child: Container(
+                  constraints: BoxConstraints(
+                    minWidth:
+                        screenWidth * 0.15, // Ensure a larger touchable area
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        item.icon,
+                        size: screenWidth * 0.07, // Increased icon size
                         color: isSelected ? activeColor : inactiveColor,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4), // Slightly increased spacing
+                      Text(
+                        item.label,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 13, // Slightly increased font size
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: isSelected ? activeColor : inactiveColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }).toList(),
@@ -95,8 +101,5 @@ class BottomNavBarItem {
   final IconData icon;
   final String label;
 
-  BottomNavBarItem({
-    required this.icon,
-    required this.label,
-  });
+  BottomNavBarItem({required this.icon, required this.label});
 }

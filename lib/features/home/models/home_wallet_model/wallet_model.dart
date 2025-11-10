@@ -39,35 +39,20 @@ class WalletData {
 @JsonSerializable(explicitToJson: true)
 class WalletAccount {
   final int? id;
-  @JsonKey(name: 'user_id')
-  final int? userId;
-  @JsonKey(name: 'account_number')
-  final int? accountNumber;
-  @JsonKey(name: 'account_status')
-  final String? accountStatus;
-  @JsonKey(name: 'created_at')
-  final String? createdAt;
-  @JsonKey(name: 'updated_at')
-  final String? updatedAt;
   @JsonKey(name: 'wallet_balance')
   final WalletBalance? walletBalance;
-  @JsonKey(name: 'wallet_credit')
-  final List<WalletCredit>? walletCredit;
-  @JsonKey(name: 'wallet_debit')
-  final List<WalletDebit>? walletDebit;
   @JsonKey(name: 'wallet_refund_balance')
   final int? walletRefundBalance;
 
+  // ✅ Removed unused fields:
+  // - user_id, account_number, account_status
+  // - created_at, updated_at
+  // - wallet_credit (can be large array)
+  // - wallet_debit (can be large array)
+
   WalletAccount({
     this.id,
-    this.userId,
-    this.accountNumber,
-    this.accountStatus,
-    this.createdAt,
-    this.updatedAt,
     this.walletBalance,
-    this.walletCredit,
-    this.walletDebit,
     this.walletRefundBalance,
   });
 
@@ -80,33 +65,19 @@ class WalletAccount {
 @JsonSerializable()
 class WalletBalance {
   final int? id;
-  @JsonKey(name: 'wallet_id')
-  final int? walletId;
-  @JsonKey(name: 'user_id')
-  final int? userId;
-  @JsonKey(name: 'account_number')
-  final int? accountNumber;
   @JsonKey(name: 'total_credit')
   final int? totalCredit;
   @JsonKey(name: 'total_debit')
   final int? totalDebit;
-  @JsonKey(name: 'created_at')
-  final String? createdAt;
-  @JsonKey(name: 'updated_at')
-  final String? updatedAt;
 
-  /// ✅ Computed property: safe balance calculation
+  
   int get balance => (totalCredit ?? 0) - (totalDebit ?? 0);
+
 
   WalletBalance({
     this.id,
-    this.walletId,
-    this.userId,
-    this.accountNumber,
     this.totalCredit,
     this.totalDebit,
-    this.createdAt,
-    this.updatedAt,
   });
 
   factory WalletBalance.fromJson(Map<String, dynamic> json) =>
@@ -115,101 +86,3 @@ class WalletBalance {
   Map<String, dynamic> toJson() => _$WalletBalanceToJson(this);
 }
 
-@JsonSerializable()
-class WalletCredit {
-  final int? id;
-  @JsonKey(name: 'wallet_id')
-  final int? walletId;
-  @JsonKey(name: 'money_in_id')
-  final int? moneyInId;
-  @JsonKey(name: 'user_id')
-  final int? userId;
-  @JsonKey(name: 'account_number')
-  final int? accountNumber;
-  @JsonKey(name: 'account_type')
-  final String? accountType;
-  final int? amount;
-  final String? source;
-  @JsonKey(name: 'credit_type')
-  final String? creditType;
-  @JsonKey(name: 'source_reference')
-  final String? sourceReference;
-  @JsonKey(name: 'created_at')
-  final String? createdAt;
-  @JsonKey(name: 'updated_at')
-  final String? updatedAt;
-
-  WalletCredit({
-    this.id,
-    this.walletId,
-    this.moneyInId,
-    this.userId,
-    this.accountNumber,
-    this.accountType,
-    this.amount,
-    this.source,
-    this.creditType,
-    this.sourceReference,
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory WalletCredit.fromJson(Map<String, dynamic> json) =>
-      _$WalletCreditFromJson(json);
-
-  Map<String, dynamic> toJson() => _$WalletCreditToJson(this);
-}
-
-@JsonSerializable()
-class WalletDebit {
-  final int? id;
-  @JsonKey(name: 'wallet_id')
-  final int? walletId;
-  @JsonKey(name: 'destination_id')
-  final int? destinationId;
-  @JsonKey(name: 'money_out_id')
-  final int? moneyOutId;
-  @JsonKey(name: 'user_id')
-  final int? userId;
-  @JsonKey(name: 'account_number')
-  final int? accountNumber;
-  @JsonKey(name: 'account_type')
-  final String? accountType;
-  final int? amount;
-  @JsonKey(name: 'withdrawal_fee')
-  final int? withdrawalFee;
-  final String? destination;
-  @JsonKey(name: 'destination_reference')
-  final String? destinationReference;
-  @JsonKey(name: 'debit_status')
-  final String? debitStatus;
-  @JsonKey(name: 'debit_required_approval')
-  final int? debitRequiredApproval;
-  @JsonKey(name: 'created_at')
-  final String? createdAt;
-  @JsonKey(name: 'updated_at')
-  final String? updatedAt;
-
-  WalletDebit({
-    this.id,
-    this.walletId,
-    this.destinationId,
-    this.moneyOutId,
-    this.userId,
-    this.accountNumber,
-    this.accountType,
-    this.amount,
-    this.withdrawalFee,
-    this.destination,
-    this.destinationReference,
-    this.debitStatus,
-    this.debitRequiredApproval,
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory WalletDebit.fromJson(Map<String, dynamic> json) =>
-      _$WalletDebitFromJson(json);
-
-  Map<String, dynamic> toJson() => _$WalletDebitToJson(this);
-}

@@ -1,6 +1,6 @@
 import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_state.dart';
-import 'package:flexpay/features/flexchama/ui/shimmer_chama_products.dart';
+import 'package:flexpay/features/flexchama/ui/chama_home/shimmer_chama_products.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,6 +24,7 @@ class _ViewChamasState extends State<ViewChamas> {
   final flexcoinIconColor = const Color(0xFFF5A623);
   final loanIconColor = const Color(0xFF6FCF97);
   final Color textColor = const Color(0xFF1D3C4E);
+  bool _isBackPressed = false;
 
   final cardShadow = [
     BoxShadow(
@@ -228,21 +229,18 @@ class _ViewChamasState extends State<ViewChamas> {
             // }
 
             final chamaDetails = view.savings?.data?.chamaDetails;
-          if (chamaDetails != null) {
-            // ✅ Check if totalSavings is negative (e.g., -1), treat as 0
-            final rawSavings = chamaDetails.totalSavings;
-            totalSavings = rawSavings > 0 
-                ? rawSavings.toString() 
-                : "0";
-            
-            maturityDate = chamaDetails.maturityDate;
-            
-            if (chamaDetails.targetAmount > 0 && rawSavings > 0) {
-              progress = rawSavings / chamaDetails.targetAmount;
-              progressText = "${(progress * 100).toStringAsFixed(1)}%";
-            }
-          }
+            if (chamaDetails != null) {
+              // ✅ Check if totalSavings is negative (e.g., -1), treat as 0
+              final rawSavings = chamaDetails.totalSavings;
+              totalSavings = rawSavings > 0 ? rawSavings.toString() : "0";
 
+              maturityDate = chamaDetails.maturityDate;
+
+              if (chamaDetails.targetAmount > 0 && rawSavings > 0) {
+                progress = rawSavings / chamaDetails.targetAmount;
+                progressText = "${(progress * 100).toStringAsFixed(1)}%";
+              }
+            }
 
             return RefreshIndicator(
               onRefresh: () async {
@@ -259,21 +257,26 @@ class _ViewChamasState extends State<ViewChamas> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.arrow_back,
-                            color: textColor,
-                            size: 22.sp,
-                          ),
+                       IconButton(
                           onPressed: () async {
-                            // First refresh savings
-                            await context
-                                .read<ChamaCubit>()
-                                .fetchChamaUserSavings();
+                            if (_isBackPressed) return;
+                            _isBackPressed = true;
 
-                            // Then go back
-                            Navigator.pop(context);
+                            try {
+                              // Refresh parent data BEFORE pop
+                              // await context.read<ChamaCubit>().fetchChamaUserSavings();
+                            } catch (e) {
+                              debugPrint("Back refresh error: $e");
+                            } finally {
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                              }
+                              // Unlock after delay
+                              await Future.delayed(const Duration(milliseconds: 500));
+                              if (mounted) _isBackPressed = false;
+                            }
                           },
+                          icon: Icon(Icons.arrow_back, color: textColor, size: 22.sp),
                         ),
                         Center(
                           child: ColorFiltered(
@@ -668,188 +671,190 @@ void _showCampaignModal(BuildContext context) {
     ),
     builder: (_) {
       return BlocProvider.value(
-              value: chamaCubit,
-              child: BlocConsumer<ChamaCubit, ChamaState>(
-                listener: (context, state) {
-                  if (state is ChamaReferralSuccess) {
-                    CustomSnackBar.showSuccess(
-                      context,
-                      title: "Referral Sent!",
-                      message: "Your friend has been referred successfully.",
-                    );
-                    Navigator.pop(context); 
-                  } else if (state is ChamaReferralFailure) {
-                    CustomSnackBar.showError(
-                      context,
-                      title: "Referral Failed",
-                      message: state.message,
-                    );
-                    Navigator.pop(context); 
-                  }
-                },
+        value: chamaCubit,
+        child: BlocConsumer<ChamaCubit, ChamaState>(
+          listener: (context, state) {
+            if (state is ChamaReferralSuccess) {
+              CustomSnackBar.showSuccess(
+                context,
+                title: "Referral Sent!",
+                message: "Your friend has been referred successfully.",
+              );
+              Navigator.pop(context);
+            } else if (state is ChamaReferralFailure) {
+              CustomSnackBar.showError(
+                context,
+                title: "Referral Failed",
+                message: state.message,
+              );
+              Navigator.pop(context);
+            }
+          },
 
-        builder: (context, state) {
-          return Padding(
-            padding: EdgeInsets.fromLTRB(32.w, 24.h, 18.w, 24.h),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Top underline indicator
-                  Center(
-                    child: Container(
-                      width: 50.w,
-                      height: 5.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(3.r),
+          builder: (context, state) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(32.w, 24.h, 18.w, 24.h),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Top underline indicator
+                    Center(
+                      child: Container(
+                        width: 50.w,
+                        height: 5.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(3.r),
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 16.h),
-                  // Animated or lively icons row
-                  Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.emoji_people,
-                          color: Colors.orange,
-                          size: 30.sp,
-                        ),
-                        SizedBox(width: 12.w),
-                        Icon(
-                          Icons.card_giftcard,
-                          color: Colors.blue,
-                          size: 30.sp,
-                        ),
-                        SizedBox(width: 12.w),
-                        Icon(Icons.star, color: Colors.amber, size: 30.sp),
-                      ],
+                    SizedBox(height: 16.h),
+                    // Animated or lively icons row
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.emoji_people,
+                            color: Colors.orange,
+                            size: 30.sp,
+                          ),
+                          SizedBox(width: 12.w),
+                          Icon(
+                            Icons.card_giftcard,
+                            color: Colors.blue,
+                            size: 30.sp,
+                          ),
+                          SizedBox(width: 12.w),
+                          Icon(Icons.star, color: Colors.amber, size: 30.sp),
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 18.h),
-                  // Title
-                  Center(
-                    child: Text(
-                      'Refer & Earn',
+                    SizedBox(height: 18.h),
+                    // Title
+                    Center(
+                      child: Text(
+                        'Refer & Earn',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1D3C4E),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 6.h),
+                    // Subtitle
+                    Text(
+                      'Share the love—get KES 100 when your friend tops up KES 500!',
                       style: GoogleFonts.montserrat(
-                        fontSize: 22.sp,
+                        fontSize: 14.sp,
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    SizedBox(height: 26.h),
+                    // Phone Number Label
+                    Text(
+                      "Phone Number",
+                      style: GoogleFonts.montserrat(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+                    // Phone Number Input
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(30.r),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 18.w),
+                      child: TextField(
+                        controller: _phoneController,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 15.sp,
+                          color: Colors.black,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: "Enter Phone number",
+                          border: InputBorder.none,
+                          hintStyle: GoogleFonts.montserrat(
+                            color: Colors.grey[500],
+                            fontSize: 15.sp,
+                          ),
+                        ),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ),
+                    SizedBox(height: 22.h),
+                    // Refer Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52.h,
+                      child: ElevatedButton(
+                        onPressed: state is ChamaReferralLoading
+                            ? null
+                            : () {
+                                final phone = _phoneController.text.trim();
+                                if (phone.isNotEmpty) {
+                                  context.read<ChamaCubit>().makeReferral(
+                                    phone,
+                                  );
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF337687),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: state is ChamaReferralLoading
+                            ? SizedBox(
+                                height: 22.sp,
+                                width: 22.sp,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                "Refer",
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                    SizedBox(height: 24.h),
+                    Divider(thickness: 1, color: Colors.grey[300]),
+                    SizedBox(height: 10.h),
+                    // Referral Rewards Section
+                    Text(
+                      "My Referral Rewards",
+                      style: GoogleFonts.montserrat(
+                        fontSize: 18.sp,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1D3C4E),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 6.h),
-                  // Subtitle
-                  Text(
-                    'Share the love—get KES 100 when your friend tops up KES 500!',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 14.sp,
-                      color: Colors.grey[700],
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  SizedBox(height: 26.h),
-                  // Phone Number Label
-                  Text(
-                    "Phone Number",
-                    style: GoogleFonts.montserrat(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  SizedBox(height: 10.h),
-                  // Phone Number Input
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(30.r),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 18.w),
-                    child: TextField(
-                      controller: _phoneController,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 15.sp,
-                        color: Colors.black,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: "Enter Phone number",
-                        border: InputBorder.none,
-                        hintStyle: GoogleFonts.montserrat(
-                          color: Colors.grey[500],
-                          fontSize: 15.sp,
-                        ),
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
-                  ),
-                  SizedBox(height: 22.h),
-                  // Refer Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52.h,
-                    child: ElevatedButton(
-                      onPressed: state is ChamaReferralLoading
-                          ? null
-                          : () {
-                              final phone = _phoneController.text.trim();
-                              if (phone.isNotEmpty) {
-                                context.read<ChamaCubit>().makeReferral(phone);
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF337687),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30.r),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: state is ChamaReferralLoading
-                          ? SizedBox(
-                              height: 22.sp,
-                              width: 22.sp,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text(
-                              "Refer",
-                              style: GoogleFonts.montserrat(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white,
-                              ),
-                            ),
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
-                  Divider(thickness: 1, color: Colors.grey[300]),
-                  SizedBox(height: 10.h),
-                  // Referral Rewards Section
-                  Text(
-                    "My Referral Rewards",
-                    style: GoogleFonts.montserrat(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1D3C4E),
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  _referralRow("Friends Joined", "50"),
-                  _referralRow("Total Earned", "Kes 5,000"),
-                  _referralRow("Amount Used", "Kes 250"),
-                  _referralRow("Current Balance", "Kes 4,750"),
-                  SizedBox(height: 10.h),
-                ],
+                    SizedBox(height: 16.h),
+                    _referralRow("Friends Joined", "50"),
+                    _referralRow("Total Earned", "Kes 5,000"),
+                    _referralRow("Amount Used", "Kes 250"),
+                    _referralRow("Current Balance", "Kes 4,750"),
+                    SizedBox(height: 10.h),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
-              ),
+            );
+          },
+        ),
       );
     },
   );

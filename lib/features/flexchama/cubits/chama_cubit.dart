@@ -85,31 +85,41 @@ class ChamaCubit extends Cubit<ChamaState> {
 
 /// ---------------- Fetch Chama User Savings ----------------
 Future<void> fetchChamaUserSavings() async {
-  // ✅ Pass previous savings response to loading state
+  // Always emit loading with previous data
   emit(ChamaSavingsLoading(
     previousProfile: _currentProfile,
-    previousSavings: _cachedSavings, // ✅ Add this
+    previousSavings: _cachedSavings, // Pass cached data
   ));
 
-  final savingsResponse = await _chamaRepo.fetchUserChamaSavings();
+  try {
+    final savingsResponse = await _chamaRepo.fetchUserChamaSavings();
 
-  // ✅ Update cache
-  _cachedSavings = savingsResponse;
+    // Update cache
+    _cachedSavings = savingsResponse;
 
-  // ✅ Always emit Fetched so FlexChama page renders
-  emit(ChamaSavingsFetched(savingsResponse));
+    // Emit new data
+    emit(ChamaSavingsFetched(savingsResponse));
 
-  // ✅ Show error if there is one in the logs
-  if (savingsResponse.errors?.isNotEmpty ?? false) {
-    final errorMsg = savingsResponse.errors!.first.toString();
-
-    if (!errorMsg.toLowerCase().contains("member product not found")) {
-      AppLogger.log("⚠️ Non-400 error: $errorMsg");
-    } else {
-      AppLogger.log("ℹ️ 400 error ignored for UI: $errorMsg");
+    // Log errors (but don't break UI)
+    if (savingsResponse.errors?.isNotEmpty ?? false) {
+      final errorMsg = savingsResponse.errors!.first.toString();
+      if (!errorMsg.toLowerCase().contains("member product not found")) {
+        AppLogger.log("Non-400 error: $errorMsg");
+      } else {
+        AppLogger.log("400 error ignored for UI: $errorMsg");
+      }
     }
+  } catch (e) {
+    final errorMsg = e.toString();
+    AppLogger.log("fetchChamaUserSavings exception: $errorMsg");
+
+    // Still emit fetched with empty/error response to avoid stuck loading
+    final fallback = ChamaSavingsResponse.empty(errorMessage: errorMsg);
+    _cachedSavings = fallback;
+    emit(ChamaSavingsFetched(fallback));
   }
 }
+
 
 /// ---------------- Withdraw Chama Savings ----------------
 Future<void> withdrawChamaSavings(double amount) async {
@@ -200,7 +210,7 @@ Future<void> withdrawChamaSavings(double amount) async {
 
   /// ---------------- Get User Chamas  ----------------
   Future<void> getUserChamas() async {
-    emit(UserChamasLoading());
+    // emit(UserChamasLoading());
 
     try {
       final response = await _chamaRepo.getUserChamas();

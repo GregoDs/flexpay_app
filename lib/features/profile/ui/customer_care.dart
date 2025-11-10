@@ -126,16 +126,16 @@ class CustomerServicePage extends StatelessWidget {
                     ),
                     SizedBox(height: 12.h),
 
-                    // _buildContactTile(
-                    //   context,
-                    //   icon: Icons.message,
-                    //   title: 'Chat on WhatsApp',
-                    //   subtitle: 'Open WhatsApp Support',
-                    //   cardColor: cardColor,
-                    //   textColor: textColor,
-                    //   onTap: () => _launchURL('https://wa.me/254700000000'),
-                    // ),
-                    // SizedBox(height: 12.h),
+                    _buildContactTile(
+                      context,
+                      icon: Icons.message,
+                      title: 'Chat on WhatsApp',
+                      subtitle: 'Open WhatsApp Support',
+                      cardColor: cardColor,
+                      textColor: textColor,
+                      onTap: () => _launchURL('https://wa.me/254759687055'),
+                    ),
+                    SizedBox(height: 12.h),
 
                     // _buildContactTile(
                     //   context,

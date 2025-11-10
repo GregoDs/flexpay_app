@@ -3,8 +3,8 @@ import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/bookings/ui/bookings.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_cubit.dart';
 import 'package:flexpay/features/flexchama/cubits/chama_state.dart';
-import 'package:flexpay/features/flexchama/ui/chama_home.dart';
-import 'package:flexpay/features/flexchama/ui/opt_chama_screen.dart';
+import 'package:flexpay/features/flexchama/ui/chama_home/chama_home.dart';
+import 'package:flexpay/features/flexchama/ui/registration_chama/opt_chama_screen.dart';
 import 'package:flexpay/features/goals/ui/goals.dart';
 import 'package:flexpay/features/home/cubits/home_cubit.dart';
 import 'package:flexpay/features/home/ui/homescreen.dart';
@@ -144,13 +144,15 @@ void _onTabTapped(int index) async {
 
     // ✅ Clean build — no local BlocProviders required
     return WillPopScope(
-      onWillPop: () async {
-        if (_currentIndex != 0) {
-          setState(() => _currentIndex = 0);
-          return false;
-        }
-        return false;
-      },
+  onWillPop: () async {
+    if (_currentIndex != 0) {
+      setState(() => _currentIndex = 0);
+      return false;
+    }
+
+    // If on Home, allow system back (exit app)
+    return true;
+  },
       child: Scaffold(
         body: IndexedStack(
           index: _currentIndex,

@@ -1,9 +1,13 @@
 import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/home/ui/appbarhome.dart';
 import 'package:flexpay/features/home/ui/transactions_home.dart';
+import 'package:flexpay/features/kapu/cubits/kapu_cubit.dart';
+import 'package:flexpay/features/kapu/ui/kapu_opt_in.dart';
+import 'package:flexpay/features/kapu/ui/promo_cards.dart';
 import 'package:flexpay/features/payments/ui/voucher_sheet.dart';
-import 'package:flexpay/features/promos/ui/promo_cards.dart';
 import 'package:flexpay/gen/colors.gen.dart';
+import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
+import 'package:flexpay/utils/services/logger.dart';
 import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flexpay/utils/widgets/app_text.dart';
 import 'package:flutter/material.dart';
@@ -160,15 +164,71 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                         vertical: 8.h,
                       ),
                       child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PromoCardsSwiperPage(
-                                userModel: widget.userModel,
-                              ),
-                            ),
+                        onTap: () async {
+                          final userId = widget.userModel.user.id.toString();
+
+                          final hasVisited = await SharedPreferencesHelper.hasVisitedKapu(userId);
+                          final hasUsed = await SharedPreferencesHelper.hasUsedKapu(userId);
+                          final hasInteracted = await SharedPreferencesHelper.hasInteractedWithKapu(userId);
+
+                          AppLogger.log(
+                            '🔍 [KAPU NAV CHECK] userId=$userId | visited=$hasVisited | used=$hasUsed | interacted=$hasInteracted',
                           );
+
+                          final kapuWalletResponses = await context.read<KapuCubit>().fetchMultipleKapuWalletBalances([
+                            "812",
+                            "347",
+                            "107",
+                            "73",
+                            "727",
+                            "4",
+                          ]);
+
+                          if (kapuWalletResponses.isNotEmpty) {
+                            AppLogger.log(
+                              '🟢 [KAPU NAV] Wallet data exists → navigating directly to PromoCardsSwiperPage',
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PromoCardsSwiperPage(userModel: widget.userModel),
+                              ),
+                            );
+                          } else if (!hasVisited || (hasVisited && !hasUsed && !hasInteracted)) {
+                            AppLogger.log(
+                              '🟡 [KAPU NAV] Navigating to OnBoardKapu (user has not interacted yet)',
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OnBoardKapu(
+                                  userModel: widget.userModel,
+                                  onOptIn: () async {
+                                    await SharedPreferencesHelper.markKapuVisited(userId);
+                                    AppLogger.log(
+                                      '✅ [KAPU NAV] User opted in → marking visited and navigating to PromoCardsSwiperPage',
+                                    );
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PromoCardsSwiperPage(userModel: widget.userModel),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          } else {
+                            AppLogger.log(
+                              '🟢 [KAPU NAV] User already interacted → navigating directly to PromoCardsSwiperPage',
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PromoCardsSwiperPage(userModel: widget.userModel),
+                              ),
+                            );
+                          }
                         },
                         child: Container(
                           height: 110.h,
@@ -182,16 +242,9 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                               bottomLeft: Radius.circular(20.r),
                               bottomRight: Radius.circular(20.r),
                             ),
-                            // Add glow effect for light mode
                             boxShadow: widget.isDarkModeOn
                                 ? null
                                 : [
-                                    // BoxShadow(
-                                    //   color: Colors.white.withOpacity(0.8),
-                                    //   blurRadius: 15.r,
-                                    //   spreadRadius: 3.r,
-                                    //   offset: Offset(0, 0),
-                                    // ),
                                     BoxShadow(
                                       color: Colors.white.withOpacity(0.4),
                                       blurRadius: 5.r,
@@ -271,7 +324,6 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                                   ),
                                 ],
                               ),
-                              // ❄️ Replace image with Lottie animation
                               Positioned(
                                 right: -94.w,
                                 top: -34.h,
@@ -290,11 +342,11 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
                     SizedBox(height: 10.h),
                     _buildCampaignCard(context),
-                    SizedBox(height: 28.h),
-                    VoucherModalSheet(context: context),
-                    SizedBox(height: 8.h),
-                    _buildMerchantImages(context),
-                    SizedBox(height: 8.h),
+                    SizedBox(height: 20.h),
+                    // VoucherModalSheet(context: context),
+                    // SizedBox(height: 8.h),
+                    // _buildMerchantImages(context),
+                    // SizedBox(height: 8.h),
                     _buildTransactionsSection(context),
                   ],
                 ),
@@ -530,23 +582,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                       ),
 
                       SizedBox(height: 24.h),
-                      Divider(thickness: 1, color: Colors.grey[300]),
-                      SizedBox(height: 10.h),
-
-                      Text(
-                        "My Referral Rewards",
-                        style: GoogleFonts.montserrat(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1D3C4E),
-                        ),
-                      ),
-                      SizedBox(height: 16.h),
-                      _referralRow("Friends Joined", "0"),
-                      _referralRow("Total Earned", "Kes 0"),
-                      _referralRow("Amount Used", "Kes 0"),
-                      _referralRow("Current Balance", "Kes 0"),
-                      SizedBox(height: 10.h),
+                      
                     ],
                   );
                 },
@@ -737,7 +773,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         },
         // ... existing code ...
         child: Container(
-          padding: EdgeInsets.all(12.w),
+          padding: EdgeInsets.all(10.w),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12.r),
@@ -772,15 +808,15 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                           Text(
                             dateTime,
                             style: GoogleFonts.montserrat(
-                              fontSize: 13.sp,
+                              fontSize: 10.sp,
                               color: Colors.black.withOpacity(0.6),
                             ),
                           ),
-                          SizedBox(height: 4.h),
+                          SizedBox(height: 2.h),
                           Text(
                             description,
                             style: GoogleFonts.montserrat(
-                              fontSize: 15.sp,
+                              fontSize: 14.sp,
                               color: Colors.black,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -796,7 +832,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
               Text(
                 amount,
                 style: GoogleFonts.montserrat(
-                  fontSize: 16.sp,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
                   color: isIncome ? Colors.green : Colors.red,
                 ),

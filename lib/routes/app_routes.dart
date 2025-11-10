@@ -6,7 +6,8 @@ import 'package:flexpay/features/auth/ui/register.dart';
 import 'package:flexpay/features/auth/ui/onboarding_screen.dart';
 import 'package:flexpay/features/auth/ui/splash_screen.dart';
 import 'package:flexpay/features/bookings/ui/bookings.dart';
-import 'package:flexpay/features/flexchama/ui/chama_reg.dart';
+import 'package:flexpay/features/flexchama/ui/chama_details/chama_details.dart';
+import 'package:flexpay/features/flexchama/ui/registration_chama/chama_reg.dart';
 import 'package:flexpay/features/flexchama/ui/viewchama.dart';
 import 'package:flexpay/features/goals/ui/goals.dart';
 import 'package:flexpay/features/merchants/ui/merchants.dart';
@@ -23,6 +24,8 @@ class AppRoutes {
     Routes.login: (context) => const LoginScreen(),
     Routes.otp: (context) => const OtpScreen(),
 
+    Routes.chamaPage: (context) => const ChamaPage(),
+
     Routes.home: (context) {
       final args = ModalRoute.of(context)!.settings.arguments;
 
@@ -35,9 +38,7 @@ class AppRoutes {
           );
           Navigator.pushReplacementNamed(context, Routes.login);
         });
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       }
 
       // ✅ NavigationWrapper will automatically access Cubits from global providers in main.dart
@@ -48,7 +49,7 @@ class AppRoutes {
     Routes.registerChama: (context) => const ChamaRegistrationPage(),
     Routes.viewChamas: (context) => const ViewChamas(),
     Routes.bookings: (context) => const BookingsPage(),
-    Routes.merchants: (context) =>  MerchantsScreen(),
+    Routes.merchants: (context) => MerchantsScreen(),
   };
 }
 
@@ -66,4 +67,5 @@ class Routes {
   static const bookings = '/bookings';
   static const merchants = '/merchants';
   static const bookingDetails = '/booking-details';
+  static const chamaPage = '/chamaPage';
 }

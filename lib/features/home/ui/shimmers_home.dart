@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// ==========================================================
 /// 🧭 HOME SCREEN SHIMMERS
 /// ==========================================================
-
 
 /// 🧭 1️⃣ AppBar shimmer — only the balance section shimmers
 class AppBarBalanceShimmer extends StatelessWidget {
@@ -14,33 +12,25 @@ class AppBarBalanceShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: Colors.white.withOpacity(0.4),
-      highlightColor: Colors.white.withOpacity(0.9),
-      period: const Duration(milliseconds: 1200),
-      child: Row(
-        children: [
-          // Simulate text width and curvature
-          Container(
-            width: 12.w,
-            height: 12.h,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.6),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
+    return Row(
+      children: [
+        Expanded(
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey.shade300,
+            highlightColor: Colors.grey.shade100,
+            child: Container(height: 32, color: Colors.white),
           ),
-          SizedBox(width: 10.w),
-          Icon(
-            Icons.visibility,
-            color: Colors.white70.withOpacity(0.8),
-            size: 24.sp,
-          ),
-        ],
-      ),
+        ),
+        SizedBox(width: 8),
+        Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+          child: Icon(Icons.visibility, size: 24, color: Colors.white),
+        ),
+      ],
     );
   }
 }
-
 
 /// 🧩 2️⃣ TransactionDetails shimmer — full list shimmer
 class TransactionDetailsShimmer extends StatelessWidget {
@@ -98,21 +88,13 @@ class _TransactionItemShimmer extends StatelessWidget {
                     color: Colors.white,
                   ),
                   const SizedBox(height: 6),
-                  Container(
-                    width: 100,
-                    height: 12,
-                    color: Colors.white,
-                  ),
+                  Container(width: 100, height: 12, color: Colors.white),
                 ],
               ),
             ),
             const SizedBox(width: 8),
             // Right side (amount placeholder)
-            Container(
-              width: 60,
-              height: 16,
-              color: Colors.white,
-            ),
+            Container(width: 60, height: 16, color: Colors.white),
           ],
         ),
       ),

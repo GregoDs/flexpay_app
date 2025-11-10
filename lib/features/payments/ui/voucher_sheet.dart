@@ -6,257 +6,331 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-class VoucherModalSheet extends StatelessWidget {
-  const VoucherModalSheet({super.key, required this.context});
-
-  final BuildContext context;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Buy a shopping voucher',
-          style: GoogleFonts.montserrat(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        GestureDetector(
-          onTap: () {
-            // later: maybe show all vouchers page
-          },
-          child: Text(
-            'View All',
-            style: GoogleFonts.montserrat(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w500,
-              color: Colors.blue,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-void showMerchantVoucherModal(
-  BuildContext context,
-  String merchantName,
-  int merchantId,
-) {
+void showMerchantVoucherModal(BuildContext context, String merchantName, int merchantId) {
   final TextEditingController amountController = TextEditingController();
   final paymentsCubit = context.read<PaymentsCubit>();
 
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
 
+  final bgColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+  final textColor = isDark ? Colors.white : Colors.black87;
+  final subtitleColor = isDark ? Colors.white70 : Colors.grey[700];
+  final chipBgColor = isDark ? const Color(0xFF2A2A2D) : Colors.grey[200];
+  final chipBorderColor = isDark ? Colors.white54 : Colors.blue[800];
+  final inputFillColor = isDark ? const Color(0xFF2A2A2D) : Colors.grey[200];
+  final iconColor = isDark ? Colors.white70 : Colors.blue[800];
+
+  final List<Map<String, dynamic>> merchants = [
+    {'name': 'Jaza Supermarket', 'merchant_id': '812', 'color': const Color(0xFF761B1A)},
+    {'name': 'Appliance Zone', 'merchant_id': '347', 'color': const Color(0xFF111111)},
+    {'name': 'Quickmart Supermarket', 'merchant_id': '347', 'color': const Color(0xFF111111)},
+    {'name': 'Naivas Supermarket', 'merchant_id': '107', 'color': const Color(0xFFFFB020)},
+    {'name': 'HotPoint Appliances', 'merchant_id': '73', 'color': const Color(0xFFCD0000)},
+    {'name': 'Personal Goal', 'merchant_id': '4', 'color': const Color(0xFF00A86B)},
+  ];
+
+  String? selectedMerchantName;
+  String? selectedMerchantId;
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: theme.colorScheme.surface,
+    backgroundColor: bgColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (_) {
-      return BlocProvider.value(
-        value: paymentsCubit,
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: 20.w,
-            right: 20.w,
-            top: 20.h,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20.h,
-          ),
-          child: BlocConsumer<PaymentsCubit, PaymentsState>(
-            listener: (context, state) {
-              if (state is VoucherSuccess) {
-                Navigator.pop(context);
-                CustomSnackBar.showSuccess(
-                  context,
-                  title: "Success!",
-                  message: "✅ Voucher created successfully!",
-                );
-              } else if (state is VoucherFailure) {
-                Navigator.pop(context);
-                CustomSnackBar.showError(
-                  context,
-                  title: "Voucher creation Failed",
-                  message: "⚠️ ${state.message}",
-                );
-              }
-            },
-            builder: (context, state) {
-              final isLoading = state is VoucherLoading;
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return BlocProvider.value(
+            value: paymentsCubit,
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: 20.w,
+                right: 20.w,
+                top: 20.h,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20.h,
+              ),
+              child: BlocConsumer<PaymentsCubit, PaymentsState>(
+                listener: (context, state) {
+                  if (state is VoucherSuccess) {
+                    Navigator.pop(context);
+                    CustomSnackBar.showSuccess(
+                      context,
+                      title: "Success!",
+                      message: "✅ Voucher created successfully!",
+                    );
+                  } else if (state is VoucherFailure) {
+                    Navigator.pop(context);
+                    CustomSnackBar.showError(
+                      context,
+                      title: "Voucher Creation Failed",
+                      message: "⚠️ ${state.message}",
+                    );
+                  }
+                },
+                builder: (context, state) {
+                  final isLoading = state is VoucherLoading;
 
-              return SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 50.w,
-                        height: 5.h,
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.grey[700] : Colors.grey[400],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 16.h),
-
-                    Text(
-                      "Create Voucher Goal",
-                      style: GoogleFonts.montserrat(
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
-
-                    Text(
-                      "Quick Amounts",
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    SizedBox(height: 10.h),
-
-                    Wrap(
-                      spacing: 12.w,
-                      runSpacing: 12.h,
+                  return SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (final amt in [
-                          "5,000",
-                          "10,000",
-                          "20,000",
-                          "50,000",
-                          "100,000",
-                        ])
-                          _voucherChip(
-                            amt,
-                            () => amountController.text = amt.replaceAll(",", ""),
-                            isDark,
+                        Center(
+                          child: Container(
+                            width: 50.w,
+                            height: 5.h,
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.grey[600] : Colors.grey[400],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                      ],
-                    ),
-                    SizedBox(height: 20.h),
-
-                    TextField(
-                      controller: amountController,
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.montserrat(
-                        color: theme.colorScheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: "Enter amount",
-                        hintStyle: TextStyle(
-                          color: isDark ? Colors.grey[500] : Colors.grey[600],
                         ),
-                        filled: true,
-                        fillColor:
-                            isDark ? Colors.grey[850] : Colors.grey[200],
-                        prefixIcon: Icon(
-                          Icons.payments_outlined,
-                          color: isDark ? Colors.blue[300] : Colors.blue[800],
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
+                        SizedBox(height: 20.h),
 
-                    Text(
-                      "This voucher can only be redeemed for any $merchantName products at any $merchantName outlet countrywide.",
-                      style: GoogleFonts.montserrat(
-                        fontSize: 13.sp,
-                        color: isDark ? Colors.red[300] : Colors.red[700],
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ColorName.primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
+                        Text(
+                          "Create Voucher Goal",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
                           ),
-                          padding: EdgeInsets.symmetric(vertical: 14.h),
                         ),
-                        onPressed: isLoading
-                            ? null
-                            : () {
-                                final amount = amountController.text.trim();
-                                if (amount.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Please enter amount"),
-                                    ),
-                                  );
-                                  return;
-                                }
+                        SizedBox(height: 10.h),
 
-                                context.read<PaymentsCubit>().generateVoucher(
-                                      merchantId: merchantId,
-                                      voucherAmount: amount,
-                                    );
+                        Text(
+                          "Select a merchant and set an amount to create a shopping voucher that can be redeemed at any of their outlets nationwide.",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 13.sp,
+                            color: subtitleColor,
+                            height: 1.4,
+                          ),
+                        ),
+                        SizedBox(height: 20.h),
+
+                        // --- Merchant Dropdown
+                        Text(
+                          "Select Merchant",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+
+                        Container(
+                          decoration: BoxDecoration(
+                            color: inputFillColor,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              if (!isDark)
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.25),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                            ],
+                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              dropdownColor: bgColor,
+                              value: selectedMerchantName,
+                              isExpanded: true,
+                              hint: Text(
+                                "Select merchant",
+                                style: GoogleFonts.montserrat(color: subtitleColor),
+                              ),
+                              style: GoogleFonts.montserrat(color: textColor, fontSize: 14.sp),
+                              icon: Icon(Icons.arrow_drop_down, color: iconColor),
+                              items: merchants.map((merchant) {
+                                return DropdownMenuItem<String>(
+                                  value: merchant['name'],
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 10.w,
+                                        height: 10.w,
+                                        decoration: BoxDecoration(
+                                          color: merchant['color'],
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      Text(
+                                        merchant['name'],
+                                        style: GoogleFonts.montserrat(color: textColor),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                final selected = merchants.firstWhere(
+                                  (m) => m['name'] == value,
+                                );
+                                setState(() {
+                                  selectedMerchantName = selected['name'];
+                                  selectedMerchantId = selected['merchant_id'];
+                                });
                               },
-                        child: isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                            : Text(
-                                "Generate Voucher",
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20.h),
+
+                        // --- Quick Amounts
+                        Text(
+                          "Quick Amounts",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                        SizedBox(height: 10.h),
+
+                        Wrap(
+                          spacing: 12.w,
+                          runSpacing: 12.h,
+                          children: [
+                            for (final amt in ["5000", "10000", "20000", "50000", "100000"])
+                              GestureDetector(
+                                onTap: () {
+                                  amountController.text = amt;
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
+                                  decoration: BoxDecoration(
+                                    color: chipBgColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: chipBorderColor!, width: 1),
+                                  ),
+                                  child: Text(
+                                    "Ksh $amt",
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.white : Colors.blue[800],
+                                    ),
+                                  ),
                                 ),
                               ),
-                      ),
+                          ],
+                        ),
+                        SizedBox(height: 20.h),
+
+                        // --- Input Field
+                        TextField(
+                          controller: amountController,
+                          keyboardType: TextInputType.number,
+                          style: GoogleFonts.montserrat(color: textColor),
+                          decoration: InputDecoration(
+                            hintText: "Enter custom amount",
+                            hintStyle: GoogleFonts.montserrat(color: subtitleColor),
+                            filled: true,
+                            fillColor: inputFillColor,
+                            prefixIcon: Icon(Icons.card_giftcard_rounded, color: iconColor),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 25.h),
+
+                        // --- Note/Description
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8.w),
+                          child: Text(
+                            selectedMerchantName == null
+                                ? "Please select a merchant to generate a voucher."
+                                : "Once generated, this voucher can only be redeemed for $selectedMerchantName products.",
+                            style: GoogleFonts.montserrat(
+                              fontSize: 13.sp,
+                              color: isDark ? Colors.red[300] : Colors.red[700],
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 25.h),
+
+                        // --- Submit Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ColorName.primaryColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 14.h),
+                            ),
+                            onPressed: isLoading
+                                ? null
+                                : () {
+                                    final amount = amountController.text.trim();
+
+                                    if (selectedMerchantId == null) {
+                                      CustomSnackBar.showError(
+                                        context,
+                                        title: "Missing Merchant",
+                                        message: "Please select a merchant first.",
+                                      );
+                                      return;
+                                    }
+
+                                    if (amount.isEmpty) {
+                                      CustomSnackBar.showError(
+                                        context,
+                                        title: "Missing Amount",
+                                        message: "Please enter voucher amount",
+                                      );
+                                      return;
+                                    }
+
+                                    final parsedAmount = double.tryParse(amount);
+                                    if (parsedAmount == null || parsedAmount <= 0) {
+                                      CustomSnackBar.showError(
+                                        context,
+                                        title: "Invalid Amount",
+                                        message: "Please enter a valid number",
+                                      );
+                                      return;
+                                    }
+
+                                    context.read<PaymentsCubit>().generateVoucher(
+                                          merchantId: int.parse(selectedMerchantId!),
+                                          voucherAmount: amount,
+                                        );
+                                  },
+                            child: isLoading
+                                ? const SpinKitWave(color: Colors.white, size: 22.0)
+                                : Text(
+                                    "Generate Voucher",
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 16.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        SizedBox(height: 20.h),
+                      ],
                     ),
-                    SizedBox(height: 20.h),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
       );
     },
-  );
-}
-
-Widget _voucherChip(String label, VoidCallback onTap, bool isDark) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.grey[200],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.blue[300]! : Colors.blue[800]!,
-          width: 1,
-        ),
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.montserrat(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w600,
-          color: isDark ? Colors.blue[300] : Colors.blue[800],
-        ),
-      ),
-    ),
   );
 }

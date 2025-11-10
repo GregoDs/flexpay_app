@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 /// -------------------
 /// TOP LEVEL RESPONSE
 /// -------------------
@@ -9,12 +7,7 @@ class AllBookingsResponse {
   final bool? success;
   final int? statusCode;
 
-  AllBookingsResponse({
-    this.data,
-    this.errors,
-    this.success,
-    this.statusCode,
-  });
+  AllBookingsResponse({this.data, this.errors, this.success, this.statusCode});
 
   factory AllBookingsResponse.fromJson(Map<String, dynamic> json) {
     return AllBookingsResponse(
@@ -71,9 +64,7 @@ class BookingData {
 
   Map<String, dynamic> toJson() {
     return {
-      'pBooking': {
-        'data': pBooking?.map((e) => e.toJson()).toList(),
-      },
+      'pBooking': {'data': pBooking?.map((e) => e.toJson()).toList()},
     };
   }
 }
@@ -98,6 +89,8 @@ class Booking {
   final num? initialDeposit;
   final String? hasFixedDeadline;
   final String? bookingStatus;
+  final int? isPermanent;
+  final int? parentBookingId;
   final int? isPromotional;
   final num? promotionalAmount;
   final String? endDate;
@@ -150,6 +143,8 @@ class Booking {
     this.initialDeposit,
     this.hasFixedDeadline,
     this.bookingStatus,
+    this.isPermanent,
+    this.parentBookingId,
     this.isPromotional,
     this.promotionalAmount,
     this.endDate,
@@ -204,6 +199,8 @@ class Booking {
       initialDeposit: json['initial_deposit'],
       hasFixedDeadline: json['has_fixed_deadline']?.toString(),
       bookingStatus: json['booking_status']?.toString(),
+      isPermanent: json['is_permanent'],
+      parentBookingId: json['parent_booking_id'],
       isPromotional: json['is_promotional'],
       promotionalAmount: json['promotional_amount'],
       endDate: json['end_date']?.toString(),
@@ -228,7 +225,9 @@ class Booking {
       total: json['total'],
       balance: json['balance'],
       user: json['user'] != null ? User.fromJson(json['user']) : null,
-      promoter: json['promoter'] != null ? Promoter.fromJson(json['promoter']) : null,
+      promoter: json['promoter'] != null
+          ? Promoter.fromJson(json['promoter'])
+          : null,
       bookingInterest: json['booking_interest'] ?? [],
       interestAmount: json['interest_amount'],
       maturityDate: json['maturity_date']?.toString(),
@@ -239,7 +238,9 @@ class Booking {
       payments: (json['payment'] as List? ?? json['payments'] as List? ?? [])
           .map((e) => Payment.fromJson(e))
           .toList(),
-      receipt: json['receipt'] != null ? Receipt.fromJson(json['receipt']) : null,
+      receipt: json['receipt'] != null
+          ? Receipt.fromJson(json['receipt'])
+          : null,
     );
   }
 
@@ -261,6 +262,8 @@ class Booking {
       'initial_deposit': initialDeposit,
       'has_fixed_deadline': hasFixedDeadline,
       'booking_status': bookingStatus,
+      'is_permanent': isPermanent,
+      'parent_booking_id': parentBookingId,
       'is_promotional': isPromotional,
       'promotional_amount': promotionalAmount,
       'end_date': endDate,
@@ -400,7 +403,8 @@ class Payment {
       destination: json['destination']?.toString(),
       destinationAccountNo: json['destination_account_no']?.toString(),
       destinationPhoneNo: json['destination_phone_no']?.toString(),
-      destinationTransactionReference: json['destination_transaction_reference']?.toString(),
+      destinationTransactionReference: json['destination_transaction_reference']
+          ?.toString(),
       deletedAt: json['deleted_at']?.toString(),
       createdAt: json['created_at']?.toString(),
       updatedAt: json['updated_at']?.toString(),
@@ -433,11 +437,7 @@ class Promoter {
   final String? lastName;
   final String? phoneNumber;
 
-  Promoter({
-    this.firstName,
-    this.lastName,
-    this.phoneNumber,
-  });
+  Promoter({this.firstName, this.lastName, this.phoneNumber});
 
   factory Promoter.fromJson(Map<String, dynamic> json) {
     return Promoter(

@@ -24,14 +24,14 @@ class _BookingsPageState extends State<BookingsPage> with RouteAware {
   final TextEditingController _searchController = TextEditingController();
 
   @override
-void initState() {
-  super.initState();
-  // Only fetch if not already loaded
-  final state = context.read<BookingsCubit>().state;
-  if (state is! BookingsFetched || state.bookings.isEmpty) {
-    context.read<BookingsCubit>().fetchBookingsByType("active");
+  void initState() {
+    super.initState();
+    // Only fetch if not already loaded
+    final state = context.read<BookingsCubit>().state;
+    if (state is! BookingsFetched || state.bookings.isEmpty) {
+      context.read<BookingsCubit>().fetchBookingsByType("active");
+    }
   }
-}
 
   @override
   void didChangeDependencies() {
@@ -60,10 +60,10 @@ void initState() {
   }
 
   Future<void> _refreshBookings() async {
-  context.read<BookingsCubit>().fetchBookingsByType(
-    selectedTab.toLowerCase(),
-  );
-}
+    context.read<BookingsCubit>().fetchBookingsByType(
+      selectedTab.toLowerCase(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -188,53 +188,69 @@ void initState() {
                     // Search bar
                     Row(
                       children: [
-                       Expanded(
-                        child: Container(
-                          height: 56.h,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF6F7F9),
-                            borderRadius: BorderRadius.circular(28.r),
-                          ),
-                          child: Row(
-                            children: [
-                              SizedBox(width: 18.w),
-                              Icon(Icons.search, size: 26.sp, color: Colors.black87),
-                              SizedBox(width: 10.w),
-                              Expanded(
-                                child: TextField(
-                                  controller: _searchController,
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: "Search by booking reference",
-                                    hintStyle: GoogleFonts.montserrat(
-                                      fontSize: 16.sp,
-                                      color: Colors.black54,
+                        Expanded(
+                          child: Container(
+                            height: 56.h,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF6F7F9),
+                              borderRadius: BorderRadius.circular(28.r),
+                            ),
+                            child: Row(
+                              children: [
+                                SizedBox(width: 18.w),
+                                Icon(
+                                  Icons.search,
+                                  size: 26.sp,
+                                  color: Colors.black87,
+                                ),
+                                SizedBox(width: 10.w),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _searchController,
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "Search by booking reference",
+                                      hintStyle: GoogleFonts.montserrat(
+                                        fontSize: 16.sp,
+                                        color: Colors.black54,
+                                      ),
                                     ),
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 16.sp,
+                                      color: Colors.black,
+                                    ),
+                                    textInputAction: TextInputAction.search,
+                                    onSubmitted: (value) {
+                                      if (value.trim().isNotEmpty) {
+                                        context
+                                            .read<BookingsCubit>()
+                                            .fetchBookingByReference(
+                                              value.trim(),
+                                            );
+                                      }
+                                    },
                                   ),
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 16.sp,
-                                    color: Colors.black,
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.clear,
+                                    size: 22.sp,
+                                    color: Colors.black54,
                                   ),
-                                  textInputAction: TextInputAction.search,
-                                  onSubmitted: (value) {
-                                    if (value.trim().isNotEmpty) {
-                                      context.read<BookingsCubit>().fetchBookingByReference(value.trim());
-                                    }
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    // Restore the list for current tab
+                                    context
+                                        .read<BookingsCubit>()
+                                        .fetchBookingsByType(
+                                          selectedTab.toLowerCase(),
+                                        );
                                   },
                                 ),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.clear, size: 22.sp, color: Colors.black54),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  // Restore the list for current tab
-                                  context.read<BookingsCubit>().fetchBookingsByType(selectedTab.toLowerCase());
-                                },
-                              )
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
                         SizedBox(width: 18.w),
                         Container(
                           width: 38.w,
@@ -323,8 +339,8 @@ void initState() {
               // Bookings List
               Expanded(
                 child: RefreshIndicator(
-                onRefresh: _refreshBookings,
-                color: const Color(0xFF337687),
+                  onRefresh: _refreshBookings,
+                  color: const Color(0xFF337687),
                   child: BlocBuilder<BookingsCubit, BookingsState>(
                     builder: (context, state) {
                       if (state is BookingsLoading) {
@@ -350,9 +366,11 @@ void initState() {
                             message: state.message,
                           );
                           // restore current list
-                          context.read<BookingsCubit>().fetchBookingsByType(selectedTab.toLowerCase());
+                          context.read<BookingsCubit>().fetchBookingsByType(
+                            selectedTab.toLowerCase(),
+                          );
                         });
-                  
+
                         // Show friendly error UI
                         return Center(
                           child: Column(
@@ -382,39 +400,43 @@ void initState() {
                         );
                       } else if (state is BookingsFetched) {
                         final bookings = state.bookings;
-                  
-                        if (bookings.isEmpty) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Lottie animation
-                                  Lottie.asset(
-                                    'assets/images/notification_imgs/empty.json',
-                                    height: 340, 
-                                    repeat: true,
+                        // Exclude permanent bookings (is_permanent == 1)
+                        final filteredBookings = bookings
+                            .where((b) => (b.isPermanent ?? 0) == 0)
+                            .toList();
+
+                        if (filteredBookings.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Lottie animation
+                                Lottie.asset(
+                                  'assets/images/notification_imgs/empty.json',
+                                  height: 340,
+                                  repeat: true,
+                                ),
+                                const SizedBox(height: 20),
+                                // Text message
+                                Text(
+                                  "Ooops....No ${state.bookingType} bookings yet",
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey[600],
                                   ),
-                                  const SizedBox(height: 20),
-                                  // Text message
-                                  Text(
-                                    "Ooops....No ${state.bookingType} bookings yet",
-                                    style: GoogleFonts.montserrat(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.grey[600],
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                  
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
                         return ListView.builder(
                           padding: EdgeInsets.only(top: 12.h, bottom: 24.h),
-                          itemCount: bookings.length,
+                          itemCount: filteredBookings.length,
                           itemBuilder: (context, index) {
-                            final booking = bookings[index];
+                            final booking = filteredBookings[index];
                             return _BookingCard(
                               booking: booking,
                               cardColor: cardColor,
@@ -424,7 +446,7 @@ void initState() {
                           },
                         );
                       }
-                  
+
                       return const SizedBox();
                     },
                   ),
@@ -463,17 +485,17 @@ class _BookingCard extends StatelessWidget {
               value: context.read<BookingsCubit>(),
               child: BookingDetailsPage(
                 booking: booking,
-                 user: User(),
-                 selectedTab: selectedTab,
-                 ),
+                user: User(),
+                selectedTab: selectedTab,
+              ),
             ),
           ),
-        );// Only refetch if something changed
-     if (result == true) {
-    context.read<BookingsCubit>().fetchBookingsByType(selectedTab.toLowerCase());
-    }
-        
-        
+        ); // Only refetch if something changed
+        if (result == true) {
+          context.read<BookingsCubit>().fetchBookingsByType(
+            selectedTab.toLowerCase(),
+          );
+        }
       },
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),

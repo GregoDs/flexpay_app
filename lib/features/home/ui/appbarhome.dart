@@ -3,15 +3,20 @@ import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/home/cubits/home_cubit.dart';
 import 'package:flexpay/features/home/cubits/home_states.dart';
 import 'package:flexpay/features/home/ui/notifications_page.dart';
-import 'package:flexpay/features/profile/ui/profile.dart';
+import 'package:flexpay/features/kapu/cubits/kapu_cubit.dart';
+import 'package:flexpay/features/kapu/cubits/kapu_state.dart';
+import 'package:flexpay/features/payments/ui/voucher_sheet.dart';
+import 'package:flexpay/features/profile/ui/system_menu.dart';
 import 'package:flexpay/features/payments/ui/topup_home_page.dart';
 import 'package:flexpay/features/payments/ui/withdraw_home.dart';
-import 'package:flexpay/features/navigation/navigation_wrapper.dart';
-import 'package:flexpay/features/promos/ui/promo_cards.dart';
-import 'package:flexpay/main.dart';
+import 'package:flexpay/features/kapu/ui/promo_cards.dart';
+import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/getters/getters.dart' as AppUtils;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:flexpay/features/kapu/ui/kapu_opt_in.dart';
+
+import '../../../utils/services/logger.dart';
 
 class AppBarHome extends StatefulWidget {
   final String userName;
@@ -152,7 +157,8 @@ class _AppBarHomeState extends State<AppBarHome> {
 
                 double balance = 0.0;
                 if (state is HomeWalletFetched) {
-                  final wallet = state.walletResponse.data?.walletAccount?.walletBalance;
+                  final wallet =
+                      state.walletResponse.data?.walletAccount?.walletBalance;
                   balance = wallet?.balance.toDouble() ?? 0.0;
                 }
 
@@ -192,27 +198,38 @@ class _AppBarHomeState extends State<AppBarHome> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                  _buildActionButton(
-                    Icons.shopping_cart,
-                    "Shop",
-                    onTap: () {
-                      final navWrapper = context.findAncestorStateOfType<NavigationWrapperState>();
-                      if (navWrapper != null) {
-                        navWrapper.setTabIndex(4); // 👈 jump to the Merchant tab
-                      } else {
-                        // fallback if somehow opened outside NavigationWrapper
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => NavigationWrapper(
-                              initialIndex: 4,
-                              userModel: widget.userModel,
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                  ),
+                // _buildActionButton(
+                //   Icons.shopping_cart,
+                //   "Shop",
+                //   onTap: () {
+                //     final navWrapper = context.findAncestorStateOfType<NavigationWrapperState>();
+                //     if (navWrapper != null) {
+                //       navWrapper.setTabIndex(4); // 👈 jump to the Merchant tab
+                //     } else {
+                //       // fallback if somehow opened outside NavigationWrapper
+                //       Navigator.push(
+                //         context,
+                //         MaterialPageRoute(
+                //           builder: (_) => NavigationWrapper(
+                //             initialIndex: 4,
+                //             userModel: widget.userModel,
+                //           ),
+                //         ),
+                //       );
+                //     }
+                //   },
+                // ),
+                _buildActionButton(
+                  Icons.discount_rounded,
+                  "Vouchers",
+                  onTap: () async {
+                    showMerchantVoucherModal(
+                      context,
+                      "FlexPay",
+                      0, // Default merchant ID for the Vouchers button
+                    );
+                  },
+                ),
                 _buildActionButton(
                   Icons.arrow_downward,
                   "Top up",
@@ -239,20 +256,92 @@ class _AppBarHomeState extends State<AppBarHome> {
                     }
                   },
                 ),
+
                 _buildActionButton(
                   Icons.card_giftcard,
                   "Kapu",
                   onTap: () async {
-                    final result = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PromoCardsSwiperPage(userModel: widget.userModel),
-                      ),
+                    final userId = widget.userModel.user.id.toString();
+
+                    final hasVisited =
+                        await SharedPreferencesHelper.hasVisitedKapu(userId);
+                    final hasUsed = await SharedPreferencesHelper.hasUsedKapu(
+                      userId,
+                    );
+                    final hasInteracted =
+                        await SharedPreferencesHelper.hasInteractedWithKapu(
+                          userId,
+                        );
+
+                    AppLogger.log(
+                      '🔍 [KAPU NAV CHECK] userId=$userId | visited=$hasVisited | used=$hasUsed | interacted=$hasInteracted',
                     );
 
-                    // ✅ Only refresh if a voucher or promo action actually changed the wallet
-                    if (result == true && context.mounted) {
-                      context.read<HomeCubit>().fetchUserWallet();
+                    final kapuWalletResponses = await context
+                        .read<KapuCubit>()
+                        .fetchMultipleKapuWalletBalances([
+                          "812",
+                          "347",
+                          "107",
+                          "73",
+                          "727",
+                          "4",
+                        ]);
+
+                    if (kapuWalletResponses.isNotEmpty) {
+                      AppLogger.log(
+                        '🟢 [KAPU NAV] Wallet data exists → navigating directly to PromoCardsSwiperPage',
+                      );
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              PromoCardsSwiperPage(userModel: widget.userModel),
+                        ),
+                        (route) => route.isFirst,
+                      );
+                    } else if (!hasVisited ||
+                        (hasVisited && !hasUsed && !hasInteracted)) {
+                      AppLogger.log(
+                        '🟡 [KAPU NAV] Navigating to OnBoardKapu (user has not interacted yet)',
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OnBoardKapu(
+                            userModel: widget.userModel,
+                            onOptIn: () async {
+                              await SharedPreferencesHelper.markKapuVisited(
+                                userId,
+                              );
+                              AppLogger.log(
+                                '✅ [KAPU NAV] User opted in → marking visited and navigating to PromoCardsSwiperPage',
+                              );
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PromoCardsSwiperPage(
+                                    userModel: widget.userModel,
+                                  ),
+                                ),
+                                (route) => route.isFirst,
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    } else {
+                      AppLogger.log(
+                        '🟢 [KAPU NAV] User already interacted → navigating directly to PromoCardsSwiperPage',
+                      );
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              PromoCardsSwiperPage(userModel: widget.userModel),
+                        ),
+                        (route) => route.isFirst,
+                      );
                     }
                   },
                 ),
@@ -303,18 +392,10 @@ class AppBarBalanceShimmer extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Container(
-              height: 36.h,
-              width: 120.w,
-              color: Colors.white54,
-            ),
+            child: Container(height: 36.h, width: 120.w, color: Colors.white54),
           ),
           SizedBox(width: 10.w),
-          Icon(
-            Icons.visibility,
-            color: Colors.white70,
-            size: 24.sp,
-          ),
+          Icon(Icons.visibility, color: Colors.white70, size: 24.sp),
         ],
       ),
     );
