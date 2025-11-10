@@ -2,6 +2,7 @@ import 'package:flexpay/features/auth/models/user_model.dart';
 import 'package:flexpay/features/home/ui/appbarhome.dart';
 import 'package:flexpay/features/home/ui/transactions_home.dart';
 import 'package:flexpay/features/kapu/cubits/kapu_cubit.dart';
+import 'package:flexpay/features/kapu/cubits/kapu_state.dart';
 import 'package:flexpay/features/kapu/ui/kapu_opt_in.dart';
 import 'package:flexpay/features/kapu/ui/promo_cards.dart';
 import 'package:flexpay/features/payments/ui/voucher_sheet.dart';
@@ -28,15 +29,17 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.isDarkModeOn,
-    required this.userModel, UserModel? user,
+    required this.userModel,
+    UserModel? user,
   });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMixin {
-    @override
+class _HomeScreenState extends State<HomeScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
   bool get wantKeepAlive => true;
   List<dynamic> outlets = [];
   bool isLoading = true;
@@ -49,7 +52,6 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
   @override
   void initState() {
-
     super.initState();
     // Fetch wallet when arriving on HomeScreen regardless of navigation path
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -57,13 +59,12 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
       final cubit = context.read<HomeCubit>();
 
-
       // ✅ Only fetch if Cubit has no existing data
       if (cubit.state is! HomeWalletFetched) {
         cubit.fetchUserWallet();
       }
 
-      if (cubit.state is! HomeTransactionsFetched) { 
+      if (cubit.state is! HomeTransactionsFetched) {
         setState(() {
           _txLoading = true;
           _txError = null;
@@ -166,74 +167,86 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                       ),
                       child: GestureDetector(
                         onTap: () async {
-                      // ✅ Prevent multiple rapid taps
-                      if (_isNavigatingToKapu) return;
-                      setState(() => _isNavigatingToKapu = true);
+                          if (_isNavigatingToKapu) return;
+                          setState(() => _isNavigatingToKapu = true);
 
-                      try {
-                        final userId = widget.userModel.user.id.toString();
+                          try {
+                            final userId = widget.userModel.user.id.toString();
 
-                        final hasVisited = await SharedPreferencesHelper.hasVisitedKapu(userId);
-                        final hasUsed = await SharedPreferencesHelper.hasUsedKapu(userId);
-                        final hasInteracted = await SharedPreferencesHelper.hasInteractedWithKapu(userId);
+                            final hasVisited =
+                                await SharedPreferencesHelper.hasVisitedKapu(
+                                  userId,
+                                );
+                            final hasUsed =
+                                await SharedPreferencesHelper.hasUsedKapu(
+                                  userId,
+                                );
+                            final hasInteracted =
+                                await SharedPreferencesHelper.hasInteractedWithKapu(
+                                  userId,
+                                );
 
-                        AppLogger.log(
-                          '🔍 [KAPU NAV CHECK] userId=$userId | visited=$hasVisited | used=$hasUsed | interacted=$hasInteracted',
+                            AppLogger.log(
+                              '🔍 [KAPU NAV CHECK] userId=$userId | visited=$hasVisited | used=$hasUsed | interacted=$hasInteracted',
+                            );
+
+                            await context
+                                .read<KapuCubit>()
+                                .fetchAllKapuWalletsInstantly();
+                            final state = context.read<KapuCubit>().state;
+
+                            if (state is KapuAllWalletsInstantlyFetched &&
+                                state.walletsResponse.success &&
+                                state.walletsResponse.data.isNotEmpty) {
+                              AppLogger.log(
+                                '🟢 [KAPU NAV] Wallet data exists → navigating directly to PromoCardsSwiperPage',
+                              );
+                              Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PromoCardsSwiperPage(
+                              userModel: widget.userModel,
+                            ),
+                          ),
+                          (route) => route.isFirst,
                         );
-
-                        final kapuWalletResponses = await context.read<KapuCubit>().fetchMultipleKapuWalletBalances([
-                          "812",
-                          "347",
-                          "107",
-                          "73",
-                          "727",
-                          "4",
-                        ]);
-
-                        if (kapuWalletResponses.isNotEmpty) {
-                          AppLogger.log('🟢 [KAPU NAV] Wallet data exists → navigating directly to PromoCardsSwiperPage');
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PromoCardsSwiperPage(userModel: widget.userModel),
-                            ),
-                          );
-                        } else if (!hasVisited || (hasVisited && !hasUsed && !hasInteracted)) {
-                          AppLogger.log('🟡 [KAPU NAV] Navigating to OnBoardKapu (user has not interacted yet)');
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => OnBoardKapu(
-                                userModel: widget.userModel,
-                                onOptIn: () async {
-                                  await SharedPreferencesHelper.markKapuVisited(userId);
-                                  AppLogger.log('✅ [KAPU NAV] User opted in → marking visited and navigating to PromoCardsSwiperPage');
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PromoCardsSwiperPage(userModel: widget.userModel),
+                      }  else {
+                              AppLogger.log(
+                                '🟡 [KAPU NAV] Navigating to OnBoardKapu (user has not interacted yet)',
+                              );
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => OnBoardKapu(
+                                    userModel: widget.userModel,
+                                    onOptIn: () async {
+                                      await SharedPreferencesHelper.markKapuVisited(
+                                        userId,
+                                      );
+                                      AppLogger.log(
+                                        '✅ [KAPU NAV] User opted in → marking visited and navigating to PromoCardsSwiperPage',
+                                      );
+                                  Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PromoCardsSwiperPage(
+                                      userModel: widget.userModel,
                                     ),
-                                  );
-                                },
-                              ),
-                            ),
-                          );
-                        } else {
-                          AppLogger.log('🟢 [KAPU NAV] User already interacted → navigating directly to PromoCardsSwiperPage');
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PromoCardsSwiperPage(userModel: widget.userModel),
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        AppLogger.log('❌ [KAPU NAV ERROR] $e');
-                      } finally {
-                        // ✅ Re-enable navigation after returning
-                        if (mounted) setState(() => _isNavigatingToKapu = false);
-                      }
-                    },
+                                  ),
+                                  (route) => route.isFirst,
+                                );
+                                    },
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            AppLogger.log('❌ [KAPU NAV ERROR] $e');
+                          } finally {
+                            if (mounted)
+                              setState(() => _isNavigatingToKapu = false);
+                          }
+                        },
                         child: Container(
                           height: 110.h,
                           padding: EdgeInsets.all(16.w),
@@ -328,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                                   ),
                                 ],
                               ),
-                               // ❄️ Replace image with Lottie animation
+                              // ❄️ Replace image with Lottie animation
                               Positioned(
                                 right: -94.w,
                                 top: -34.h,
@@ -587,7 +600,6 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                       ),
 
                       SizedBox(height: 24.h),
-                      
                     ],
                   );
                 },
