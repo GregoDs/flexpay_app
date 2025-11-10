@@ -66,8 +66,8 @@ class KapuRepo {
 
       // Retrieve stored user info
       final userModel = await SharedPreferencesHelper.getUserModel();
-      final userId = userModel?.user.id;
-      // final userId = '22';
+      // final userId = userModel?.user.id;
+      final userId = '22';
 
       if (userId == null) {
         throw Exception("User ID not found in storage.");

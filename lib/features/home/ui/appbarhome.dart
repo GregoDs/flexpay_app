@@ -35,6 +35,7 @@ class AppBarHome extends StatefulWidget {
 
 class _AppBarHomeState extends State<AppBarHome> {
   bool isBalanceVisible = true;
+  bool isKapuButtonPressed = false; // Flag to prevent multiple instances
 
   void toggleBalanceVisibility() {
     setState(() {
@@ -261,6 +262,11 @@ class _AppBarHomeState extends State<AppBarHome> {
                   Icons.card_giftcard,
                   "Kapu",
                   onTap: () async {
+                    if (isKapuButtonPressed) return; // Prevent multiple presses
+                    setState(() {
+                      isKapuButtonPressed = true;
+                    });
+
                     final userId = widget.userModel.user.id.toString();
 
                     final hasVisited =
@@ -277,71 +283,63 @@ class _AppBarHomeState extends State<AppBarHome> {
                       '🔍 [KAPU NAV CHECK] userId=$userId | visited=$hasVisited | used=$hasUsed | interacted=$hasInteracted',
                     );
 
-                    final kapuWalletResponses = await context
-                        .read<KapuCubit>()
-                        .fetchMultipleKapuWalletBalances([
-                          "812",
-                          "347",
-                          "107",
-                          "73",
-                          "727",
-                          "4",
-                        ]);
+                    try {
+                      await context
+                          .read<KapuCubit>()
+                          .fetchAllKapuWalletsInstantly();
+                      final state = context.read<KapuCubit>().state;
 
-                    if (kapuWalletResponses.isNotEmpty) {
-                      AppLogger.log(
-                        '🟢 [KAPU NAV] Wallet data exists → navigating directly to PromoCardsSwiperPage',
-                      );
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              PromoCardsSwiperPage(userModel: widget.userModel),
-                        ),
-                        (route) => route.isFirst,
-                      );
-                    } else if (!hasVisited ||
-                        (hasVisited && !hasUsed && !hasInteracted)) {
-                      AppLogger.log(
-                        '🟡 [KAPU NAV] Navigating to OnBoardKapu (user has not interacted yet)',
-                      );
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OnBoardKapu(
-                            userModel: widget.userModel,
-                            onOptIn: () async {
-                              await SharedPreferencesHelper.markKapuVisited(
-                                userId,
-                              );
-                              AppLogger.log(
-                                '✅ [KAPU NAV] User opted in → marking visited and navigating to PromoCardsSwiperPage',
-                              );
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PromoCardsSwiperPage(
-                                    userModel: widget.userModel,
-                                  ),
-                                ),
-                                (route) => route.isFirst,
-                              );
-                            },
+                      if (state is KapuAllWalletsInstantlyFetched &&
+                          state.walletsResponse.success &&
+                          state.walletsResponse.data.isNotEmpty) {
+                        AppLogger.log(
+                          '🟢 [KAPU NAV] Wallet data exists → navigating directly to PromoCardsSwiperPage',
+                        );
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PromoCardsSwiperPage(
+                              userModel: widget.userModel,
+                            ),
                           ),
-                        ),
-                      );
-                    } else {
-                      AppLogger.log(
-                        '🟢 [KAPU NAV] User already interacted → navigating directly to PromoCardsSwiperPage',
-                      );
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              PromoCardsSwiperPage(userModel: widget.userModel),
-                        ),
-                        (route) => route.isFirst,
-                      );
+                          (route) => route.isFirst,
+                        );
+                      } else {
+                        AppLogger.log(
+                          '🟡 [KAPU NAV] Navigating to OnBoardKapu (user has not interacted yet)',
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OnBoardKapu(
+                              userModel: widget.userModel,
+                              onOptIn: () async {
+                                await SharedPreferencesHelper.markKapuVisited(
+                                  userId,
+                                );
+                                AppLogger.log(
+                                  '✅ [KAPU NAV] User opted in → marking visited and navigating to PromoCardsSwiperPage',
+                                );
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PromoCardsSwiperPage(
+                                      userModel: widget.userModel,
+                                    ),
+                                  ),
+                                  (route) => route.isFirst,
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      AppLogger.log('❌ [KAPU NAV] Error during navigation: $e');
+                    } finally {
+                      setState(() {
+                        isKapuButtonPressed = false; // Reset the flag
+                      });
                     }
                   },
                 ),
