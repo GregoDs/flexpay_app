@@ -5,6 +5,7 @@ import 'package:flexpay/features/kapu/ui/modals/kapu_voucher_modal.dart';
 import 'package:flexpay/features/kapu/ui/modals/transfer_modal.dart';
 import 'package:flexpay/features/kapu/cubits/kapu_cubit.dart';
 import 'package:flexpay/features/kapu/cubits/kapu_state.dart';
+import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -37,6 +38,9 @@ class _PromoCardDetailPageState extends State<PromoCardDetailPage> {
     super.initState();
     _loadHidePreference();
     _currentBalance = widget.balance;
+
+    // Mark the user as having interacted with Kapu
+    SharedPreferencesHelper.markKapuInteracted(widget.booking.userId.toString());
   }
 
   Future<void> _loadHidePreference() async {
