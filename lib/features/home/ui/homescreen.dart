@@ -46,6 +46,11 @@ class _HomeScreenState extends State<HomeScreen>
   String? _txError;
   bool _isNavigatingToKapu = false;
   bool _walletLoading = false;
+  bool _isLoading = true;
+
+  // Added flags to track individual fetch states
+  bool _walletFetched = false;
+  bool _transactionsFetched = false;
 
   @override
   void initState() {
@@ -98,47 +103,62 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             child: BlocListener<HomeCubit, HomeState>(
               listener: (context, state) {
-                AppLogger.log('BlocListener: Current state = $state'); // Debug log
+                AppLogger.log(
+                  'BlocListener: Current state = $state',
+                ); // Debug log
 
-                if (state is HomeWalletLoading) {
+                if (state is HomeWalletLoading ||
+                    state is HomeTransactionsLoading) {
                   setState(() {
-                    _walletLoading = true; // Trigger app bar shimmer for wallet loading
+                    _isLoading = true; // Keep shimmer active while loading
+                    AppLogger.log(
+                      'Combined loading started: _isLoading = $_isLoading',
+                    );
                   });
                 } else if (state is HomeWalletFetched) {
                   setState(() {
-                    _walletLoading = false; // Stop app bar shimmer
-                  });
-                } else if (state is HomeWalletFailure) {
-                  setState(() {
-                    _walletLoading = false; // Stop app bar shimmer on failure
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.message)),
-                  );
-                } else if (state is HomeTransactionsLoading) {
-                  setState(() {
-                    _txLoading = true; // Trigger SpinKitWave for transactions loading
+                    _walletFetched = true; // Mark wallet as fetched
+                    AppLogger.log(
+                      'Wallet fetched: _walletFetched = $_walletFetched',
+                    );
+                    _isLoading =
+                        !_walletFetched ||
+                        !_transactionsFetched; // Update combined loading state
+                    AppLogger.log('Updated _isLoading = $_isLoading');
                   });
                 } else if (state is HomeTransactionsFetched) {
                   setState(() {
-                    _txLoading = false; // Stop SpinKitWave
-                    _transactions = state.transactionsResponse.data;
+                    _transactionsFetched = true; // Mark transactions as fetched
+                    _txLoading = false; // Stop transactions loader
+                    _transactions = state
+                        .transactionsResponse
+                        .data; // Update transactions list
+                    AppLogger.log(
+                      'Transactions fetched: _transactionsFetched = $_transactionsFetched',
+                    );
+                    AppLogger.log('Updated _txLoading = $_txLoading');
+                    _isLoading =
+                        !_walletFetched ||
+                        !_transactionsFetched; // Update combined loading state
+                    AppLogger.log('Updated _isLoading = $_isLoading');
                   });
-                } else if (state is HomeTransactionsFailure) {
+                } else if (state is HomeWalletFailure ||
+                    state is HomeTransactionsFailure) {
                   setState(() {
-                    _txLoading = false; // Stop SpinKitWave on failure
-                    _txError = state.message;
+                    _isLoading = false; // Stop shimmer on failure
+                    _txLoading = false; // Stop transactions loader on failure
+                    AppLogger.log(
+                      'Combined loading failed: _isLoading = $_isLoading',
+                    );
                   });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.message)),
-                  );
                 }
               },
               child: AppBarHome(
                 context,
                 userName: "${widget.userModel.user.firstName}",
                 userModel: widget.userModel,
-                isDataReady: !_walletLoading, // Use _walletLoading to control shimmer
+                isDataReady:
+                    !_isLoading, // Use combined loading flag to control shimmer
               ),
             ),
           ),
@@ -345,7 +365,7 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                 ),
-                
+
                 SizedBox(height: 10.h),
                 _buildCampaignCard(context),
                 SizedBox(height: 20.h),
