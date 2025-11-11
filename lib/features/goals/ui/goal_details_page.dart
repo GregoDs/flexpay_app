@@ -97,9 +97,11 @@ class _GoalDetailsPageState extends State<GoalDetailsPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          productName,
+                          productName.length > 20
+                              ? "${productName.substring(0, 22)}..."
+                              : productName,
                           style: GoogleFonts.montserrat(
-                            fontSize: 18.sp,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w600,
                             color: textColor,
                           ),
@@ -205,9 +207,11 @@ class _GoalDetailsPageState extends State<GoalDetailsPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  productName,
+                                  productName.length > 20
+                                      ? "${productName.substring(0, 22)}..."
+                                      : productName,
                                   style: GoogleFonts.montserrat(
-                                    fontSize: 20.sp,
+                                    fontSize: 16.sp,
                                     fontWeight: FontWeight.w500,
                                     color: textColor,
                                   ),
@@ -265,26 +269,26 @@ class _GoalDetailsPageState extends State<GoalDetailsPage> {
                 SizedBox(height: 30.h),
 
                 // Transaction History
-                Text(
-                  "Transaction History",
-                  style: GoogleFonts.montserrat(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildTransactionRow(
-                        "10 July 2025", "+Ksh 500", textColor, subtitleColor),
-                    _buildTransactionRow(
-                        "08 July 2025", "+Ksh 1000", textColor, subtitleColor),
-                    _buildTransactionRow(
-                        "02 July 2025", "+Ksh 200", textColor, subtitleColor),
-                  ],
-                ),
+                // Text(
+                //   "Transaction History",
+                //   style: GoogleFonts.montserrat(
+                //     fontSize: 16.sp,
+                //     fontWeight: FontWeight.w600,
+                //     color: textColor,
+                //   ),
+                // ),
+                // SizedBox(height: 12.h),
+                // Column(
+                //   mainAxisSize: MainAxisSize.min,
+                //   children: [
+                //     _buildTransactionRow(
+                //         "10 July 2025", "+Ksh 500", textColor, subtitleColor),
+                //     _buildTransactionRow(
+                //         "08 July 2025", "+Ksh 1000", textColor, subtitleColor),
+                //     _buildTransactionRow(
+                //         "02 July 2025", "+Ksh 200", textColor, subtitleColor),
+                //   ],
+                // ),
                 SizedBox(height: 30.h),
                 // Top Up Button (with goal completion logic)
                 SizedBox(

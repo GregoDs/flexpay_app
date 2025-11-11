@@ -28,20 +28,27 @@ class _CreateGoalPageState extends State<CreateGoalPage> {
   @override
   void initState() {
     super.initState();
-    amountController =
-        TextEditingController(text: widget.prefilledGoal?['amount'] ?? '');
-    productNameController =
-        TextEditingController(text: widget.prefilledGoal?['product_name'] ?? '');
-    startDateController =
-        TextEditingController(text: widget.prefilledGoal?['start_date'] ?? '');
-    endDateController =
-        TextEditingController(text: widget.prefilledGoal?['end_date'] ?? '');
-    frequencyController =
-        TextEditingController(text: widget.prefilledGoal?['frequency'] ?? '');
+    amountController = TextEditingController(
+      text: widget.prefilledGoal?['amount'] ?? '',
+    );
+    productNameController = TextEditingController(
+      text: widget.prefilledGoal?['product_name'] ?? '',
+    );
+    startDateController = TextEditingController(
+      text: widget.prefilledGoal?['start_date'] ?? '',
+    );
+    endDateController = TextEditingController(
+      text: widget.prefilledGoal?['end_date'] ?? '',
+    );
+    frequencyController = TextEditingController(
+      text: widget.prefilledGoal?['frequency'] ?? '',
+    );
     frequencyContributionController = TextEditingController(
-        text: widget.prefilledGoal?['frequency_contribution'] ?? '');
-    depositController =
-        TextEditingController(text: widget.prefilledGoal?['deposit'] ?? '');
+      text: widget.prefilledGoal?['frequency_contribution'] ?? '',
+    );
+    depositController = TextEditingController(
+      text: widget.prefilledGoal?['deposit'] ?? '',
+    );
   }
 
   @override
@@ -106,8 +113,10 @@ class _CreateGoalPageState extends State<CreateGoalPage> {
             ),
             body: SafeArea(
               child: SingleChildScrollView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 2,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -234,13 +243,15 @@ class _CreateGoalPageState extends State<CreateGoalPage> {
                               : () {
                                   if (_formKey.currentState!.validate()) {
                                     cubit.createGoal(
-                                      productName:
-                                          productNameController.text.trim(),
-                                      targetAmount: amountController.text.trim(),
-                                      startDate: startDateController.text.trim(),
+                                      productName: productNameController.text
+                                          .trim(),
+                                      targetAmount: amountController.text
+                                          .trim(),
+                                      startDate: startDateController.text
+                                          .trim(),
                                       endDate: endDateController.text.trim(),
-                                      frequency:
-                                          frequencyController.text.trim(),
+                                      frequency: frequencyController.text
+                                          .trim(),
                                       frequencyContribution:
                                           frequencyContributionController.text
                                               .trim(),
@@ -249,15 +260,15 @@ class _CreateGoalPageState extends State<CreateGoalPage> {
                                   }
                                 },
                           child: state is CreateGoalsLoading
-                            ? const SizedBox(
-                                height: 24,
-                                child: Center(
-                                  child: SpinKitWave(
-                                    color: Colors.white,
-                                    size: 24,
+                              ? const SizedBox(
+                                  height: 24,
+                                  child: Center(
+                                    child: SpinKitWave(
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
                                   ),
-                                ),
-                              )
+                                )
                               : Text(
                                   "Create Goal",
                                   style: GoogleFonts.montserrat(
@@ -292,11 +303,13 @@ class _CreateGoalPageState extends State<CreateGoalPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            )),
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
         SizedBox(height: 6),
         TextFormField(
           controller: controller,
@@ -318,15 +331,14 @@ class _CreateGoalPageState extends State<CreateGoalPage> {
               borderSide: BorderSide.none,
             ),
           ),
-          validator: (val) => val == null || val.isEmpty
-              ? "This field is required"
-              : null,
+          validator: (val) =>
+              val == null || val.isEmpty ? "This field is required" : null,
         ),
       ],
     );
   }
 
-  // Date Field (with same error text style)
+  // ✅ Updated Date Field for proper dark mode visibility
   Widget _buildDateField({
     required String label,
     required TextEditingController controller,
@@ -337,15 +349,20 @@ class _CreateGoalPageState extends State<CreateGoalPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            )),
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
         SizedBox(height: 6),
         GestureDetector(
           onTap: () async {
             FocusScope.of(context).unfocus();
+
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+
             DateTime? pickedDate = await showDatePicker(
               context: context,
               initialDate: DateTime.now(),
@@ -354,16 +371,34 @@ class _CreateGoalPageState extends State<CreateGoalPage> {
               builder: (context, child) {
                 return Theme(
                   data: Theme.of(context).copyWith(
-                    colorScheme: ColorScheme.light(
-                      primary: ColorName.primaryColor,
-                      onPrimary: Colors.white,
-                      onSurface: textColor,
+                    colorScheme: isDark
+                        ? const ColorScheme.dark(
+                            primary: ColorName.primaryColor, // accent color
+                            onPrimary: Colors.white, // text color on accent
+                            surface: Color(0xFF121212), // dialog bg
+                            onSurface: Colors.white, // calendar numbers
+                          )
+                        : ColorScheme.light(
+                            primary: ColorName.primaryColor,
+                            onPrimary: Colors.white,
+                            surface: Colors.white,
+                            onSurface: Colors.black87,
+                          ),
+                    dialogBackgroundColor: isDark
+                        ? const Color(0xFF1C1C1E)
+                        : Colors.white,
+                    textButtonTheme: TextButtonThemeData(
+                      style: TextButton.styleFrom(
+                        foregroundColor:
+                            ColorName.primaryColor, // OK/Cancel color
+                      ),
                     ),
                   ),
                   child: child!,
                 );
               },
             );
+
             if (pickedDate != null) {
               controller.text =
                   "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
@@ -376,9 +411,11 @@ class _CreateGoalPageState extends State<CreateGoalPage> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: fieldColor,
-                prefixIcon: Icon(icon, color: Colors.blue[800]),
+                prefixIcon: Icon(icon, color: textColor),
                 hintText: "YYYY-MM-DD",
-                hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+                hintStyle: GoogleFonts.montserrat(
+                  color: textColor.withOpacity(0.6),
+                ),
                 errorStyle: GoogleFonts.montserrat(
                   color: Colors.redAccent,
                   fontSize: 12.sp,

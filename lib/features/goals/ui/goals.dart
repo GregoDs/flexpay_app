@@ -29,14 +29,14 @@ class _GoalsPageState extends State<GoalsPage> with RouteAware {
       "product_category_name": "College",
       "targetAmount": "from Kshs 21k",
       "image": "assets/images/goals_imgs/school_fees.png",
-      "color": const Color(0xFF2F3E46), 
+      "color": const Color(0xFF2F3E46),
       "isSelected": false,
     },
     {
       "product_category_name": "Christmas",
       "targetAmount": "from Kshs 10k",
       "image": "assets/images/goals_imgs/christmass_goals.png",
-      "color": const Color(0xFFB71C1C), 
+      "color": const Color(0xFFB71C1C),
       "isSelected": false,
     },
     {
@@ -50,7 +50,7 @@ class _GoalsPageState extends State<GoalsPage> with RouteAware {
       "product_category_name": "Shopping",
       "targetAmount": "from Kshs 5k",
       "image": "assets/images/goals_imgs/shopping.jpg",
-      "color": Colors.green, 
+      "color": Colors.green,
       "isSelected": false,
     },
   ];
@@ -207,18 +207,26 @@ class _GoalsPageState extends State<GoalsPage> with RouteAware {
 
                             return GestureDetector(
                               onTap: () {
-                                String targetText =
-                                    goal["targetAmount"].toString().toLowerCase();
+                                String targetText = goal["targetAmount"]
+                                    .toString()
+                                    .toLowerCase();
                                 double numericValue = 0;
 
                                 if (targetText.contains('k')) {
                                   final number = double.tryParse(
-                                    targetText.replaceAll(RegExp(r'[^0-9.]'), ''),
+                                    targetText.replaceAll(
+                                      RegExp(r'[^0-9.]'),
+                                      '',
+                                    ),
                                   );
-                                  if (number != null) numericValue = number * 1000;
+                                  if (number != null)
+                                    numericValue = number * 1000;
                                 } else {
                                   final number = double.tryParse(
-                                    targetText.replaceAll(RegExp(r'[^0-9.]'), ''),
+                                    targetText.replaceAll(
+                                      RegExp(r'[^0-9.]'),
+                                      '',
+                                    ),
                                   );
                                   if (number != null) numericValue = number;
                                 }
@@ -228,8 +236,11 @@ class _GoalsPageState extends State<GoalsPage> with RouteAware {
                                   MaterialPageRoute(
                                     builder: (_) => CreateGoalPage(
                                       prefilledGoal: {
-                                        'product_name': goal["product_category_name"],
-                                        'amount': numericValue.toStringAsFixed(0),
+                                        'product_name':
+                                            goal["product_category_name"],
+                                        'amount': numericValue.toStringAsFixed(
+                                          0,
+                                        ),
                                       },
                                     ),
                                   ),
@@ -245,10 +256,13 @@ class _GoalsPageState extends State<GoalsPage> with RouteAware {
                                 child: Padding(
                                   padding: EdgeInsets.all(12.w),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       ClipRRect(
-                                        borderRadius: BorderRadius.circular(16.r),
+                                        borderRadius: BorderRadius.circular(
+                                          16.r,
+                                        ),
                                         child: Image.asset(
                                           goal["image"],
                                           height: 100.h,
@@ -262,8 +276,9 @@ class _GoalsPageState extends State<GoalsPage> with RouteAware {
                                         style: GoogleFonts.montserrat(
                                           fontSize: 16.sp,
                                           fontWeight: FontWeight.w600,
-                                          color:
-                                              isSelected ? Colors.black : Colors.white,
+                                          color: isSelected
+                                              ? Colors.black
+                                              : Colors.white,
                                         ),
                                       ),
                                       SizedBox(height: 2.h),
@@ -304,7 +319,7 @@ class _GoalsPageState extends State<GoalsPage> with RouteAware {
                 ),
 
                 SizedBox(height: 20.h),
-                
+
                 // My Goals Section (unchanged)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -517,8 +532,11 @@ class _GoalsPageState extends State<GoalsPage> with RouteAware {
                                     0.0;
 
                           final progress = bookingPrice > 0
-                              ? total / bookingPrice
+                              ? (total / bookingPrice)
                               : 0.0;
+                          final cappedProgress = progress > 1.0
+                              ? 1.0
+                              : progress; // Cap progress at 100%
 
                           return GestureDetector(
                             onTap: () {
@@ -585,7 +603,7 @@ class _GoalsPageState extends State<GoalsPage> with RouteAware {
                                         ),
                                         SizedBox(height: 8.h),
                                         Text(
-                                          "${(progress * 100).toStringAsFixed(0)}%",
+                                          "${(cappedProgress * 100).toStringAsFixed(0)}%", // Display capped progress percentage
                                           style: GoogleFonts.montserrat(
                                             fontSize: 16.sp,
                                             fontWeight: FontWeight.w600,
@@ -606,7 +624,8 @@ class _GoalsPageState extends State<GoalsPage> with RouteAware {
                                               ),
                                             ),
                                             FractionallySizedBox(
-                                              widthFactor: progress,
+                                              widthFactor:
+                                                  cappedProgress, // Use capped progress for the progress bar
                                               child: Container(
                                                 height: 4.h,
                                                 decoration: BoxDecoration(
