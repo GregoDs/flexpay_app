@@ -55,23 +55,25 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    // Fetch wallet when arriving on HomeScreen regardless of navigation path
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
       final cubit = context.read<HomeCubit>();
 
-      // ✅ Only fetch if Cubit has no existing data
-      if (cubit.state is! HomeWalletFetched) {
-        cubit.fetchUserWallet();
+      // Prevent overlapping API calls
+      if (!_walletLoading && cubit.state is! HomeWalletFetched) {
+        _walletLoading = true;
+        cubit.fetchUserWallet().then((_) => _walletLoading = false);
       }
 
-      if (cubit.state is! HomeTransactionsFetched) {
+      if (!_txLoading && cubit.state is! HomeTransactionsFetched) {
         setState(() {
           _txLoading = true;
           _txError = null;
         });
-        cubit.fetchLatestTransactions();
+        cubit.fetchLatestTransactions().then(
+          (_) => setState(() => _txLoading = false),
+        );
       }
     });
   }
@@ -79,16 +81,35 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> _refreshData() async {
     final cubit = context.read<HomeCubit>();
 
+    // Prevent overlapping API calls
+    if (_walletLoading || _txLoading) return;
+
     setState(() {
       _txLoading = true;
       _txError = null;
     });
 
-    // ✅ Re-fetch wallet and transactions in parallel, wait for both
     await Future.wait([
-      cubit.fetchUserWallet(),
-      cubit.fetchLatestTransactions(),
+      cubit.fetchUserWallet().then((_) => _walletLoading = false),
+      cubit.fetchLatestTransactions().then(
+        (_) => setState(() => _txLoading = false),
+      ),
     ]);
+  }
+
+  Widget _buildMerchantImage(String imagePath) {
+    return Image.asset(
+      imagePath,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Image.asset('assets/merchantspageimg/default.png');
+      },
+    );
+  }
+
+  // Added a delay to ensure shimmer lasts for at least 2 seconds
+  Future<void> _ensureMinimumShimmerDuration() async {
+    await Future.delayed(const Duration(seconds: 2));
   }
 
   @override
@@ -102,31 +123,29 @@ class _HomeScreenState extends State<HomeScreen>
               MediaQuery.of(context).size.height * 0.60,
             ),
             child: BlocListener<HomeCubit, HomeState>(
-              listener: (context, state) {
+              listener: (context, state) async {
                 AppLogger.log(
                   'BlocListener: Current state = $state',
                 ); // Debug log
 
-                if (state is HomeWalletLoading ||
-                    state is HomeTransactionsLoading) {
-                  setState(() {
-                    _isLoading = true; // Keep shimmer active while loading
-                    AppLogger.log(
-                      'Combined loading started: _isLoading = $_isLoading',
-                    );
-                  });
-                } else if (state is HomeWalletFetched) {
+                if (state is HomeWalletFetched) {
+                  final walletBalance =
+                      state.walletResponse.data!.walletAccount?.walletBalance;
+                  AppLogger.log(
+                    'Wallet balance fetched: Total Credit = ${walletBalance?.totalCredit}, Total Debit = ${walletBalance?.totalDebit}',
+                  );
+                  await _ensureMinimumShimmerDuration(); // Ensure shimmer lasts for 2 seconds
                   setState(() {
                     _walletFetched = true; // Mark wallet as fetched
-                    AppLogger.log(
-                      'Wallet fetched: _walletFetched = $_walletFetched',
-                    );
                     _isLoading =
                         !_walletFetched ||
                         !_transactionsFetched; // Update combined loading state
                     AppLogger.log('Updated _isLoading = $_isLoading');
                   });
-                } else if (state is HomeTransactionsFetched) {
+                }
+
+                if (state is HomeTransactionsFetched) {
+                  await _ensureMinimumShimmerDuration(); // Ensure shimmer lasts for 2 seconds
                   setState(() {
                     _transactionsFetched = true; // Mark transactions as fetched
                     _txLoading = false; // Stop transactions loader
@@ -136,14 +155,26 @@ class _HomeScreenState extends State<HomeScreen>
                     AppLogger.log(
                       'Transactions fetched: _transactionsFetched = $_transactionsFetched',
                     );
-                    AppLogger.log('Updated _txLoading = $_txLoading');
                     _isLoading =
                         !_walletFetched ||
                         !_transactionsFetched; // Update combined loading state
                     AppLogger.log('Updated _isLoading = $_isLoading');
                   });
-                } else if (state is HomeWalletFailure ||
+                }
+
+                if (state is HomeWalletLoading ||
+                    state is HomeTransactionsLoading) {
+                  setState(() {
+                    _isLoading = true; // Keep shimmer active while loading
+                    AppLogger.log(
+                      'Combined loading started: _isLoading = $_isLoading',
+                    );
+                  });
+                }
+
+                if (state is HomeWalletFailure ||
                     state is HomeTransactionsFailure) {
+                  await _ensureMinimumShimmerDuration(); // Ensure shimmer lasts for 2 seconds
                   setState(() {
                     _isLoading = false; // Stop shimmer on failure
                     _txLoading = false; // Stop transactions loader on failure
@@ -159,6 +190,34 @@ class _HomeScreenState extends State<HomeScreen>
                 userModel: widget.userModel,
                 isDataReady:
                     !_isLoading, // Use combined loading flag to control shimmer
+                onWalletBalanceMissing: () {
+                  // Add a fallback UI or refetch option
+                  AppLogger.log(
+                    'Wallet balance missing in UI. Prompting user to refetch.',
+                  );
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('Wallet Balance Missing'),
+                      content: Text(
+                        'Your wallet balance is not visible. Would you like to refetch it?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            context.read<HomeCubit>().fetchUserWallet();
+                          },
+                          child: Text('Refetch'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text('Cancel'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ),

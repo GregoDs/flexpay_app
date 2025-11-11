@@ -24,6 +24,7 @@ class AppBarHome extends StatefulWidget {
   final String userName;
   final UserModel userModel;
   final bool isDataReady;
+  final VoidCallback? onWalletBalanceMissing; // Add the new parameter
 
   const AppBarHome(
     BuildContext context, {
@@ -31,6 +32,7 @@ class AppBarHome extends StatefulWidget {
     required this.userName,
     required this.userModel,
     required this.isDataReady,
+    this.onWalletBalanceMissing, // Initialize the new parameter
   });
 
   @override
@@ -43,6 +45,7 @@ class _AppBarHomeState extends State<AppBarHome> {
   bool isDataReady = false;
   Timer? _balanceRefreshTimer; // Timer to manage periodic refresh
   DateTime? _lastUpdated; // Track the last updated timestamp
+  double? cachedBalance; // Cached balance to avoid blank data
 
   @override
   void initState() {
@@ -73,10 +76,22 @@ class _AppBarHomeState extends State<AppBarHome> {
 
   void _fetchInitialData() async {
     await context.read<HomeCubit>().fetchUserWallet();
+    await _ensureMinimumShimmerDuration(); // Ensure shimmer lasts for the full duration
     setState(() {
       isDataReady = true;
       _lastUpdated = DateTime.now(); // Update the last updated timestamp
+
+      // Update cached balance
+      final state = context.read<HomeCubit>().state;
+      if (state is HomeWalletFetched) {
+        final wallet = state.walletResponse.data?.walletAccount?.walletBalance;
+        cachedBalance = wallet?.balance.toDouble();
+      }
     });
+  }
+
+  Future<void> _ensureMinimumShimmerDuration() async {
+    await Future.delayed(const Duration(seconds: 0));
   }
 
   void _manualRefresh() {
@@ -204,83 +219,77 @@ class _AppBarHomeState extends State<AppBarHome> {
                     ),
                   ),
                   SizedBox(width: 4.w), // Add spacing between text and icon
-                  if (_lastUpdated == null ||
-                      DateTime.now().difference(_lastUpdated!) >
-                          const Duration(minutes: 2))
-                    GestureDetector(
-                      onTap: () {
-                        _manualRefresh();
-                        showDialog(
-                          context: context,
-                          builder: (context) => Dialog(
-                            shape: RoundedRectangleBorder(
+                  GestureDetector(
+                    onTap: () {
+                      _manualRefresh();
+                      showDialog(
+                        context: context,
+                        builder: (context) => Dialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.all(16.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(16.r),
                             ),
-                            child: Container(
-                              padding: EdgeInsets.all(16.w),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16.r),
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.info_outline,
-                                    color: Colors.blue,
-                                    size: 48.sp,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.blue,
+                                  size: 48.sp,
+                                ),
+                                SizedBox(height: 16.h),
+                                Text(
+                                  'Balance Information',
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
                                   ),
-                                  SizedBox(height: 16.h),
-                                  Text(
-                                    'Balance Information',
-                                    style: GoogleFonts.montserrat(
-                                      fontSize: 18.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
+                                ),
+                                SizedBox(height: 8.h),
+                                Text(
+                                  'Feels like the balance is outdated...lets refresh it.',
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 14.sp,
+                                    color: Colors.black54,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 16.h),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8.r),
                                     ),
                                   ),
-                                  SizedBox(height: 8.h),
-                                  Text(
-                                    'Feels like the balance is outdated...lets refresh it.',
+                                  child: Text(
+                                    'OK',
                                     style: GoogleFonts.montserrat(
                                       fontSize: 14.sp,
-                                      color: Colors.black54,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  SizedBox(height: 16.h),
-                                  ElevatedButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          8.r,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'OK',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 14.sp,
-                                        color: Colors.white,
-                                      ),
+                                      color: Colors.white,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
-                        );
-                      },
-                      child: Icon(
-                        Icons.info_outline,
-                        color: Colors
-                            .yellow, // Make the icon yellow for visibility
-                        size: 16.sp,
-                      ),
+                        ),
+                      );
+                    },
+                    child: Icon(
+                      Icons.info_outline,
+                      color:
+                          Colors.yellow, // Make the icon yellow for visibility
+                      size: 16.sp,
                     ),
+                  ),
                 ],
               ),
               SizedBox(height: 4.h),
@@ -293,7 +302,7 @@ class _AppBarHomeState extends State<AppBarHome> {
                     return const AppBarBalanceShimmer();
                   }
 
-                  double? balance; // Change to nullable double
+                  double? balance = cachedBalance; // Use cached balance
                   if (state is HomeWalletFetched) {
                     final wallet =
                         state.walletResponse.data?.walletAccount?.walletBalance;
@@ -311,7 +320,7 @@ class _AppBarHomeState extends State<AppBarHome> {
                                   ? (isBalanceVisible
                                         ? 'Ksh ${balance.toStringAsFixed(2)}'
                                         : '••••••')
-                                  : '', // Show nothing if balance is null
+                                  : 'Ksh ${cachedBalance?.toStringAsFixed(2) ?? '••••••'}', // Fallback to cached balance
                               style: GoogleFonts.montserrat(
                                 fontSize: 32.sp,
                                 fontWeight: FontWeight.w500,
