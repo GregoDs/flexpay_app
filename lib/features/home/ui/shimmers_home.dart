@@ -6,28 +6,51 @@ import 'package:shimmer/shimmer.dart';
 /// 🧭 HOME SCREEN SHIMMERS
 /// ==========================================================
 
-/// 🧭 1️⃣ AppBar shimmer — only the balance section shimmers
+
+/// 🧭 Adaptive shimmer for AppBar balance section — blends with blue background
 class AppBarBalanceShimmer extends StatelessWidget {
-  const AppBarBalanceShimmer({super.key});
+  final bool isDarkMode;
+  const AppBarBalanceShimmer({super.key, this.isDarkMode = false});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Shimmer.fromColors(
-            baseColor: Colors.grey.shade300,
-            highlightColor: Colors.grey.shade100,
-            child: Container(height: 32, color: Colors.white),
+    // 🎨 Smooth adaptive tones for blue background
+    final baseColor = isDarkMode
+        ? Colors.blueGrey.shade700.withOpacity(0.4)
+        : Colors.blue.shade300.withOpacity(0.35);
+    final highlightColor = isDarkMode
+        ? Colors.lightBlueAccent.withOpacity(0.6)
+        : Colors.white.withOpacity(0.8);
+
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      direction: ShimmerDirection.ltr, // 👈 horizontal sweep
+      period: const Duration(seconds: 2), // smooth Apple-like timing
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 💠 Total Balance Label shimmer
+          Container(
+            width: 100,
+            height: 14,
+            decoration: BoxDecoration(
+              color: baseColor,
+              borderRadius: BorderRadius.circular(6),
+            ),
           ),
-        ),
-        SizedBox(width: 8),
-        Shimmer.fromColors(
-          baseColor: Colors.grey.shade300,
-          highlightColor: Colors.grey.shade100,
-          child: Icon(Icons.visibility, size: 24, color: Colors.white),
-        ),
-      ],
+          const SizedBox(height: 6),
+          // 💰 Balance Value shimmer
+          Container(
+            width: 150,
+            height: 32,
+            decoration: BoxDecoration(
+              color: baseColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -54,7 +77,7 @@ class TransactionDetailsShimmer extends StatelessWidget {
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: 10, // show 10 shimmer items
+        itemCount: 10,
         itemBuilder: (context, index) {
           return const _TransactionItemShimmer();
         },

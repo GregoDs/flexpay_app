@@ -5,7 +5,6 @@ import 'package:flexpay/features/kapu/cubits/kapu_cubit.dart';
 import 'package:flexpay/features/kapu/cubits/kapu_state.dart';
 import 'package:flexpay/features/kapu/ui/kapu_opt_in.dart';
 import 'package:flexpay/features/kapu/ui/promo_cards.dart';
-import 'package:flexpay/features/payments/ui/voucher_sheet.dart';
 import 'package:flexpay/gen/colors.gen.dart';
 import 'package:flexpay/utils/cache/shared_preferences_helper.dart';
 import 'package:flexpay/utils/services/logger.dart';
@@ -13,7 +12,6 @@ import 'package:flexpay/utils/widgets/scaffold_messengers.dart';
 import 'package:flexpay/utils/widgets/app_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,12 +41,11 @@ class _HomeScreenState extends State<HomeScreen>
   bool get wantKeepAlive => true;
   List<dynamic> outlets = [];
   bool isLoading = true;
-  double _walletBalance = 0.0;
-  double _refundableBalance = 0.0;
   List<TransactionData> _transactions = [];
   bool _txLoading = false;
   String? _txError;
   bool _isNavigatingToKapu = false;
+  bool _walletLoading = false;
 
   @override
   void initState() {
@@ -101,274 +98,263 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             child: BlocListener<HomeCubit, HomeState>(
               listener: (context, state) {
-                if (state is HomeWalletFetched) {
-                  final wallet =
-                      state.walletResponse.data?.walletAccount?.walletBalance;
-                  final refundableWalletBalance =
-                      state
-                          .walletResponse
-                          .data
-                          ?.walletAccount
-                          ?.walletRefundBalance ??
-                      0;
-                  if (wallet != null) {
-                    setState(() {
-                      // _walletBalance = wallet.balance.toDouble();
-                      _refundableBalance = refundableWalletBalance.toDouble();
-                    });
-                  }
+                AppLogger.log('BlocListener: Current state = $state'); // Debug log
+
+                if (state is HomeWalletLoading) {
+                  setState(() {
+                    _walletLoading = true; // Trigger app bar shimmer for wallet loading
+                  });
+                } else if (state is HomeWalletFetched) {
+                  setState(() {
+                    _walletLoading = false; // Stop app bar shimmer
+                  });
                 } else if (state is HomeWalletFailure) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(state.message)));
+                  setState(() {
+                    _walletLoading = false; // Stop app bar shimmer on failure
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.message)),
+                  );
                 } else if (state is HomeTransactionsLoading) {
                   setState(() {
-                    _txLoading = true;
-                    _txError = null;
+                    _txLoading = true; // Trigger SpinKitWave for transactions loading
                   });
                 } else if (state is HomeTransactionsFetched) {
                   setState(() {
+                    _txLoading = false; // Stop SpinKitWave
                     _transactions = state.transactionsResponse.data;
-                    _txLoading = false;
                   });
                 } else if (state is HomeTransactionsFailure) {
                   setState(() {
-                    _txLoading = false;
+                    _txLoading = false; // Stop SpinKitWave on failure
                     _txError = state.message;
                   });
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(state.message)));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.message)),
+                  );
                 }
               },
               child: AppBarHome(
                 context,
                 userName: "${widget.userModel.user.firstName}",
-                // balance: _walletBalance,
-                // refundableBalance: _refundableBalance,
                 userModel: widget.userModel,
+                isDataReady: !_walletLoading, // Use _walletLoading to control shimmer
               ),
             ),
           ),
           body: RefreshIndicator(
             onRefresh: _refreshData,
             color: const Color(0xFF337687),
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 🎅 Xmas Kapu Promo Banner
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10.w,
-                        vertical: 8.h,
-                      ),
-                      child: GestureDetector(
-                        onTap: () async {
-                          if (_isNavigatingToKapu) return;
-                          setState(() => _isNavigatingToKapu = true);
+            child: ListView(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+              children: [
+                // 🎅 Xmas Kapu Promo Banner
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 8.h,
+                  ),
+                  child: GestureDetector(
+                    onTap: () async {
+                      if (_isNavigatingToKapu) return;
+                      setState(() => _isNavigatingToKapu = true);
 
-                          try {
-                            final userId = widget.userModel.user.id.toString();
+                      try {
+                        final userId = widget.userModel.user.id.toString();
 
-                            final hasVisited =
-                                await SharedPreferencesHelper.hasVisitedKapu(
-                                  userId,
-                                );
-                            final hasUsed =
-                                await SharedPreferencesHelper.hasUsedKapu(
-                                  userId,
-                                );
-                            final hasInteracted =
-                                await SharedPreferencesHelper.hasInteractedWithKapu(
-                                  userId,
-                                );
-
-                            AppLogger.log(
-                              '🔍 [KAPU NAV CHECK] userId=$userId | visited=$hasVisited | used=$hasUsed | interacted=$hasInteracted',
+                        final hasVisited =
+                            await SharedPreferencesHelper.hasVisitedKapu(
+                              userId,
+                            );
+                        final hasUsed =
+                            await SharedPreferencesHelper.hasUsedKapu(userId);
+                        final hasInteracted =
+                            await SharedPreferencesHelper.hasInteractedWithKapu(
+                              userId,
                             );
 
-                            await context
-                                .read<KapuCubit>()
-                                .fetchAllKapuWalletsInstantly();
-                            final state = context.read<KapuCubit>().state;
-
-                            if (state is KapuAllWalletsInstantlyFetched &&
-                                state.walletsResponse.success &&
-                                state.walletsResponse.data.isNotEmpty) {
-                              AppLogger.log(
-                                '🟢 [KAPU NAV] Wallet data exists → navigating directly to PromoCardsSwiperPage',
-                              );
-                              Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PromoCardsSwiperPage(
-                              userModel: widget.userModel,
-                            ),
-                          ),
-                          (route) => route.isFirst,
+                        AppLogger.log(
+                          '🔍 [KAPU NAV CHECK] userId=$userId | visited=$hasVisited | used=$hasUsed | interacted=$hasInteracted',
                         );
-                      }  else {
-                              AppLogger.log(
-                                '🟡 [KAPU NAV] Navigating to OnBoardKapu (user has not interacted yet)',
-                              );
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => OnBoardKapu(
-                                    userModel: widget.userModel,
-                                    onOptIn: () async {
-                                      await SharedPreferencesHelper.markKapuVisited(
-                                        userId,
-                                      );
-                                      AppLogger.log(
-                                        '✅ [KAPU NAV] User opted in → marking visited and navigating to PromoCardsSwiperPage',
-                                      );
-                                  Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => PromoCardsSwiperPage(
-                                      userModel: widget.userModel,
-                                    ),
-                                  ),
-                                  (route) => route.isFirst,
-                                );
-                                    },
-                                  ),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            AppLogger.log('❌ [KAPU NAV ERROR] $e');
-                          } finally {
-                            if (mounted)
-                              setState(() => _isNavigatingToKapu = false);
-                          }
-                        },
-                        child: Container(
-                          height: 110.h,
-                          padding: EdgeInsets.all(16.w),
-                          decoration: BoxDecoration(
-                            color: widget.isDarkModeOn
-                                ? Colors.white.withOpacity(0.05)
-                                : Colors.grey.shade100,
-                            borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(20.r),
-                              bottomLeft: Radius.circular(20.r),
-                              bottomRight: Radius.circular(20.r),
+
+                        await context
+                            .read<KapuCubit>()
+                            .fetchAllKapuWalletsInstantly();
+                        final state = context.read<KapuCubit>().state;
+
+                        if (state is KapuAllWalletsInstantlyFetched &&
+                            state.walletsResponse.success &&
+                            state.walletsResponse.data.isNotEmpty) {
+                          AppLogger.log(
+                            '🟢 [KAPU NAV] Wallet data exists → navigating directly to PromoCardsSwiperPage',
+                          );
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PromoCardsSwiperPage(
+                                userModel: widget.userModel,
+                              ),
                             ),
-                            boxShadow: widget.isDarkModeOn
-                                ? null
-                                : [
-                                    BoxShadow(
-                                      color: Colors.white.withOpacity(0.4),
-                                      blurRadius: 5.r,
-                                      spreadRadius: 5.r,
-                                      offset: Offset(0, 0),
+                            (route) => route.isFirst,
+                          );
+                        } else {
+                          AppLogger.log(
+                            '🟡 [KAPU NAV] Navigating to OnBoardKapu (user has not interacted yet)',
+                          );
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OnBoardKapu(
+                                userModel: widget.userModel,
+                                onOptIn: () async {
+                                  await SharedPreferencesHelper.markKapuVisited(
+                                    userId,
+                                  );
+                                  AppLogger.log(
+                                    '✅ [KAPU NAV] User opted in → marking visited and navigating to PromoCardsSwiperPage',
+                                  );
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          PromoCardsSwiperPage(
+                                            userModel: widget.userModel,
+                                          ),
                                     ),
-                                    BoxShadow(
-                                      color: widget.isDarkModeOn
-                                          ? Colors.white.withOpacity(0.4)
-                                          : Colors.amber.withOpacity(0.4),
-                                      blurRadius: 35.r,
-                                      spreadRadius: 2.r,
-                                      offset: Offset(0, 0),
-                                    ),
-                                  ],
-                          ),
-                          child: Stack(
-                            clipBehavior: Clip.none,
+                                    (route) => route.isFirst,
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        AppLogger.log('❌ [KAPU NAV ERROR] $e');
+                      } finally {
+                        if (mounted)
+                          setState(() => _isNavigatingToKapu = false);
+                      }
+                    },
+                    child: Container(
+                      height: 110.h,
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: widget.isDarkModeOn
+                            ? Colors.white.withOpacity(0.05)
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(20.r),
+                          bottomLeft: Radius.circular(20.r),
+                          bottomRight: Radius.circular(20.r),
+                        ),
+                        boxShadow: widget.isDarkModeOn
+                            ? null
+                            : [
+                                BoxShadow(
+                                  color: Colors.white.withOpacity(0.4),
+                                  blurRadius: 5.r,
+                                  spreadRadius: 5.r,
+                                  offset: Offset(0, 0),
+                                ),
+                                BoxShadow(
+                                  color: widget.isDarkModeOn
+                                      ? Colors.white.withOpacity(0.4)
+                                      : Colors.amber.withOpacity(0.4),
+                                  blurRadius: 35.r,
+                                  spreadRadius: 2.r,
+                                  offset: Offset(0, 0),
+                                ),
+                              ],
+                      ),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              AppText.small(
+                                "Lipia PolePole",
+                                fontSize: 18.sp,
+                                color: widget.isDarkModeOn
+                                    ? ColorName.whiteColor
+                                    : ColorName.blackColor,
+                              ),
+                              SizedBox(height: 2.h),
+                              AppText.small(
+                                "Christmas Kapu 🎅",
+                                fontSize: 18.sp,
+                                color: widget.isDarkModeOn
+                                    ? ColorName.whiteColor
+                                    : ColorName.blackColor,
+                              ),
+                              SizedBox(height: 2.h),
+                              Row(
                                 children: [
-                                  AppText.small(
-                                    "Lipia PolePole",
-                                    fontSize: 18.sp,
-                                    color: widget.isDarkModeOn
-                                        ? ColorName.whiteColor
-                                        : ColorName.blackColor,
-                                  ),
-                                  SizedBox(height: 2.h),
-                                  AppText.small(
-                                    "Christmas Kapu 🎅",
-                                    fontSize: 18.sp,
-                                    color: widget.isDarkModeOn
-                                        ? ColorName.whiteColor
-                                        : ColorName.blackColor,
-                                  ),
-                                  SizedBox(height: 2.h),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 12.w,
-                                          vertical: 2.h,
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.touch_app_rounded,
-                                              size: 12.sp,
-                                              color: widget.isDarkModeOn
-                                                  ? ColorName.whiteColor
-                                                  : ColorName.blackColor,
-                                            ),
-                                            SizedBox(width: 4.w),
-                                            AppText.medium(
-                                              "Tap to view",
-                                              fontSize: 12.sp,
-                                              color: widget.isDarkModeOn
-                                                  ? ColorName.whiteColor
-                                                  : ColorName.blackColor,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(width: 12.w),
-                                      Container(
-                                        padding: EdgeInsets.all(8.w),
-                                        decoration: BoxDecoration(
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12.w,
+                                      vertical: 2.h,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.touch_app_rounded,
+                                          size: 12.sp,
                                           color: widget.isDarkModeOn
-                                              ? Colors.white.withOpacity(0.1)
-                                              : Colors.white,
-                                          shape: BoxShape.circle,
+                                              ? ColorName.whiteColor
+                                              : ColorName.blackColor,
                                         ),
-                                      ),
-                                    ],
+                                        SizedBox(width: 4.w),
+                                        AppText.medium(
+                                          "Tap to view",
+                                          fontSize: 12.sp,
+                                          color: widget.isDarkModeOn
+                                              ? ColorName.whiteColor
+                                              : ColorName.blackColor,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(width: 12.w),
+                                  Container(
+                                    padding: EdgeInsets.all(8.w),
+                                    decoration: BoxDecoration(
+                                      color: widget.isDarkModeOn
+                                          ? Colors.white.withOpacity(0.1)
+                                          : Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
                                   ),
                                 ],
                               ),
-                              // ❄️ Replace image with Lottie animation
-                              Positioned(
-                                right: -94.w,
-                                top: -34.h,
-                                child: Lottie.asset(
-                                  'assets/images/home_images/happy_snowman.json',
-                                  height: 146.h,
-                                  fit: BoxFit.cover,
-                                  repeat: true,
-                                ),
-                              ),
                             ],
                           ),
-                        ),
+                          // ❄️ Replace image with Lottie animation
+                          Positioned(
+                            right: -94.w,
+                            top: -34.h,
+                            child: Lottie.asset(
+                              'assets/images/home_images/happy_snowman.json',
+                              height: 146.h,
+                              fit: BoxFit.cover,
+                              repeat: true,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-
-                    SizedBox(height: 10.h),
-                    _buildCampaignCard(context),
-                    SizedBox(height: 20.h),
-                    // VoucherModalSheet(context: context),
-                    // SizedBox(height: 8.h),
-                    // _buildMerchantImages(context),
-                    // SizedBox(height: 8.h),
-                    _buildTransactionsSection(context),
-                  ],
+                  ),
                 ),
-              ),
+                
+                SizedBox(height: 10.h),
+                _buildCampaignCard(context),
+                SizedBox(height: 20.h),
+                // VoucherModalSheet(context: context),
+                // SizedBox(height: 8.h),
+                // _buildMerchantImages(context),
+                // SizedBox(height: 8.h),
+                _buildTransactionsSection(context),
+              ],
             ),
           ),
         );
@@ -608,126 +594,6 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         );
       },
-    );
-  }
-
-  Widget _referralRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.montserrat(
-              fontSize: 15.sp,
-              color: Colors.grey[800],
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          Text(
-            value,
-            style: GoogleFonts.montserrat(
-              fontSize: 15.sp,
-              color: Colors.grey[800],
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMerchantImages(BuildContext context) {
-    final bool useDynamicMerchants = false;
-
-    if (!useDynamicMerchants) {
-      // ✅ Hardcoded fallback
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _buildMerchantCard(
-              context,
-              "assets/merchants/hotpoint.svg",
-              110.w,
-              "Hotpoint",
-              merchantId: 73,
-            ),
-            SizedBox(width: 30.w),
-            _buildMerchantCard(
-              context,
-              "assets/merchants/naivas.png",
-              110.w,
-              "Naivas",
-              merchantId: 107,
-            ),
-            SizedBox(width: 30.w),
-            _buildMerchantCard(
-              context,
-              "assets/merchants/quickmart.png",
-              100.w,
-              "Quickmart",
-              merchantId: 347,
-            ),
-          ],
-        ),
-      );
-    }
-
-    // ✅ Dynamic merchants via Bloc
-    // return BlocBuilder<MerchantsCubit, MerchantsState>(
-    //   builder: (context, state) {
-    //     if (state is MerchantsLoading) {
-    //       return const Center(child: CircularProgressIndicator());
-    //     } else if (state is MerchantsError) {
-    //       return Text("Error: ${state.message}");
-    //     } else if (state is MerchantsFetched) {
-    //       if (state.merchants.isEmpty) {
-    //         return const Text("No merchants available");
-    //       }
-    //       return SingleChildScrollView(
-    //         scrollDirection: Axis.horizontal,
-    //         child: Row(
-    //           children: state.merchants.map((m) {
-    //             final img = m.logo ?? "assets/placeholder.png";
-    //             return Padding(
-    //               padding: EdgeInsets.only(right: 30.w),
-    //               child: _buildMerchantCard(
-    //                 context,
-    //                 img,
-    //                 110.w,
-    //                 m.merchantName ?? "Merchant",
-    //               ),
-    //             );
-    //           }).toList(),
-    //         ),
-    //       );
-    //     }
-    //     return const SizedBox.shrink();
-    //   },
-    // );
-  }
-
-  Widget _buildMerchantCard(
-    BuildContext context,
-    String imagePath,
-    double width,
-    String merchantName, {
-    int merchantId = 0,
-  }) {
-    return GestureDetector(
-      onTap: () => showMerchantVoucherModal(context, merchantName, merchantId),
-      child: Container(
-        width: width,
-        height: 60.h,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12.r)),
-        child: imagePath.endsWith('.svg')
-            ? SvgPicture.asset(imagePath, fit: BoxFit.contain)
-            : imagePath.startsWith("http")
-            ? Image.network(imagePath, fit: BoxFit.contain)
-            : Image.asset(imagePath, fit: BoxFit.contain),
-      ),
     );
   }
 

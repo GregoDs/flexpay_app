@@ -24,12 +24,11 @@ void showMerchantVoucherModal(BuildContext context, String merchantName, int mer
   final iconColor = isDark ? Colors.white70 : Colors.blue[800];
 
   final List<Map<String, dynamic>> merchants = [
-    {'name': 'Jaza Supermarket', 'merchant_id': '812', 'color': const Color(0xFF761B1A)},
-    {'name': 'Appliance Zone', 'merchant_id': '347', 'color': const Color(0xFF111111)},
-    {'name': 'Quickmart Supermarket', 'merchant_id': '347', 'color': const Color(0xFF111111)},
     {'name': 'Naivas Supermarket', 'merchant_id': '107', 'color': const Color(0xFFFFB020)},
     {'name': 'HotPoint Appliances', 'merchant_id': '73', 'color': const Color(0xFFCD0000)},
-    {'name': 'Personal Goal', 'merchant_id': '4', 'color': const Color(0xFF00A86B)},
+    {'name': 'Appliance Zone', 'merchant_id': '347', 'color': const Color(0xFF111111)},
+    {'name': 'CityWalk Limited', 'merchant_id': '689', 'color': const Color(0xFF761B1A)},
+
   ];
 
   String? selectedMerchantName;

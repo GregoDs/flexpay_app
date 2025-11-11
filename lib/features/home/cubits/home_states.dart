@@ -79,7 +79,6 @@ class HomeReferralFailure extends HomeState {
   List<Object?> get props => [message];
 }
 
-
 ///Unified state
 class HomeCombinedState extends HomeState {
   final bool isWalletLoading;
@@ -105,7 +104,8 @@ class HomeCombinedState extends HomeState {
   }) {
     return HomeCombinedState(
       isWalletLoading: isWalletLoading ?? this.isWalletLoading,
-      isTransactionsLoading: isTransactionsLoading ?? this.isTransactionsLoading,
+      isTransactionsLoading:
+          isTransactionsLoading ?? this.isTransactionsLoading,
       walletResponse: walletResponse ?? this.walletResponse,
       transactionsResponse: transactionsResponse ?? this.transactionsResponse,
       errorMessage: errorMessage,
@@ -114,10 +114,10 @@ class HomeCombinedState extends HomeState {
 
   @override
   List<Object?> get props => [
-        isWalletLoading,
-        isTransactionsLoading,
-        walletResponse,
-        transactionsResponse,
-        errorMessage,
-      ];
+    isWalletLoading,
+    isTransactionsLoading,
+    walletResponse,
+    transactionsResponse,
+    errorMessage,
+  ];
 }

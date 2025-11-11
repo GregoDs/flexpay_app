@@ -20,7 +20,7 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
   List<dynamic> _filteredMerchants = [];
 
   final Map<String, String> localMerchantImages = {
-    "Smart Devices": "assets/merchantspageimg/Quickmart.png",
+    "Smart Devices": "assets/merchantspageimg/Smartdevices.png",
     "Moko": "assets/merchantspageimg/Moko.png",
     "Leviticus": "assets/merchantspageimg/Leviticus.png",
     "Patabay": "assets/merchantspageimg/Patabay.png",
@@ -29,7 +29,6 @@ class _MerchantsScreenState extends State<MerchantsScreen> {
     "Electromart Kenya": "assets/merchantspageimg/Electromart.png",
     "Naivas Supermarket": "assets/merchantspageimg/Naivas.png",
     "ZuriMall Limited": "assets/merchantspageimg/Zurimall.png",
-    "Citywalk Limited": "assets/merchantspageimg/Quickmart.png",
     "Quickmart Supermarket": "assets/merchantspageimg/Quickmart.png",
   };
 
